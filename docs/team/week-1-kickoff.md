@@ -7,11 +7,12 @@ Make the project runnable, scoped, and assigned before implementation gets deep.
 ## Meeting 1 Agenda
 
 1. Confirm the two-track plan.
-2. Assign owners and backups.
-3. Review constraints and risks.
-4. Pick initial data sources to investigate.
-5. Decide the first Friday demo.
-6. Send the professor email.
+2. Review the starter owner split: Jonathan, Tessy, and Bonheur Briringiro.
+3. Adjust owners/backups if needed.
+4. Review constraints and risks.
+5. Pick initial data sources to investigate.
+6. Decide the first Friday demo.
+7. Send the professor email.
 
 ## Week 1 Checklist
 

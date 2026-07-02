@@ -9,6 +9,12 @@ Kinyarwanda Language Learning LM
 Build a CS336-inspired language-modeling project that teaches the full LM
 pipeline from scratch while producing a small Kinyarwanda learning tutor demo.
 
+## Contributors
+
+- Jonathan Muhire
+- Tessy
+- Bonheur Briringiro
+
 ## Tracks
 
 ### Track A: From-Scratch LM

@@ -53,11 +53,17 @@ GitHub repo:
 
 https://github.com/Jonathan-321/kinyalm
 
-Default visibility:
+Visibility:
 
 ```text
-private until the team is ready to share
+public
 ```
+
+Contributors:
+
+- Jonathan Muhire
+- Tessy
+- Bonheur Briringiro
 
 Hugging Face starting point:
 
@@ -82,7 +88,7 @@ tests/                    project tests
 
 ### 1. Project Coordination
 
-Owner: Project Lead
+Owner: Jonathan Muhire
 
 Responsibilities:
 
@@ -100,7 +106,7 @@ Week 1 output:
 
 ### 2. Data
 
-Owner: Data Lead
+Owner: Tessy
 
 Responsibilities:
 
@@ -118,7 +124,7 @@ Week 1 output:
 
 ### 3. Tokenizer
 
-Owner: Tokenizer Lead
+Owner: Bonheur Briringiro
 
 Responsibilities:
 
@@ -140,7 +146,7 @@ Kinyarwanda-aware BPE tokenizer analysis on a small documented corpus.
 
 ### 4. Modeling
 
-Owner: Modeling Lead
+Owner: Bonheur Briringiro
 
 Responsibilities:
 
@@ -157,7 +163,7 @@ Week 1 output:
 
 ### 5. Tutor MVP
 
-Owner: Tutor / UX Lead
+Owner: Jonathan Muhire
 
 Responsibilities:
 
@@ -173,7 +179,7 @@ Week 1 output:
 
 ### 6. Evaluation
 
-Owner: Evaluation Lead
+Owner: Tessy
 
 Responsibilities:
 
@@ -190,7 +196,7 @@ Week 1 output:
 
 ### 7. Documentation
 
-Owner: Documentation Lead
+Owner: Jonathan Muhire
 
 Responsibilities:
 
