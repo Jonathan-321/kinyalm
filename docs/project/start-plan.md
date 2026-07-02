@@ -4,6 +4,8 @@
 
 Start with project infrastructure and data reality, not model training.
 
+For the full plan, read `docs/project/master-plan.md`.
+
 The first implementation target is:
 
 ```text

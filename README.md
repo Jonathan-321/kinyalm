@@ -21,10 +21,11 @@ Week 1 is not about training a model yet. It is about making the project
 workable.
 
 1. Read [project-charter.md](/Users/jonathanmuhire/Documents/RL/docs/project/project-charter.md).
-2. Assign owners using [roles.md](/Users/jonathanmuhire/Documents/RL/docs/team/roles.md).
-3. Work through [week-1-kickoff.md](/Users/jonathanmuhire/Documents/RL/docs/team/week-1-kickoff.md).
-4. Record every data source in [source-log.md](/Users/jonathanmuhire/Documents/RL/docs/data/source-log.md).
-5. Keep risks visible in [constraints-and-risks.md](/Users/jonathanmuhire/Documents/RL/docs/project/constraints-and-risks.md).
+2. Read the full [master-plan.md](/Users/jonathanmuhire/Documents/RL/docs/project/master-plan.md).
+3. Assign owners using [roles.md](/Users/jonathanmuhire/Documents/RL/docs/team/roles.md).
+4. Work through [week-1-kickoff.md](/Users/jonathanmuhire/Documents/RL/docs/team/week-1-kickoff.md).
+5. Record every data source in [source-log.md](/Users/jonathanmuhire/Documents/RL/docs/data/source-log.md).
+6. Keep risks visible in [constraints-and-risks.md](/Users/jonathanmuhire/Documents/RL/docs/project/constraints-and-risks.md).
 
 ## Repository Layout
 
