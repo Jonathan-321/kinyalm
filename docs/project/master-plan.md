@@ -61,9 +61,9 @@ public
 
 Contributors:
 
-- Jonathan Muhire
-- Tessy
-- Bonheur Briringiro
+- Jonathan Muhire ([@Jonathan-321](https://github.com/Jonathan-321))
+- Tessy Mugisha ([@TessyMugisha](https://github.com/TessyMugisha))
+- Bonheur Byiringiro ([@BonheurByiringiro](https://github.com/BonheurByiringiro))
 
 Hugging Face starting point:
 
@@ -106,7 +106,7 @@ Week 1 output:
 
 ### 2. Data
 
-Owner: Tessy
+Owner: Tessy Mugisha
 
 Responsibilities:
 
@@ -124,7 +124,7 @@ Week 1 output:
 
 ### 3. Tokenizer
 
-Owner: Bonheur Briringiro
+Owner: Bonheur Byiringiro
 
 Responsibilities:
 
@@ -146,7 +146,7 @@ Kinyarwanda-aware BPE tokenizer analysis on a small documented corpus.
 
 ### 4. Modeling
 
-Owner: Bonheur Briringiro
+Owner: Bonheur Byiringiro
 
 Responsibilities:
 
@@ -179,7 +179,7 @@ Week 1 output:
 
 ### 6. Evaluation
 
-Owner: Tessy
+Owner: Tessy Mugisha
 
 Responsibilities:
 
@@ -372,8 +372,8 @@ Tasks:
 
 Before implementation, decide:
 
-1. Who owns each role?
-2. Is the GitHub repo staying private for now?
+1. Have Tessy and Bonheur accepted the GitHub collaborator invites?
+2. Does the starter role split work for everyone's availability?
 3. Which data sources can we use for training?
 4. Which sources are reference-only?
 5. What compute can the team access?

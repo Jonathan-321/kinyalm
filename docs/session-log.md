@@ -55,3 +55,13 @@ Next step:
 
 Assign owners, send the professor email, and begin data-source review before
 training or scraping anything.
+
+Update:
+
+- Made the GitHub repo public.
+- Invited Tessy Mugisha and Bonheur Byiringiro as collaborators with write
+  access.
+- Updated contributors, handles, and starter role ownership across the project
+  docs.
+- Created the remaining Week 1 GitHub issues and routed pending-owner issues
+  with comments until collaborator invitations are accepted.

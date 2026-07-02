@@ -8,21 +8,29 @@ has stronger availability or experience for a role.
 
 ## Contributors
 
-- Jonathan Muhire
-- Tessy
-- Bonheur Briringiro
+- Jonathan Muhire ([@Jonathan-321](https://github.com/Jonathan-321))
+- Tessy Mugisha ([@TessyMugisha](https://github.com/TessyMugisha))
+- Bonheur Byiringiro ([@BonheurByiringiro](https://github.com/BonheurByiringiro))
+
+## GitHub Access
+
+- The repository is public.
+- Tessy Mugisha and Bonheur Byiringiro have been invited as collaborators with
+  write access.
+- GitHub issue assignment for Tessy and Bonheur can be finalized after they
+  accept the invitations.
 
 ## Role Matrix
 
 | Role | Owner | Backup | Week 1 Output |
 | --- | --- | --- | --- |
-| Project Lead / Coordinator | Jonathan Muhire | Tessy | Meeting rhythm, professor email, issue tracker |
-| Data Lead | Tessy | Jonathan Muhire | Data source log and licensing notes |
-| Tokenizer Lead | Bonheur Briringiro | Jonathan Muhire | Tokenizer task breakdown and evaluation examples |
-| Modeling Lead | Bonheur Briringiro | Jonathan Muhire | Tiny LM implementation plan and compute assumptions |
-| Tutor / UX Lead | Jonathan Muhire | Tessy | Tutor MVP task list and lesson-source needs |
-| Evaluation Lead | Tessy | Bonheur Briringiro | Human evaluation rubric and 20 starter prompts |
-| Documentation Lead | Jonathan Muhire | Tessy | README, weekly updates, final report outline |
+| Project Lead / Coordinator | Jonathan Muhire | Tessy Mugisha | Meeting rhythm, professor email, issue tracker |
+| Data Lead | Tessy Mugisha | Jonathan Muhire | Data source log and licensing notes |
+| Tokenizer Lead | Bonheur Byiringiro | Jonathan Muhire | Tokenizer task breakdown and evaluation examples |
+| Modeling Lead | Bonheur Byiringiro | Jonathan Muhire | Tiny LM implementation plan and compute assumptions |
+| Tutor / UX Lead | Jonathan Muhire | Tessy Mugisha | Tutor MVP task list and lesson-source needs |
+| Evaluation Lead | Tessy Mugisha | Bonheur Byiringiro | Human evaluation rubric and 20 starter prompts |
+| Documentation Lead | Jonathan Muhire | Tessy Mugisha | README, weekly updates, final report outline |
 
 ## Responsibilities
 

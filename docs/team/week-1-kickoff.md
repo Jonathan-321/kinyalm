@@ -7,7 +7,8 @@ Make the project runnable, scoped, and assigned before implementation gets deep.
 ## Meeting 1 Agenda
 
 1. Confirm the two-track plan.
-2. Review the starter owner split: Jonathan, Tessy, and Bonheur Briringiro.
+2. Review the starter owner split: Jonathan, Tessy Mugisha, and Bonheur
+   Byiringiro.
 3. Adjust owners/backups if needed.
 4. Review constraints and risks.
 5. Pick initial data sources to investigate.

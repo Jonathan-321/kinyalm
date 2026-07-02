@@ -11,9 +11,9 @@ pipeline from scratch while producing a small Kinyarwanda learning tutor demo.
 
 ## Contributors
 
-- Jonathan Muhire
-- Tessy
-- Bonheur Briringiro
+- Jonathan Muhire ([@Jonathan-321](https://github.com/Jonathan-321))
+- Tessy Mugisha ([@TessyMugisha](https://github.com/TessyMugisha))
+- Bonheur Byiringiro ([@BonheurByiringiro](https://github.com/BonheurByiringiro))
 
 ## Tracks
 

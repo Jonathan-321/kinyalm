@@ -22,7 +22,7 @@ constraints:
 
 ## Day 1-2
 
-- Assign team roles.
+- Confirm the starter team roles.
 - Send professor email.
 - Fill the first data source log entries.
 - Pick tokenizer analysis examples.

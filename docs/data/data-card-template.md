@@ -2,7 +2,7 @@
 
 ## Dataset Name
 
-TBD
+KinyaLM corpus, working name. Replace this once approved sources are chosen.
 
 ## Purpose
 
