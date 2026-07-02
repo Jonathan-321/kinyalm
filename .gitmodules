@@ -1,0 +1,15 @@
+[submodule "coursework/cs336/assignment1-basics"]
+	path = coursework/cs336/assignment1-basics
+	url = https://github.com/stanford-cs336/assignment1-basics.git
+[submodule "coursework/cs336/assignment2-systems"]
+	path = coursework/cs336/assignment2-systems
+	url = https://github.com/stanford-cs336/assignment2-systems.git
+[submodule "coursework/cs336/assignment3-scaling"]
+	path = coursework/cs336/assignment3-scaling
+	url = https://github.com/stanford-cs336/assignment3-scaling.git
+[submodule "coursework/cs336/assignment4-data"]
+	path = coursework/cs336/assignment4-data
+	url = https://github.com/stanford-cs336/assignment4-data.git
+[submodule "coursework/cs336/assignment5-alignment"]
+	path = coursework/cs336/assignment5-alignment
+	url = https://github.com/stanford-cs336/assignment5-alignment.git

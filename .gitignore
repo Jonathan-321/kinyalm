@@ -1,0 +1,31 @@
+.DS_Store
+
+# Local experiment outputs
+experiments/logs/
+experiments/results/
+experiments/runs/
+wandb/
+
+# Python/editor noise for wrapper repo work
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+.env
+
+# Large local data should not be committed by default.
+data/raw/*
+data/interim/*
+data/processed/*
+data/external/*
+!data/**/.gitkeep
+!data/README.md
+
+# Model artifacts and large generated files
+checkpoints/
+artifacts/
+*.pt
+*.pth
+*.safetensors
+*.ckpt
