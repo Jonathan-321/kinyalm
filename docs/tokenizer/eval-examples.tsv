@@ -1,0 +1,21 @@
+id	category	text	notes	status
+greeting_basic	greeting	Muraho	Common greeting; confirm register and beginner-level explanation	needs-review
+greeting_morning	greeting	Mwaramutse	Common morning greeting; confirm usage notes	needs-review
+question_wellbeing	greeting	Amakuru?	Common wellbeing question; punctuation check	needs-review
+self_intro	sentence	Nitwa Jonathan.	Simple self-introduction pattern	needs-review
+student_identity	sentence	Ndi umunyeshuri.	Simple learner/classroom sentence	needs-review
+thanks	greeting	Murakoze.	Common thanks expression	needs-review
+school_vocab	vocabulary	ishuri	School vocabulary; noun-class review needed	needs-review
+teacher_vocab	vocabulary	umwarimu	Teacher vocabulary; prefix segmentation target	needs-review
+student_vocab	vocabulary	umunyeshuri	Student vocabulary; prefix segmentation target	needs-review
+family_vocab	vocabulary	umuryango	Family/community vocabulary; segmentation review needed	needs-review
+language_vocab	vocabulary	Ikinyarwanda	Language name; capitalization and prefix segmentation	needs-review
+country_vocab	vocabulary	u Rwanda	Country expression; whitespace/token boundary check	needs-review
+learn_sentence	sentence	Ndiga Ikinyarwanda.	Simple learning sentence; verb form review needed	needs-review
+understand_sentence	sentence	Ndumva buhoro.	Simple comprehension/speed sentence; speaker review needed	needs-review
+polite_request	sentence	Subiramo buhoro.	Polite classroom request; confirm tone/register	needs-review
+help_request	sentence	Mfasha gusobanukirwa iri jambo.	Help request; morphology and phrase review needed	needs-review
+correction_target	sentence	Ndi kwiga Ikinyarwanda.	Possible learner sentence for correction task; needs teacher validation	needs-review
+hyphen_check	orthography	Kigali-Rwanda	Hyphen boundary check; not necessarily a natural phrase	needs-review
+apostrophe_check	orthography	n'ubwo	Apostrophe boundary check; confirm orthography and meaning	needs-review
+punctuation_check	sentence	Muraho! Amakuru?	Multiple punctuation boundary check	needs-review

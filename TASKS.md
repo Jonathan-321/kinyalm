@@ -15,14 +15,14 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-007 | Define tiny model config assumptions | Bonheur Byiringiro | todo | CPU-friendly first. |
 | W1-008 | Draft 20 tutor MVP tasks | Jonathan Muhire | todo | Grammar, vocabulary, correction, quizzes. |
 | W1-009 | Draft human scoring rubric | Tessy Mugisha | todo | Start from `docs/evaluation/evaluation-plan.md`. |
-| W1-010 | Prepare first weekly update | Jonathan Muhire | todo | Use `docs/weekly/week-1-update.md`. |
+| W1-010 | Prepare first weekly update | Jonathan Muhire | done | Initial update exists in `docs/weekly/week-1-update.md`. |
 
 ## Week 1: Nice To Have
 
 | ID | Task | Owner | Status | Notes |
 | --- | --- | --- | --- | --- |
 | W1-011 | Create repo labels | Jonathan Muhire | done | `data`, `tokenizer`, `model`, `tutor`, `eval`, `docs`, `blocked`. |
-| W1-012 | Add starter tokenizer-analysis notebook | Bonheur Byiringiro | todo | Keep it lightweight. |
+| W1-012 | Add starter tokenizer-analysis scaffold | Bonheur Byiringiro | in-progress | Starter examples, metrics helpers, and tests are in place; notebook/report can build on them. |
 | W1-013 | Create shared data spreadsheet | Tessy Mugisha | todo | Mirror important entries back into repo docs. |
 | W1-014 | Collect compute inventory | Bonheur Byiringiro | todo | Laptops, lab machines, GPUs, cloud credits. |
 

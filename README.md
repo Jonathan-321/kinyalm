@@ -77,6 +77,23 @@ That includes:
 - examples involving prefixes, noun classes, apostrophes, hyphens, and common
   Kinyarwanda words.
 
+## First Runnable Check
+
+Run the project health check:
+
+```bash
+python3 scripts/check_project.py
+```
+
+Run the starter tokenizer metric tests:
+
+```bash
+PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q
+```
+
+These checks do not train a tokenizer or use unapproved data. They only verify
+that the starter example set and tokenizer-analysis helpers are wired correctly.
+
 ## CS336 Boundary
 
 The CS336 assignment repos include their own AI-assistance policy. We will use

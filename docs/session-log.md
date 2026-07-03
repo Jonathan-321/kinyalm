@@ -65,3 +65,22 @@ Update:
   docs.
 - Created the remaining Week 1 GitHub issues and routed pending-owner issues
   with comments until collaborator invitations are accepted.
+
+## 2026-07-03
+
+Started the first implementation milestone without touching CS336 assignment
+solutions.
+
+Added:
+
+- reviewed-before-use tokenizer example set,
+- tokenizer analysis plan,
+- tokenizer metric utilities,
+- project example loader,
+- lightweight project health check,
+- starter tests for tokenizer metrics.
+
+Verified:
+
+- `python3 scripts/check_project.py`
+- `PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q`
