@@ -95,7 +95,8 @@ Exploration update:
 
 Track A sandbox update:
 
-- Added a separate `sandbox/track_a` guide and review-only toy corpus.
-- Added a character-level tokenizer and tiny causal Transformer sandbox.
-- Added `scripts/run_track_a_sandbox.py` to run the full toy loop end to end.
-- Added tests for tokenizer round-tripping and model forward-pass shape.
+- Moved the runnable sandbox into standalone repo
+  `https://github.com/Jonathan-321/kilm`.
+- KILM contains the review-only toy corpus, character-level tokenizer, tiny
+  causal Transformer, runner, run notes, and tests.
+- This repo now keeps only the planning record and Track A gates.

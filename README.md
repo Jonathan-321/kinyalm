@@ -101,23 +101,16 @@ Review Hugging Face candidate metadata:
 python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
 ```
 
-## Track A Sandbox
+## KILM Sandbox
 
-Run a tiny end-to-end LM sandbox:
+The tiny end-to-end LM sandbox now lives in its own repo:
 
-```bash
-python3 scripts/run_track_a_sandbox.py --max-steps 40
-```
+https://github.com/Jonathan-321/kilm
 
-Guide:
-
-```text
-sandbox/track_a/README.md
-```
-
-This uses a review-only toy corpus and a character-level tokenizer. It is meant
-to teach and validate the full pipeline shape before approved data, BPE, and
-larger model training.
+That repo contains the review-only toy corpus, character-level tokenizer, tiny
+Transformer, tests, and run notes. This repo keeps only the planning record and
+Track A gates so the sandbox can evolve without turning `kinyalm` into an
+experiment dump.
 
 ## CS336 Boundary
 

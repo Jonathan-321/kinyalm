@@ -392,16 +392,17 @@ Everything else depends on that data foundation.
 
 ## Sandbox Exploration
 
-Track A now has a separate sandbox path:
+Track A now has a standalone sandbox repo:
 
 ```text
-sandbox/track_a/
-scripts/run_track_a_sandbox.py
+https://github.com/Jonathan-321/kilm
 ```
 
-This path is for learning and feasibility checks only. It runs a toy corpus
-through a character-level tokenizer and a tiny causal language model so the team
-can inspect the full loop before using approved data or a BPE tokenizer.
+KILM is for learning and feasibility checks only. It runs a toy corpus through a
+character-level tokenizer and a tiny causal language model so the team can
+inspect the full loop before using approved data or a BPE tokenizer. Keep the
+runnable sandbox and toy corpus there; bring back only decisions, gates, and
+short status summaries to this planning repo.
 
 The sandbox should answer:
 

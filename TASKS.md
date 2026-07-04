@@ -25,7 +25,7 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-012 | Add starter tokenizer-analysis scaffold | Bonheur Byiringiro | in-progress | Starter examples, metrics helpers, and tests are in place; notebook/report can build on them. |
 | W1-013 | Create shared data spreadsheet | Tessy Mugisha | todo | Mirror important entries back into repo docs. |
 | W1-014 | Collect compute inventory | Bonheur Byiringiro | todo | Laptops, lab machines, GPUs, cloud credits. |
-| W1-015 | Run Track A sandbox and interpret results | Jonathan Muhire | in-progress | Character-level toy LM sandbox exists; use it as a guide, not final model evidence. |
+| W1-015 | Run Track A sandbox and interpret results | Jonathan Muhire | done | Moved to standalone `Jonathan-321/kilm` repo; use it as a guide, not final model evidence. |
 
 ## Do Not Start Yet
 
