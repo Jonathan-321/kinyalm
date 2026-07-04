@@ -84,3 +84,11 @@ Verified:
 
 - `python3 scripts/check_project.py`
 - `PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q`
+
+Exploration update:
+
+- Added a Hugging Face metadata review script that does not download dataset
+  files.
+- Generated `docs/data/huggingface-source-review.md`.
+- Updated the source log so datasets with no visible license stay blocked for
+  training until review is complete.

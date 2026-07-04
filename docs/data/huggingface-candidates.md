@@ -7,6 +7,12 @@ https://huggingface.co/datasets?search=kinyarwanda
 These are candidates, not approved sources. Each one needs a dataset-card,
 license, provenance, and quality review before training use.
 
+First-pass metadata review lives in:
+
+```text
+docs/data/huggingface-source-review.md
+```
+
 ## Strong Early Candidates
 
 | Dataset | Possible Use | First Review Question |

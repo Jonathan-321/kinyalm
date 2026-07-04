@@ -8,8 +8,8 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | --- | --- | --- | --- | --- |
 | W1-001 | Confirm team members and role owners | Jonathan Muhire | todo | Review `docs/team/roles.md` with Tessy and Bonheur. |
 | W1-002 | Send proposal email to professor | Jonathan Muhire | todo | Use `docs/project/professor-email.md`. |
-| W1-003 | Inventory Kinyarwanda data sources | Tessy Mugisha | todo | Update `docs/data/source-log.md`. |
-| W1-004 | Check source licenses and permissions | Tessy Mugisha | todo | Mark unclear sources as blocked. |
+| W1-003 | Inventory Kinyarwanda data sources | Tessy Mugisha | in-progress | HF candidate review added; Tessy should confirm sources and add any non-HF sources. |
+| W1-004 | Check source licenses and permissions | Tessy Mugisha | in-progress | First-pass HF license scan added; Tessy should do final review. |
 | W1-005 | Pick 10-20 tokenizer analysis examples | Bonheur Byiringiro | todo | Include morphology-heavy examples. |
 | W1-006 | Read CS336 tokenizer requirements | Bonheur Byiringiro | todo | Do not copy solutions into this repo. |
 | W1-007 | Define tiny model config assumptions | Bonheur Byiringiro | todo | CPU-friendly first. |

@@ -71,6 +71,7 @@ sample corpus.
 That includes:
 
 - a source log for the corpus,
+- a Hugging Face source review,
 - a cleaning note,
 - tokenizer train/encode/decode/save/load behavior,
 - tokens-per-word and fragmentation analysis,
@@ -93,6 +94,12 @@ PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q
 
 These checks do not train a tokenizer or use unapproved data. They only verify
 that the starter example set and tokenizer-analysis helpers are wired correctly.
+
+Review Hugging Face candidate metadata:
+
+```bash
+python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
+```
 
 ## CS336 Boundary
 
