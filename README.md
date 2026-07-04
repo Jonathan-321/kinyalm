@@ -101,6 +101,24 @@ Review Hugging Face candidate metadata:
 python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
 ```
 
+## Track A Sandbox
+
+Run a tiny end-to-end LM sandbox:
+
+```bash
+python3 scripts/run_track_a_sandbox.py --max-steps 40
+```
+
+Guide:
+
+```text
+sandbox/track_a/README.md
+```
+
+This uses a review-only toy corpus and a character-level tokenizer. It is meant
+to teach and validate the full pipeline shape before approved data, BPE, and
+larger model training.
+
 ## CS336 Boundary
 
 The CS336 assignment repos include their own AI-assistance policy. We will use

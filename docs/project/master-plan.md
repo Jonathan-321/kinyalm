@@ -389,3 +389,28 @@ sample corpus.
 ```
 
 Everything else depends on that data foundation.
+
+## Sandbox Exploration
+
+Track A now has a separate sandbox path:
+
+```text
+sandbox/track_a/
+scripts/run_track_a_sandbox.py
+```
+
+This path is for learning and feasibility checks only. It runs a toy corpus
+through a character-level tokenizer and a tiny causal language model so the team
+can inspect the full loop before using approved data or a BPE tokenizer.
+
+The sandbox should answer:
+
+```text
+Does the pipeline run, produce losses, and generate samples?
+```
+
+It should not be used to claim:
+
+```text
+We have a useful Kinyarwanda model.
+```

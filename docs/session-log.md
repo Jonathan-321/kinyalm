@@ -92,3 +92,10 @@ Exploration update:
 - Generated `docs/data/huggingface-source-review.md`.
 - Updated the source log so datasets with no visible license stay blocked for
   training until review is complete.
+
+Track A sandbox update:
+
+- Added a separate `sandbox/track_a` guide and review-only toy corpus.
+- Added a character-level tokenizer and tiny causal Transformer sandbox.
+- Added `scripts/run_track_a_sandbox.py` to run the full toy loop end to end.
+- Added tests for tokenizer round-tripping and model forward-pass shape.
