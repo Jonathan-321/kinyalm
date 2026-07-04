@@ -22,10 +22,11 @@ workable.
 
 1. Read [project-charter.md](docs/project/project-charter.md).
 2. Read the full [master-plan.md](docs/project/master-plan.md).
-3. Check team ownership in [roles.md](docs/team/roles.md).
-4. Work through [week-1-kickoff.md](docs/team/week-1-kickoff.md).
-5. Record every data source in [source-log.md](docs/data/source-log.md).
-6. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+3. Follow the [team-execution-plan.md](docs/project/team-execution-plan.md).
+4. Check team ownership in [roles.md](docs/team/roles.md).
+5. Work through [week-1-kickoff.md](docs/team/week-1-kickoff.md).
+6. Record every data source in [source-log.md](docs/data/source-log.md).
+7. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 
 ## Contributors
 
@@ -99,6 +100,20 @@ Review Hugging Face candidate metadata:
 
 ```bash
 python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
+```
+
+## Team Execution
+
+The team-facing next steps live here:
+
+```text
+docs/project/team-execution-plan.md
+```
+
+The immediate focus is:
+
+```text
+data approval + tokenizer analysis
 ```
 
 ## KILM Sandbox

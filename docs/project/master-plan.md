@@ -379,6 +379,20 @@ Before implementation, decide:
 5. What compute can the team access?
 6. What does the professor expect from the final demo?
 
+## Team Execution Plan
+
+Day-to-day project work is tracked here:
+
+```text
+docs/project/team-execution-plan.md
+```
+
+The immediate team-facing priority is:
+
+```text
+data approval + tokenizer analysis
+```
+
 ## First Implementation Target
 
 Once the planning decisions are made, implement only this first:

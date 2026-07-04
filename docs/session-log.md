@@ -100,3 +100,11 @@ Track A sandbox update:
 - KILM contains the review-only toy corpus, character-level tokenizer, tiny
   causal Transformer, runner, run notes, and tests.
 - This repo now keeps only the planning record and Track A gates.
+
+Team execution update:
+
+- Added `docs/project/team-execution-plan.md`.
+- Added `docs/data/source-review-checklist.md`.
+- Added `docs/model/compute-inventory.md`.
+- Added `docs/evaluation/learning-task-bank.md`.
+- Kept the immediate repo focus on data approval and tokenizer analysis.

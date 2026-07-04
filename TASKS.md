@@ -14,7 +14,7 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-006 | Read CS336 tokenizer requirements | Bonheur Byiringiro | todo | Do not copy solutions into this repo. |
 | W1-007 | Define tiny model config assumptions | Bonheur Byiringiro | todo | CPU-friendly first. |
 | W1-008 | Draft 20 tutor MVP tasks | Jonathan Muhire | todo | Grammar, vocabulary, correction, quizzes. |
-| W1-009 | Draft human scoring rubric | Tessy Mugisha | todo | Start from `docs/evaluation/evaluation-plan.md`. |
+| W1-009 | Draft human scoring rubric | Tessy Mugisha | in-progress | Rubric exists; review `docs/evaluation/evaluation-plan.md` and `docs/evaluation/learning-task-bank.md`. |
 | W1-010 | Prepare first weekly update | Jonathan Muhire | done | Initial update exists in `docs/weekly/week-1-update.md`. |
 
 ## Week 1: Nice To Have
@@ -24,8 +24,9 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-011 | Create repo labels | Jonathan Muhire | done | `data`, `tokenizer`, `model`, `tutor`, `eval`, `docs`, `blocked`. |
 | W1-012 | Add starter tokenizer-analysis scaffold | Bonheur Byiringiro | in-progress | Starter examples, metrics helpers, and tests are in place; notebook/report can build on them. |
 | W1-013 | Create shared data spreadsheet | Tessy Mugisha | todo | Mirror important entries back into repo docs. |
-| W1-014 | Collect compute inventory | Bonheur Byiringiro | todo | Laptops, lab machines, GPUs, cloud credits. |
+| W1-014 | Collect compute inventory | Bonheur Byiringiro | in-progress | Template added in `docs/model/compute-inventory.md`. |
 | W1-015 | Run Track A sandbox and interpret results | Jonathan Muhire | done | Moved to standalone `Jonathan-321/kilm` repo; use it as a guide, not final model evidence. |
+| W1-016 | Use team execution plan for next work | Jonathan Muhire | done | Added `docs/project/team-execution-plan.md`. |
 
 ## Do Not Start Yet
 
