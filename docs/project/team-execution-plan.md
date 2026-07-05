@@ -222,9 +222,10 @@ If this fails, use only speaker-written examples and reference-only notes until
 permission is clear.
 
 Current status: Digital Umuganda TTS sentence text is approved for the KILM
-baseline path. KILM has run a 1,000-line subset with 900 train / 100 validation
-lines. Digital Umuganda MT is also approved for Kinyarwanda-side import with
-attribution, but still needs domain/bias documentation before larger claims.
+baseline path. KILM has run the full local TTS import as 3,922 prepared lines
+with 3,530 train / 392 validation lines. Digital Umuganda MT is also approved
+for Kinyarwanda-side import with attribution, but still needs domain/bias
+documentation before larger claims.
 
 ### Gate 2: Tokenizer Gate
 
@@ -234,10 +235,11 @@ Pass condition:
 BPE tokenizer round-trips text and has a clear analysis report.
 ```
 
-Current status: KILM has rerun tokenizer analysis on the approved TTS subset.
-A 512-vocab BPE tokenizer compressed 83,410 character tokens to 32,659 BPE
-tokens, and morphology-focused examples now have a reviewable split report.
-Bonheur should review the example set and flag bad splits before scale-up.
+Current status: KILM has rerun tokenizer analysis on the full approved TTS
+split. A 512-vocab BPE tokenizer compressed 340,384 character tokens to 134,090
+BPE tokens, and morphology-focused examples now have a reviewable split report.
+Bonheur should review the example set and flag bad splits before further
+scale-up.
 
 If this fails, fix tokenizer behavior before model training.
 
@@ -254,9 +256,9 @@ If this fails, debug data, batching, tokenizer, or model config before scaling.
 Current status: KILM can prepare approved corpus text, run explicit
 train/validation training, save/resume checkpoints, sample from checkpoints,
 write run reports, and generate data/model cards plus a sample-review TSV. The
-approved-data sanity run moved validation perplexity from 602.1208 to 522.7661
-over 20 tiny steps. The next model gate is a longer GPU run, not more loop
-writing.
+approved-data `small` MPS run moved validation perplexity from 605.7486 to
+137.0228 over 200 steps. The next model gate is longer training and review, not
+more loop writing.
 
 ### Gate 4: Usefulness Gate
 
@@ -273,12 +275,12 @@ If this fails, keep Track B as a retrieval-first tutor fallback.
 The next team-facing move is:
 
 ```text
-Longer approved-data baseline + sample review.
+Extend approved-data baseline + sample review.
 ```
 
 Concretely:
 
 1. Tessy records attribution/domain notes for the approved sources.
 2. Bonheur validates tokenizer morphology examples and flags bad splits.
-3. Jonathan runs the longer KILM baseline on available GPU/VRAM.
+3. Jonathan extends the KILM baseline if more GPU time is available.
 4. Fluent speakers review `sample_review.tsv` before any usefulness claim.

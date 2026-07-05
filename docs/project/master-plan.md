@@ -422,11 +422,11 @@ Current approved-data baseline:
 
 ```text
 Digital Umuganda TTS subset
-1,000 prepared lines
-900 train / 100 validation
+3,922 prepared lines
+3,530 train / 392 validation
 512-vocab BPE
-20-step tiny run
-validation perplexity 602.1208 -> 522.7661
+200-step small MPS run
+validation perplexity 605.7486 -> 137.0228
 ```
 
 Keep the runnable sandbox and generated artifacts there; bring back only

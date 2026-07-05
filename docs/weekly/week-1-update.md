@@ -9,6 +9,8 @@
 - Hugging Face candidate Kinyarwanda datasets were logged for review.
 - Digital Umuganda TTS and MT sources are now approved for KILM baseline work,
   with attribution/domain notes still needed for final cards.
+- KILM ran a `small` MPS baseline on the full approved TTS split; validation
+  perplexity moved from 605.7486 to 137.0228 over 200 steps.
 
 ## What We Learned
 
@@ -23,7 +25,7 @@
 - Tessy and Bonheur need to accept GitHub collaborator invitations.
 - Professor feedback is needed on scope, data permissions, compute expectations,
   and evaluation standards.
-- Longer approved-data training still needs confirmed GPU/VRAM.
+- Longer-than-200-step training still needs a compute/time decision.
 
 ## Decisions Needed
 

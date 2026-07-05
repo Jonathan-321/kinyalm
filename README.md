@@ -126,8 +126,10 @@ That repo contains approved-corpus fetching, corpus preparation, character and
 BPE tokenizer paths, morphology-focused tokenizer examples, explicit
 train/validation runs, learning-rate scheduling, gradient clipping, interval
 checkpoints, sampling, run reports, review packets, CI, and tests. Its first
-approved-data smoke baseline uses the Digital Umuganda TTS sentence text:
-1,000 prepared lines split into 900 train / 100 validation lines.
+approved-data baseline uses the Digital Umuganda TTS sentence text: 3,922
+prepared lines split into 3,530 train / 392 validation lines. The current
+`small` MPS run moved validation perplexity from 605.7486 to 137.0228 over 200
+steps.
 
 This repo keeps only the planning record and Track A gates so the sandbox can
 evolve without turning `kinyalm` into an experiment dump.

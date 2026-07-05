@@ -53,9 +53,9 @@ Suggested target:
 - sample generation,
 - run comparison report.
 
-KILM now implements these mechanics on approved TTS text and has a 20-step
-sanity baseline. The remaining blocker is enough compute for a longer `small`
-or `baseline_gpu` run.
+KILM now implements these mechanics on approved TTS text and has a 200-step
+`small` MPS baseline. The remaining compute question is whether we can afford a
+longer `small` run or a `baseline_gpu` run without losing fast iteration.
 
 ### Gold: Stretch Run
 
