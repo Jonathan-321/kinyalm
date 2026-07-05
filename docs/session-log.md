@@ -102,6 +102,12 @@ Track A sandbox update:
 - Verified the BPE path on the toy corpus: validation loss dropped from 4.3828
   to 1.8230, and token count dropped from 558 character tokens to 386 BPE
   tokens.
+- Added KILM corpus preparation, explicit train/validation corpus support,
+  checkpoint save/resume, checkpoint sampling, run reports, comparison reports,
+  Makefile shortcuts, and GitHub Actions CI.
+- Prepared-split toy smoke run works with separate train/validation files:
+  BPE validation loss moved from 4.3952 to 3.7307 on a tiny 2-line validation
+  split. This is a wiring check, not model-quality evidence.
 - This repo now keeps only the planning record and Track A gates.
 
 Team execution update:

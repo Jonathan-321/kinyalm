@@ -48,9 +48,13 @@ Suggested target:
 
 - approved corpus,
 - train/validation split,
-- checkpointing,
+- checkpointing and resume,
 - loss/perplexity report,
-- sample generation.
+- sample generation,
+- run comparison report.
+
+KILM now implements these mechanics on toy data. The remaining blocker is an
+approved corpus and enough compute for a less tiny run.
 
 ### Gold: Stretch Run
 

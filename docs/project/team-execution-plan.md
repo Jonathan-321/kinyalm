@@ -229,9 +229,10 @@ Pass condition:
 BPE tokenizer round-trips text and has a clear analysis report.
 ```
 
-Current status: KILM has a toy BPE path that round-trips text and runs through
-the tiny LM loop. This gate is not complete for the class project until the same
-analysis is rerun on approved Kinyarwanda text.
+Current status: KILM has a toy BPE path that round-trips text, writes tokenizer
+analysis reports, and runs through the tiny LM loop. This gate is not complete
+for the class project until the same analysis is rerun on approved Kinyarwanda
+text.
 
 If this fails, fix tokenizer behavior before model training.
 
@@ -244,6 +245,10 @@ Tiny model trains reproducibly with decreasing validation loss.
 ```
 
 If this fails, debug data, batching, tokenizer, or model config before scaling.
+
+Current status: KILM can prepare a corpus, run explicit train/validation
+training, save/resume checkpoints, sample from checkpoints, and write run
+reports. This gate is still toy-only until an approved corpus is available.
 
 ### Gate 4: Usefulness Gate
 
