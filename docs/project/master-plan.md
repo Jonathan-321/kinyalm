@@ -412,11 +412,11 @@ Track A now has a standalone sandbox repo:
 https://github.com/Jonathan-321/kilm
 ```
 
-KILM is for learning and feasibility checks only. It runs a toy corpus through a
-character-level tokenizer and a tiny causal language model so the team can
-inspect the full loop before using approved data or a BPE tokenizer. Keep the
-runnable sandbox and toy corpus there; bring back only decisions, gates, and
-short status summaries to this planning repo.
+KILM is for learning and feasibility checks only. It runs a toy corpus through
+character and BPE tokenizer paths, then through a tiny causal language model, so
+the team can inspect the full loop before using approved data. Keep the runnable
+sandbox and toy corpus there; bring back only decisions, gates, and short status
+summaries to this planning repo.
 
 The sandbox should answer:
 

@@ -229,6 +229,10 @@ Pass condition:
 BPE tokenizer round-trips text and has a clear analysis report.
 ```
 
+Current status: KILM has a toy BPE path that round-trips text and runs through
+the tiny LM loop. This gate is not complete for the class project until the same
+analysis is rerun on approved Kinyarwanda text.
+
 If this fails, fix tokenizer behavior before model training.
 
 ### Gate 3: Tiny LM Gate

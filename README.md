@@ -122,10 +122,10 @@ The tiny end-to-end LM sandbox now lives in its own repo:
 
 https://github.com/Jonathan-321/kilm
 
-That repo contains the review-only toy corpus, character-level tokenizer, tiny
-Transformer, tests, and run notes. This repo keeps only the planning record and
-Track A gates so the sandbox can evolve without turning `kinyalm` into an
-experiment dump.
+That repo contains the review-only toy corpus, character and BPE tokenizer
+paths, tiny Transformer, tests, and run notes. This repo keeps only the planning
+record and Track A gates so the sandbox can evolve without turning `kinyalm`
+into an experiment dump.
 
 ## CS336 Boundary
 

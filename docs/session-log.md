@@ -97,8 +97,11 @@ Track A sandbox update:
 
 - Moved the runnable sandbox into standalone repo
   `https://github.com/Jonathan-321/kilm`.
-- KILM contains the review-only toy corpus, character-level tokenizer, tiny
-  causal Transformer, runner, run notes, and tests.
+- KILM contains the review-only toy corpus, character and BPE tokenizer paths,
+  tiny causal Transformer, runner, run notes, and tests.
+- Verified the BPE path on the toy corpus: validation loss dropped from 4.3828
+  to 1.8230, and token count dropped from 558 character tokens to 386 BPE
+  tokens.
 - This repo now keeps only the planning record and Track A gates.
 
 Team execution update:
