@@ -122,6 +122,14 @@ Track A sandbox update:
     137.0228 over 200 steps.
   - A 10,000-step continuation moved validation perplexity from 139.1711 to
     59.5324, but generated samples still failed the smoke check.
+  - The Digital Umuganda MT Kinyarwanda side needed cp1252 decoding; after the
+    importer fix, KILM prepared 44,527 clean lines with zero replacement
+    characters.
+  - The MT `baseline_gpu` run used 764,213 train tokens, 15,420 validation
+    tokens, block size 256, and 6 layers.
+  - Its 2,000-step run moved validation perplexity from 599.4842 to 42.1314.
+  - Its 10,000-step continuation moved validation perplexity from 43.7940 to
+    21.0469, and the sample is now marked `needs-linguistic-review`.
   - Run metadata records learning-rate schedule, gradient clipping, checkpoint
     interval, data card, model card, and sample-review TSV.
 - This repo now keeps only the planning record and Track A gates.

@@ -421,15 +421,25 @@ sampling, run reports, data/model cards, sample-review TSVs, and CI.
 Current approved-data baseline:
 
 ```text
-Digital Umuganda TTS subset
+Digital Umuganda TTS subset:
 3,922 prepared lines
-3,530 train / 392 validation
 512-vocab BPE
 200-step small MPS run
 validation perplexity 605.7486 -> 137.0228
 10,000-step continuation
 validation perplexity 139.1711 -> 59.5324
 sample quality failed smoke check
+
+Digital Umuganda MT Kinyarwanda side:
+44,527 clean prepared lines
+43,636 train / 891 validation
+512-vocab BPE
+baseline_gpu config, block size 256
+2,000-step MPS run
+validation perplexity 599.4842 -> 42.1314
+10,000-step continuation
+validation perplexity 43.7940 -> 21.0469
+sample marked needs-linguistic-review
 ```
 
 Keep the runnable sandbox and generated artifacts there; bring back only

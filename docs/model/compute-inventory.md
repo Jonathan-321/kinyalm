@@ -53,10 +53,11 @@ Suggested target:
 - sample generation,
 - run comparison report.
 
-KILM now implements these mechanics on approved TTS text and has a 10,000-step
-`small` MPS continuation. The remaining compute question is whether a
-`baseline_gpu` run, larger context, or more data improves sample quality enough
-to justify the extra time.
+KILM now implements these mechanics on approved TTS and MT text. The MT
+`baseline_gpu` MPS run is the current best result: validation perplexity moved
+from 43.7940 to 21.0469 during the 10,000-step continuation. The remaining
+compute question is whether another larger run is worth it before tokenizer
+performance and data cleanup improve.
 
 ### Gold: Stretch Run
 

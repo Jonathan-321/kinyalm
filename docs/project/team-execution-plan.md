@@ -224,8 +224,8 @@ permission is clear.
 Current status: Digital Umuganda TTS sentence text is approved for the KILM
 baseline path. KILM has run the full local TTS import as 3,922 prepared lines
 with 3,530 train / 392 validation lines. Digital Umuganda MT is also approved
-for Kinyarwanda-side import with attribution, but still needs domain/bias
-documentation before larger claims.
+for Kinyarwanda-side import with attribution. After fixing cp1252 decoding,
+KILM prepared 44,527 clean MT lines with zero replacement characters.
 
 ### Gate 2: Tokenizer Gate
 
@@ -238,8 +238,8 @@ BPE tokenizer round-trips text and has a clear analysis report.
 Current status: KILM has rerun tokenizer analysis on the full approved TTS
 split. A 512-vocab BPE tokenizer compressed 340,384 character tokens to 134,090
 BPE tokens, and morphology-focused examples now have a reviewable split report.
-Bonheur should review the example set and flag bad splits before further
-scale-up.
+The clean MT run used a 512-vocab BPE tokenizer over 779,633 tokens. Bonheur
+should review the example set and flag bad splits before further scale-up.
 
 If this fails, fix tokenizer behavior before model training.
 
@@ -259,8 +259,10 @@ write run reports, and generate data/model cards plus a sample-review TSV. The
 approved-data `small` MPS run moved validation perplexity from 605.7486 to
 137.0228 over 200 steps. A 10,000-step continuation moved validation perplexity
 from 139.1711 to 59.5324, but the generated sample still failed smoke review.
-The next model gate is better sample quality through more data, larger context,
-or a larger model, not more loop writing.
+The MT `baseline_gpu` run then moved validation perplexity from 599.4842 to
+42.1314 in 2,000 steps, and its 10,000-step continuation moved from 43.7940 to
+21.0469. The sample is still not learner-ready, but it is now structured enough
+for linguistic review.
 
 ### Gate 4: Usefulness Gate
 
@@ -277,14 +279,13 @@ If this fails, keep Track B as a retrieval-first tutor fallback.
 The next team-facing move is:
 
 ```text
-Improve failed-sample baseline.
+Review MT baseline and clean the next data/model path.
 ```
 
 Concretely:
 
 1. Tessy records attribution/domain notes for the approved sources.
 2. Bonheur validates tokenizer morphology examples and flags bad splits.
-3. Jonathan and Bonheur choose the next scale change: more approved text,
-   longer context, or a larger model.
-4. Fluent speakers review samples only after the smoke sample is recognizably
-   Kinyarwanda.
+3. Tessy reviews the MT sample for real fluency/meaning, not just surface shape.
+4. Jonathan and Bonheur choose the next change: data cleanup, tokenizer speed,
+   more approved text, or another larger run.

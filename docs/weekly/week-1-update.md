@@ -13,6 +13,9 @@
   perplexity moved from 605.7486 to 137.0228 over 200 steps.
 - A 10,000-step continuation moved validation perplexity to 59.5324, but the
   generated sample still failed the smoke check.
+- The MT Kinyarwanda-side run is stronger: after fixing cp1252 decoding, the
+  `baseline_gpu` 10,000-step continuation moved validation perplexity to
+  21.0469 and produced a sample marked `needs-linguistic-review`.
 
 ## What We Learned
 
@@ -27,8 +30,8 @@
 - Tessy and Bonheur need to accept GitHub collaborator invitations.
 - Professor feedback is needed on scope, data permissions, compute expectations,
   and evaluation standards.
-- Sample quality is still the blocker; lower validation loss alone is not
-  enough.
+- MT sample quality now needs real linguistic review; lower validation loss
+  alone is still not enough.
 
 ## Decisions Needed
 
