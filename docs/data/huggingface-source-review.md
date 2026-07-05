@@ -6,6 +6,12 @@ This report reviews Hugging Face dataset metadata and dataset cards. It
 does not download dataset contents and does not approve any dataset for
 training by itself.
 
+Update 2026-07-05: the project source log now approves Digital Umuganda TTS
+sentence text for the KILM baseline path after checking its dataset LICENSE,
+and approves the Kinyarwanda side of the Digital Umuganda MT dataset with
+`cc-by-4.0` attribution requirements. The table below remains the original
+first-pass metadata scan.
+
 ## Summary
 
 | Dataset | Visible License | Languages | Size | First-Pass Status |
@@ -135,4 +141,3 @@ training by itself.
   quality review before use.
 - This report should be treated as a starting point for `docs/data/source-log.md`,
   not as legal approval.
-

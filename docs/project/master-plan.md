@@ -412,12 +412,25 @@ Track A now has a standalone sandbox repo:
 https://github.com/Jonathan-321/kilm
 ```
 
-KILM is for learning and feasibility checks only. It now covers corpus
-preparation, character and BPE tokenizer paths, explicit train/validation
-corpora, tiny causal LM training, checkpoint save/resume, sampling, run reports,
-comparison reports, and CI. Keep the runnable sandbox and toy corpus there;
-bring back only decisions, gates, and short status summaries to this planning
-repo.
+KILM is for learning and feasibility checks only. It now covers approved-corpus
+fetching, corpus preparation, character and BPE tokenizer paths, morphology
+tokenizer review examples, explicit train/validation corpora, tiny causal LM
+training, learning-rate scheduling, gradient clipping, interval checkpoints,
+sampling, run reports, data/model cards, sample-review TSVs, and CI.
+
+Current approved-data baseline:
+
+```text
+Digital Umuganda TTS subset
+1,000 prepared lines
+900 train / 100 validation
+512-vocab BPE
+20-step tiny run
+validation perplexity 602.1208 -> 522.7661
+```
+
+Keep the runnable sandbox and generated artifacts there; bring back only
+decisions, gates, and short status summaries to this planning repo.
 
 The sandbox should answer:
 

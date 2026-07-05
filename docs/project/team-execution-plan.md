@@ -221,6 +221,11 @@ At least one small corpus is approved for tokenizer experiments.
 If this fails, use only speaker-written examples and reference-only notes until
 permission is clear.
 
+Current status: Digital Umuganda TTS sentence text is approved for the KILM
+baseline path. KILM has run a 1,000-line subset with 900 train / 100 validation
+lines. Digital Umuganda MT is also approved for Kinyarwanda-side import with
+attribution, but still needs domain/bias documentation before larger claims.
+
 ### Gate 2: Tokenizer Gate
 
 Pass condition:
@@ -229,10 +234,10 @@ Pass condition:
 BPE tokenizer round-trips text and has a clear analysis report.
 ```
 
-Current status: KILM has a toy BPE path that round-trips text, writes tokenizer
-analysis reports, and runs through the tiny LM loop. This gate is not complete
-for the class project until the same analysis is rerun on approved Kinyarwanda
-text.
+Current status: KILM has rerun tokenizer analysis on the approved TTS subset.
+A 512-vocab BPE tokenizer compressed 83,410 character tokens to 32,659 BPE
+tokens, and morphology-focused examples now have a reviewable split report.
+Bonheur should review the example set and flag bad splits before scale-up.
 
 If this fails, fix tokenizer behavior before model training.
 
@@ -246,9 +251,12 @@ Tiny model trains reproducibly with decreasing validation loss.
 
 If this fails, debug data, batching, tokenizer, or model config before scaling.
 
-Current status: KILM can prepare a corpus, run explicit train/validation
-training, save/resume checkpoints, sample from checkpoints, and write run
-reports. This gate is still toy-only until an approved corpus is available.
+Current status: KILM can prepare approved corpus text, run explicit
+train/validation training, save/resume checkpoints, sample from checkpoints,
+write run reports, and generate data/model cards plus a sample-review TSV. The
+approved-data sanity run moved validation perplexity from 602.1208 to 522.7661
+over 20 tiny steps. The next model gate is a longer GPU run, not more loop
+writing.
 
 ### Gate 4: Usefulness Gate
 
@@ -265,13 +273,12 @@ If this fails, keep Track B as a retrieval-first tutor fallback.
 The next team-facing move is:
 
 ```text
-Data approval + tokenizer analysis.
+Longer approved-data baseline + sample review.
 ```
 
 Concretely:
 
-1. Tessy confirms which source can be used first.
-2. Bonheur validates tokenizer examples.
-3. Jonathan keeps the issue board and docs synchronized.
-4. Once a source is approved, create a tiny processed sample and run the
-   tokenizer-analysis scaffold on it.
+1. Tessy records attribution/domain notes for the approved sources.
+2. Bonheur validates tokenizer morphology examples and flags bad splits.
+3. Jonathan runs the longer KILM baseline on available GPU/VRAM.
+4. Fluent speakers review `sample_review.tsv` before any usefulness claim.

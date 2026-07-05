@@ -108,6 +108,17 @@ Track A sandbox update:
 - Prepared-split toy smoke run works with separate train/validation files:
   BPE validation loss moved from 4.3952 to 3.7307 on a tiny 2-line validation
   split. This is a wiring check, not model-quality evidence.
+- Added the approved-corpus baseline path in KILM:
+  - Digital Umuganda TTS sentence text imports into ignored local data.
+  - A 1,000-line subset prepares into 900 train / 100 validation lines.
+  - A 512-vocab BPE tokenizer compresses the subset from 83,410 char tokens to
+    32,659 BPE tokens.
+  - Morphology-focused tokenizer examples now produce a reviewable split
+    report.
+  - Tiny approved-data baseline moved validation perplexity from 602.1208 to
+    522.7661 over a 20-step sanity run.
+  - Run metadata records learning-rate schedule, gradient clipping, checkpoint
+    interval, data card, model card, and sample-review TSV.
 - This repo now keeps only the planning record and Track A gates.
 
 Team execution update:

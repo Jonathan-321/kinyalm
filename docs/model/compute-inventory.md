@@ -53,8 +53,9 @@ Suggested target:
 - sample generation,
 - run comparison report.
 
-KILM now implements these mechanics on toy data. The remaining blocker is an
-approved corpus and enough compute for a less tiny run.
+KILM now implements these mechanics on approved TTS text and has a 20-step
+sanity baseline. The remaining blocker is enough compute for a longer `small`
+or `baseline_gpu` run.
 
 ### Gold: Stretch Run
 

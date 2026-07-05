@@ -7,6 +7,8 @@
 - Project docs now list contributors, starter owners, Week 1 tasks, data risks,
   and the first implementation target.
 - Hugging Face candidate Kinyarwanda datasets were logged for review.
+- Digital Umuganda TTS and MT sources are now approved for KILM baseline work,
+  with attribution/domain notes still needed for final cards.
 
 ## What We Learned
 
@@ -21,19 +23,20 @@
 - Tessy and Bonheur need to accept GitHub collaborator invitations.
 - Professor feedback is needed on scope, data permissions, compute expectations,
   and evaluation standards.
-- No dataset is approved for training yet.
+- Longer approved-data training still needs confirmed GPU/VRAM.
 
 ## Decisions Needed
 
 - Confirm whether the starter role split works for everyone.
-- Decide which Hugging Face datasets are approved, reference-only, or blocked.
+- Decide whether any additional Hugging Face datasets are approved,
+  reference-only, or blocked.
 - Decide the first Friday demo format.
 - Confirm available compute.
 
 ## Next Week
 
-- Tessy reviews source licenses and updates the source log.
-- Bonheur picks tokenizer analysis examples and reviews CS336 tokenizer
+- Tessy adds attribution/domain notes for the approved sources.
+- Bonheur reviews the KILM morphology tokenizer examples and CS336 tokenizer
   requirements.
 - Jonathan sends the professor email, keeps GitHub issues current, and drafts
   tutor MVP tasks.

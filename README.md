@@ -122,11 +122,15 @@ The tiny end-to-end LM sandbox now lives in its own repo:
 
 https://github.com/Jonathan-321/kilm
 
-That repo contains the review-only toy corpus, corpus preparation, character and
-BPE tokenizer paths, explicit train/validation runs, checkpoint save/resume,
-sampling, run reports, comparison reports, CI, and tests. This repo keeps only
-the planning record and Track A gates so the sandbox can evolve without turning
-`kinyalm` into an experiment dump.
+That repo contains approved-corpus fetching, corpus preparation, character and
+BPE tokenizer paths, morphology-focused tokenizer examples, explicit
+train/validation runs, learning-rate scheduling, gradient clipping, interval
+checkpoints, sampling, run reports, review packets, CI, and tests. Its first
+approved-data smoke baseline uses the Digital Umuganda TTS sentence text:
+1,000 prepared lines split into 900 train / 100 validation lines.
+
+This repo keeps only the planning record and Track A gates so the sandbox can
+evolve without turning `kinyalm` into an experiment dump.
 
 ## CS336 Boundary
 

@@ -19,7 +19,7 @@ def main() -> int:
 
     print(f"Loaded {len(examples)} tokenizer evaluation examples.")
     print("First implementation target: tokenizer analysis on reviewed examples.")
-    print("Reminder: do not train on any corpus before source-log approval.")
+    print("Reminder: keep raw training data and KILM experiments out of this repo.")
     return 0
 
 

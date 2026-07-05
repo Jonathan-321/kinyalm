@@ -8,9 +8,9 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | --- | --- | --- | --- | --- |
 | W1-001 | Confirm team members and role owners | Jonathan Muhire | todo | Review `docs/team/roles.md` with Tessy and Bonheur. |
 | W1-002 | Send proposal email to professor | Jonathan Muhire | todo | Use `docs/project/professor-email.md`. |
-| W1-003 | Inventory Kinyarwanda data sources | Tessy Mugisha | in-progress | HF candidate review added; Tessy should confirm sources and add any non-HF sources. |
-| W1-004 | Check source licenses and permissions | Tessy Mugisha | in-progress | First-pass HF license scan added; Tessy should do final review. |
-| W1-005 | Pick 10-20 tokenizer analysis examples | Bonheur Byiringiro | todo | Include morphology-heavy examples. |
+| W1-003 | Inventory Kinyarwanda data sources | Tessy Mugisha | in-progress | Digital Umuganda TTS and MT sources are now logged as approved for KILM; Tessy should add any non-HF sources. |
+| W1-004 | Check source licenses and permissions | Tessy Mugisha | in-progress | Digital Umuganda TTS/MT passed first approved-data gate; Tessy should add attribution/domain notes for final cards. |
+| W1-005 | Pick 10-20 tokenizer analysis examples | Bonheur Byiringiro | in-progress | KILM has 17 morphology/orthography examples; Bonheur should validate or replace weak examples. |
 | W1-006 | Read CS336 tokenizer requirements | Bonheur Byiringiro | todo | Do not copy solutions into this repo. |
 | W1-007 | Define tiny model config assumptions | Bonheur Byiringiro | todo | CPU-friendly first. |
 | W1-008 | Draft 20 tutor MVP tasks | Jonathan Muhire | todo | Grammar, vocabulary, correction, quizzes. |
@@ -27,6 +27,8 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-014 | Collect compute inventory | Bonheur Byiringiro | in-progress | Template added in `docs/model/compute-inventory.md`. |
 | W1-015 | Run Track A sandbox and interpret results | Jonathan Muhire | done | Moved to standalone `Jonathan-321/kilm` repo; use it as a guide, not final model evidence. |
 | W1-016 | Use team execution plan for next work | Jonathan Muhire | done | Added `docs/project/team-execution-plan.md`. |
+| W1-017 | Run longer approved-data KILM baseline | Jonathan Muhire | todo | Use `small` or `baseline_gpu` config once GPU/VRAM is confirmed; keep validation and checkpoints on. |
+| W1-018 | Review KILM generated samples | Tessy Mugisha | todo | Use KILM `sample_review.tsv`; fluent-speaker review is required before usefulness claims. |
 
 ## Do Not Start Yet
 
