@@ -427,6 +427,9 @@ Digital Umuganda TTS subset
 512-vocab BPE
 200-step small MPS run
 validation perplexity 605.7486 -> 137.0228
+10,000-step continuation
+validation perplexity 139.1711 -> 59.5324
+sample quality failed smoke check
 ```
 
 Keep the runnable sandbox and generated artifacts there; bring back only

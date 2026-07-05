@@ -120,6 +120,8 @@ Track A sandbox update:
     522.7661.
   - The `small` MPS baseline moved validation perplexity from 605.7486 to
     137.0228 over 200 steps.
+  - A 10,000-step continuation moved validation perplexity from 139.1711 to
+    59.5324, but generated samples still failed the smoke check.
   - Run metadata records learning-rate schedule, gradient clipping, checkpoint
     interval, data card, model card, and sample-review TSV.
 - This repo now keeps only the planning record and Track A gates.

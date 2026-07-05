@@ -11,6 +11,8 @@
   with attribution/domain notes still needed for final cards.
 - KILM ran a `small` MPS baseline on the full approved TTS split; validation
   perplexity moved from 605.7486 to 137.0228 over 200 steps.
+- A 10,000-step continuation moved validation perplexity to 59.5324, but the
+  generated sample still failed the smoke check.
 
 ## What We Learned
 
@@ -25,7 +27,8 @@
 - Tessy and Bonheur need to accept GitHub collaborator invitations.
 - Professor feedback is needed on scope, data permissions, compute expectations,
   and evaluation standards.
-- Longer-than-200-step training still needs a compute/time decision.
+- Sample quality is still the blocker; lower validation loss alone is not
+  enough.
 
 ## Decisions Needed
 

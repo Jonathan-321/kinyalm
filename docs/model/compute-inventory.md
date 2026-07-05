@@ -53,9 +53,10 @@ Suggested target:
 - sample generation,
 - run comparison report.
 
-KILM now implements these mechanics on approved TTS text and has a 200-step
-`small` MPS baseline. The remaining compute question is whether we can afford a
-longer `small` run or a `baseline_gpu` run without losing fast iteration.
+KILM now implements these mechanics on approved TTS text and has a 10,000-step
+`small` MPS continuation. The remaining compute question is whether a
+`baseline_gpu` run, larger context, or more data improves sample quality enough
+to justify the extra time.
 
 ### Gold: Stretch Run
 

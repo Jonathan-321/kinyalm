@@ -257,8 +257,10 @@ Current status: KILM can prepare approved corpus text, run explicit
 train/validation training, save/resume checkpoints, sample from checkpoints,
 write run reports, and generate data/model cards plus a sample-review TSV. The
 approved-data `small` MPS run moved validation perplexity from 605.7486 to
-137.0228 over 200 steps. The next model gate is longer training and review, not
-more loop writing.
+137.0228 over 200 steps. A 10,000-step continuation moved validation perplexity
+from 139.1711 to 59.5324, but the generated sample still failed smoke review.
+The next model gate is better sample quality through more data, larger context,
+or a larger model, not more loop writing.
 
 ### Gate 4: Usefulness Gate
 
@@ -275,12 +277,14 @@ If this fails, keep Track B as a retrieval-first tutor fallback.
 The next team-facing move is:
 
 ```text
-Extend approved-data baseline + sample review.
+Improve failed-sample baseline.
 ```
 
 Concretely:
 
 1. Tessy records attribution/domain notes for the approved sources.
 2. Bonheur validates tokenizer morphology examples and flags bad splits.
-3. Jonathan extends the KILM baseline if more GPU time is available.
-4. Fluent speakers review `sample_review.tsv` before any usefulness claim.
+3. Jonathan and Bonheur choose the next scale change: more approved text,
+   longer context, or a larger model.
+4. Fluent speakers review samples only after the smoke sample is recognizably
+   Kinyarwanda.

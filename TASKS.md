@@ -27,8 +27,9 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-014 | Collect compute inventory | Bonheur Byiringiro | in-progress | Template added in `docs/model/compute-inventory.md`. |
 | W1-015 | Run Track A sandbox and interpret results | Jonathan Muhire | done | Moved to standalone `Jonathan-321/kilm` repo; use it as a guide, not final model evidence. |
 | W1-016 | Use team execution plan for next work | Jonathan Muhire | done | Added `docs/project/team-execution-plan.md`. |
-| W1-017 | Run longer approved-data KILM baseline | Jonathan Muhire | done | `small` MPS run on full approved TTS split moved validation perplexity from 605.7486 to 137.0228 over 200 steps. |
-| W1-018 | Review KILM generated samples | Tessy Mugisha | todo | Use KILM `sample_review.tsv`; fluent-speaker review is required before usefulness claims. |
+| W1-017 | Run longer approved-data KILM baseline | Jonathan Muhire | done | 10k continuation moved validation perplexity from 139.1711 to 59.5324, but sample quality still failed. |
+| W1-018 | Review KILM generated samples | Tessy Mugisha | blocked | Current sample is marked `failed-smoke`; do not spend fluent-review time until samples are recognizably Kinyarwanda. |
+| W1-019 | Plan next KILM scale change | Jonathan Muhire / Bonheur Byiringiro | todo | Compare larger context/model and more approved text; do not just repeat the same small run forever. |
 
 ## Do Not Start Yet
 
