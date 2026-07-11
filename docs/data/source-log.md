@@ -35,3 +35,88 @@ For each source:
 4. Can we train on it?
 5. Can we quote examples in the final report?
 6. What bias or domain does it contain?
+
+
+## Approval Notes
+
+### DigitalUmuganda Kinyarwanda TTS dataset
+
+```text
+Source: DigitalUmuganda/kinyarwanda-tts-dataset
+Reviewer: Tessy Mugisha
+Date: 2026-07-11
+Decision: approved
+Allowed use: tokenizer analysis, small LM baseline training, quoted examples in report
+License: CC0 1.0 Universal, confirmed by reading the LICENSE file in the repo
+Attribution requirement: none legally required; we credit Digital Umuganda anyway
+Redistribution allowed: yes
+Training allowed: yes
+Report examples allowed: yes
+Risks:
+  - The dataset card has no license tag and no provenance statement. The CC0
+    license exists only as a LICENSE file. Hugging Face shows a missing-metadata
+    warning on the card.
+  - Contents look scraped, not authored. Rows include news sentences, Bible
+    verses, political commentary about named public figures, and genocide
+    survivor testimony.
+  - CC0 waives Digital Umuganda's rights only. Section 4(c) of CC0 says the
+    Affirmer does not clear third-party rights. If these sentences came from
+    news outlets, those rights were never cleared by anyone.
+  - Domain is news and religious text. It is not learner language. A tutor
+    trained on this will not sound like a tutor.
+  - Some sentences name private individuals in sensitive contexts.
+Next action:
+  - Document the provenance gap in the data card and the final report.
+  - Do not quote genocide-testimony rows as tokenizer or tutor examples.
+  - Decide as a team whether to keep using it. Recommendation: keep it for
+    tokenizer analysis, disclose the provenance gap, do not present the LM
+    samples as learner content.
+```
+
+### DigitalUmuganda Kinyarwanda-English MT dataset
+
+```text
+Source: DigitalUmuganda/kinyarwanda-english-machine-translation-dataset
+Reviewer: Tessy Mugisha
+Date: 2026-07-11
+Decision: approved
+Allowed use: Kinyarwanda-side tokenizer and LM corpus, bilingual examples, evaluation
+License: CC-BY-4.0, tagged on the dataset card
+Attribution requirement: yes, required by CC-BY-4.0
+Redistribution allowed: yes, with attribution and a note of changes
+Training allowed: yes
+Report examples allowed: yes, with attribution
+Risks:
+  - Source files are cp1252-encoded, not UTF-8. Hugging Face's own dataset
+    viewer fails to load this dataset for that reason. KILM's cp1252 fix is
+    correct and should be documented as a change we made.
+  - The card says sentences were curated and translated. It does not say where
+    the original Kinyarwanda came from.
+  - Translation-domain bias. Sentences chosen for MT training are not the same
+    distribution as natural Kinyarwanda.
+Next action:
+  - Add the attribution string below to the data card, model card, and report.
+  - State clearly that we modified the data: re-decoded from cp1252 to UTF-8,
+    dropped the English side, filtered to 44,527 lines.
+```
+
+## Attribution
+
+Required by CC-BY-4.0. Must appear in the data card, the model card, and the
+final report.
+
+```text
+Kinyarwanda-English Machine Translation Dataset by Digital Umuganda.
+https://huggingface.co/datasets/DigitalUmuganda/kinyarwanda-english-machine-translation-dataset
+Licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/).
+Modified: re-decoded from cp1252 to UTF-8, Kinyarwanda side extracted,
+filtered to 44,527 lines.
+```
+
+Not legally required, but we credit it anyway:
+
+```text
+Kinyarwanda TTS Dataset by Digital Umuganda.
+https://huggingface.co/datasets/DigitalUmuganda/kinyarwanda-tts-dataset
+Released under CC0 1.0.
+```
