@@ -39,25 +39,47 @@ good tutor.
 
 ## Tutor Evaluation
 
-Human-scored rubric:
+Human-scored rubric for each answer:
 
 | Dimension | 1 | 3 | 5 |
 | --- | --- | --- | --- |
-| Correctness | wrong or misleading | partly correct | correct |
-| Clarity | confusing | understandable | clear and learner-friendly |
-| Cultural appropriateness | awkward or risky | acceptable | context-aware |
+| Kinyarwanda correctness | wrong or misleading | partly correct | correct and natural |
+| Beginner clarity | confusing | understandable | clear and learner-friendly |
+| Grammar explanation quality | wrong rule or no rule | partly useful | accurate and well scoped |
+| Cultural/register appropriateness | awkward or risky | acceptable | context-aware |
 | Helpfulness | does not answer | partially helps | directly useful |
 | Uncertainty behavior | overconfident | mixed | clearly states uncertainty |
 
+Reviewer fields:
+
+- prompt ID,
+- model or system version,
+- answer text,
+- Kinyarwanda correctness score,
+- beginner clarity score,
+- grammar explanation score,
+- cultural/register note,
+- hallucination or unsupported-claim flag,
+- final pass/fail decision,
+- reviewer notes.
+
+Review rules:
+
+1. Score what the answer actually says, not what the model probably meant.
+2. Mark `not sure` rather than guessing when a grammar or register question is
+   uncertain.
+3. Fail answers that give confident cultural claims without support.
+4. Fail answers that are mostly English when the prompt asks for Kinyarwanda
+   output, unless the prompt explicitly asks for explanation in English.
+5. Keep benchmark prompts separate from SFT training rows.
+
 ## Starter Tutor Tasks
 
-- Explain a basic greeting.
-- Correct a simple learner sentence.
-- Generate a five-question vocabulary quiz.
-- Explain a noun-class example.
-- Translate a short classroom phrase.
-- Give a polite version of a phrase.
-- Explain when a phrase should not be used.
+Use the 50-prompt task bank:
+
+```text
+docs/evaluation/learning-task-bank.md
+```
 
 ## Error Categories
 
@@ -68,3 +90,14 @@ Human-scored rubric:
 - too much Kinyarwanda for beginner level,
 - overconfident uncertainty,
 - unsupported answer.
+
+## First Demo Evaluation
+
+For the first SFT-readiness demo:
+
+1. Pick 10 `benchmark-only` prompts from at least five categories.
+2. Run the same prompts against the baseline system and the SFT candidate, if
+   an SFT candidate exists.
+3. Have a fluent speaker review answers without looking at training examples.
+4. Report average scores and the three most important failure modes.
+5. Do not claim tutor quality from loss or perplexity alone.

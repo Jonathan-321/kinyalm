@@ -141,3 +141,27 @@ Team execution update:
 - Added `docs/model/compute-inventory.md`.
 - Added `docs/evaluation/learning-task-bank.md`.
 - Kept the immediate repo focus on data approval and tokenizer analysis.
+
+## 2026-07-12
+
+Week 2 SFT-readiness update:
+
+- Merged Bonheur's tokenizer evaluation work into the active SFT-readiness
+  branch:
+  - 38 tokenizer examples,
+  - 37 confirmed examples,
+  - one deliberate not-natural hyphen boundary check,
+  - noun-class, verb morphology, and apostrophe/elision cases.
+- Added `docs/data/sft-data-schema.md` for reviewed conversation JSONL.
+- Added `src/kinyalm/data/sft.py` and `scripts/validate_sft_jsonl.py` so future
+  SFT seed files can be checked before training.
+- Expanded `docs/evaluation/learning-task-bank.md` from 20 to 50 prompts, with
+  26 marked `benchmark-only`.
+- Updated `docs/evaluation/evaluation-plan.md` with fluent-speaker scoring
+  fields and first-demo review rules.
+- Added `docs/model/sft-run-plan.md` to define QLoRA readiness, fallback
+  settings, smoke tests, and Week 3 target.
+- Added `data/sft/README.md` and `data/sft/.gitkeep`.
+- Added `docs/weekly/week-2-update.md`.
+- Updated `scripts/check_project.py` to fail if the SFT schema is missing or
+  the tutor benchmark falls below 50 prompts / 15 held-out prompts.

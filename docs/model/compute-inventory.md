@@ -15,6 +15,7 @@ Know what model sizes we can run before we design training scripts.
 | Jonathan laptop | Jonathan | TBD | TBD | TBD | TBD | Fill in. |
 | Tessy machine | Tessy | TBD | TBD | TBD | TBD | Fill in. |
 | Bonheur machine | Bonheur | TBD | TBD | TBD | TBD | Fill in. |
+| OU OSCER / Sooner | Jonathan | SLURM partitions | Varies by node | Public GPU partitions available | Varies by GPU | See [oscer-quickstart.md](oscer-quickstart.md). Login is currently blocked by authentication, not by project setup. |
 | Lab/cloud option | TBD | TBD | TBD | TBD | TBD | Fill in if available. |
 
 ## First Config Targets
