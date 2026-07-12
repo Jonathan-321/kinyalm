@@ -10,7 +10,7 @@ Use this as the starter board until the team moves tasks into GitHub Issues.
 | W1-002 | Send proposal email to professor | Jonathan Muhire | todo | Use `docs/project/professor-email.md`. |
 | W1-003 | Inventory Kinyarwanda data sources | Tessy Mugisha | in-progress | Digital Umuganda TTS and MT sources are now logged as approved for KILM; Tessy should add any non-HF sources. |
 | W1-004 | Check source licenses and permissions | Tessy Mugisha | in-progress | Digital Umuganda TTS/MT passed first approved-data gate; Tessy should add attribution/domain notes for final cards. |
-| W1-005 | Pick 10-20 tokenizer analysis examples | Bonheur Byiringiro | in-progress | KILM has 17 morphology/orthography examples; Bonheur should validate or replace weak examples. |
+| W1-005 | Pick 10-20 tokenizer analysis examples | Bonheur Byiringiro | done | 38 examples in `docs/tokenizer/eval-examples.tsv`: 37 confirmed via fluent-speaker review, 1 kept as deliberate not-natural boundary check (hyphen). Added noun-class prefix pairs, -kora verb paradigm, and multi-elision apostrophe phrases. |
 | W1-006 | Read CS336 tokenizer requirements | Bonheur Byiringiro | todo | Do not copy solutions into this repo. |
 | W1-007 | Define tiny model config assumptions | Bonheur Byiringiro | todo | CPU-friendly first. |
 | W1-008 | Draft 20 tutor MVP tasks | Jonathan Muhire | todo | Grammar, vocabulary, correction, quizzes. |

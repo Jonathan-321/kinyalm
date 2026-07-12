@@ -1,21 +1,39 @@
 id	category	text	notes	status
-greeting_basic	greeting	Muraho	Common greeting; confirm register and beginner-level explanation	needs-review
-greeting_morning	greeting	Mwaramutse	Common morning greeting; confirm usage notes	needs-review
-question_wellbeing	greeting	Amakuru?	Common wellbeing question; punctuation check	needs-review
-self_intro	sentence	Nitwa Jonathan.	Simple self-introduction pattern	needs-review
-student_identity	sentence	Ndi umunyeshuri.	Simple learner/classroom sentence	needs-review
-thanks	greeting	Murakoze.	Common thanks expression	needs-review
-school_vocab	vocabulary	ishuri	School vocabulary; noun-class review needed	needs-review
-teacher_vocab	vocabulary	umwarimu	Teacher vocabulary; prefix segmentation target	needs-review
-student_vocab	vocabulary	umunyeshuri	Student vocabulary; prefix segmentation target	needs-review
-family_vocab	vocabulary	umuryango	Family/community vocabulary; segmentation review needed	needs-review
-language_vocab	vocabulary	Ikinyarwanda	Language name; capitalization and prefix segmentation	needs-review
-country_vocab	vocabulary	u Rwanda	Country expression; whitespace/token boundary check	needs-review
-learn_sentence	sentence	Ndiga Ikinyarwanda.	Simple learning sentence; verb form review needed	needs-review
-understand_sentence	sentence	Ndumva buhoro.	Simple comprehension/speed sentence; speaker review needed	needs-review
-polite_request	sentence	Subiramo buhoro.	Polite classroom request; confirm tone/register	needs-review
-help_request	sentence	Mfasha gusobanukirwa iri jambo.	Help request; morphology and phrase review needed	needs-review
-correction_target	sentence	Ndi kwiga Ikinyarwanda.	Possible learner sentence for correction task; needs teacher validation	needs-review
-hyphen_check	orthography	Kigali-Rwanda	Hyphen boundary check; not necessarily a natural phrase	needs-review
-apostrophe_check	orthography	n'ubwo	Apostrophe boundary check; confirm orthography and meaning	needs-review
-punctuation_check	sentence	Muraho! Amakuru?	Multiple punctuation boundary check	needs-review
+greeting_basic	greeting	Muraho	Common general greeting; neutral register, suitable for beginners	confirmed
+greeting_morning	greeting	Mwaramutse	Common morning greeting	confirmed
+question_wellbeing	greeting	Amakuru?	Common wellbeing question; question-mark boundary check	confirmed
+self_intro	sentence	Nitwa Jonathan.	Simple self-introduction pattern; proper-name tokenization check	confirmed
+student_identity	sentence	Ndi umunyeshuri.	Simple learner/classroom sentence; ndi = n- + -ri (I am)	confirmed
+thanks	greeting	Murakoze.	Common thanks expression (plural/formal)	confirmed
+school_vocab	vocabulary	ishuri	School; class 5 noun, plural amashuri	confirmed
+teacher_vocab	vocabulary	umwarimu	Teacher; umu- + vowel-initial stem (umu->umw coalescence), plural abarimu	confirmed
+student_vocab	vocabulary	umunyeshuri	Student; umu- prefix segmentation target, plural abanyeshuri	confirmed
+family_vocab	vocabulary	umuryango	Family/lineage (also door/entrance); class 3 umu-, plural imiryango	confirmed
+language_vocab	vocabulary	Ikinyarwanda	Language name; capitalization and iki- prefix segmentation	confirmed
+country_vocab	vocabulary	u Rwanda	Country expression; space-separated augment u, token boundary check	confirmed
+learn_sentence	sentence	Ndiga Ikinyarwanda.	I study Kinyarwanda; ndiga = n-ra-iga (present -ra-)	confirmed
+understand_sentence	sentence	Vuga buhoro.	Speak slowly; classic classroom request (replaced earlier unnatural "Ndumva buhoro.")	confirmed
+polite_request	sentence	Subiramo buhoro.	Please repeat slowly; classroom request, subira + -mo	confirmed
+help_request	sentence	Mfasha gusobanukirwa iri jambo.	Help me understand this word; mfasha = n+fasha, class 5 demonstrative iri	confirmed
+correction_target	sentence	Ndi kwiga Ikinyarwanda.	Intentional learner error (calque of English "I am learning"); correct form is Ndiga Ikinyarwanda. Keep as correction-task input, do not fix	confirmed
+hyphen_check	orthography	Kigali-Rwanda	Synthetic hyphen boundary check only; hyphens are rare in natural Kinyarwanda text	not-natural
+apostrophe_check	orthography	n'ubwo	Although/even though; na elided to n', apostrophe boundary check	confirmed
+punctuation_check	sentence	Muraho! Amakuru?	Multiple punctuation boundary check	confirmed
+noun_class1_sg	morphology	umuntu	Person; class 1 umu-, canonical singular	confirmed
+noun_class2_pl	morphology	abantu	People; class 2 aba-, plural pair of umuntu	confirmed
+noun_class1_vowel_sg	morphology	umwana	Child; umu- -> umw- before vowel-initial stem, segmentation under coalescence	confirmed
+noun_class2_vowel_pl	morphology	abana	Children; aba- + vowel-initial stem, plural pair of umwana	confirmed
+noun_class7_sg	morphology	igitabo	Book; class 7 iki-/igi- singular	confirmed
+noun_class8_pl	morphology	ibitabo	Books; class 8 ibi-, plural pair of igitabo	confirmed
+noun_class7_vowel_sg	morphology	icyumba	Room; iki- -> icy- before vowel-initial stem	confirmed
+noun_class8_vowel_pl	morphology	ibyumba	Rooms; ibi- -> iby- before vowel-initial stem, plural pair of icyumba	confirmed
+noun_class3_sg	morphology	umusozi	Hill; class 3 umu- (same surface prefix as class 1, different plural)	confirmed
+noun_class4_pl	morphology	imisozi	Hills; class 4 imi-, plural pair of umusozi; prefix-consistency probe vs class 1/2	confirmed
+verb_infinitive	morphology	gukora	To do/work; gu- infinitive prefix, stem -kora shared across verb rows	confirmed
+verb_present_1sg	morphology	Ndakora.	I work; n-ra-kora, present -ra-	confirmed
+verb_present_3pl	morphology	Barakora.	They work; ba-ra-kora, subject-prefix swap vs 1sg	confirmed
+verb_past_1pl	morphology	Twakoze.	We worked; tu-a- past + perfective stem change kora -> koze	confirmed
+verb_future_3sg	morphology	Azakora.	He/she will work; a-za- future	confirmed
+verb_negative_complex	morphology	Sinzabikora.	I will not do it; si-n-za-bi-kora (negation + future + object marker), heaviest single-word segmentation test	confirmed
+apostrophe_genitive	orthography	Umwarimu w'Ikinyarwanda	Kinyarwanda teacher; associative wa elided to w' mid-phrase	confirmed
+apostrophe_multi	orthography	Amazina y'abana b'u Rwanda	Names of the children of Rwanda; two elisions (y', b') plus spaced augment u	confirmed
