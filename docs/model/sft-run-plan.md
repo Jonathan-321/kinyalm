@@ -14,13 +14,13 @@ Ready:
 - approved source logging has started,
 - the SFT JSONL schema exists,
 - the held-out tutor benchmark has 50 prompts,
-- OSCER smoke-test scripts exist locally,
-- KILM has shown that approved Kinyarwanda text can support measurable language
-  modeling progress.
+- open Kinyarwanda benchmark candidates are listed,
+- OSCER smoke-test scripts exist locally.
 
 Not ready:
 
 - no approved SFT conversation dataset exists yet,
+- no 1,000-example reviewed SFT pack exists yet,
 - no final base model has been selected,
 - OSCER login is still blocked by authentication,
 - benchmark answers still need fluent-speaker scoring instructions reviewed.
@@ -52,7 +52,9 @@ Required before the first real run:
 
 - `docs/data/source-log.md` records source permission.
 - `docs/data/sft-data-schema.md` defines the row format.
-- `data/sft/seed_conversations.jsonl` has at least 100 rows.
+- `data/sft/seed_conversations.jsonl` has at least 100 rows for the seed gate.
+- The serious SFT target is about 1,000 reviewed rows, following
+  `docs/data/data-overhaul-plan.md`.
 - Every train/validation row has `review_status=approved`.
 - Benchmark prompts in `docs/evaluation/learning-task-bank.md` are not copied
   into training data.
@@ -61,9 +63,17 @@ Recommended first split:
 
 | Split | Count | Rule |
 | --- | ---: | --- |
-| train | 80 | reviewed and approved |
-| validation | 20 | reviewed and approved |
+| train | 80 | reviewed and approved seed rows |
+| validation | 20 | reviewed and approved seed rows |
 | benchmark-only | 50 | lives in task bank, never in training |
+
+Recommended serious split:
+
+| Split | Count | Rule |
+| --- | ---: | --- |
+| train | 900 | reviewed and approved |
+| validation | 100 | reviewed and approved |
+| external benchmarks | separate | never copied into training |
 
 ## QLoRA Starting Settings
 
@@ -135,6 +145,10 @@ Success means:
 - the adapter can be loaded for inference,
 - outputs are better organized or more tutor-like than the base model,
 - failure modes are specific enough to guide the next data pass.
+
+The first serious run should wait until the 1,000-example target is available
+or until the team explicitly decides that the class schedule requires a smaller
+demo run.
 
 Failure is still useful if it produces a clear blocker:
 

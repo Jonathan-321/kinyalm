@@ -29,7 +29,11 @@ compute path before training.
 5. Check team ownership in [roles.md](docs/team/roles.md).
 6. Record every data source in [source-log.md](docs/data/source-log.md).
 7. Follow the SFT schema in [sft-data-schema.md](docs/data/sft-data-schema.md).
-8. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+8. Keep benchmark sources separate with
+   [open-kinyarwanda-benchmarks.md](docs/evaluation/open-kinyarwanda-benchmarks.md).
+9. Use [data-overhaul-plan.md](docs/data/data-overhaul-plan.md) to scale from
+   the seed dataset toward a useful SFT pack.
+10. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 
 ## Contributors
 
@@ -113,6 +117,12 @@ Review Hugging Face candidate metadata:
 python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
 ```
 
+External benchmark metadata lives in:
+
+```text
+configs/evaluation/kinyarwanda_benchmarks.json
+```
+
 ## Team Execution
 
 The team-facing next steps live here:
@@ -124,29 +134,26 @@ docs/project/team-execution-plan.md
 The immediate focus is:
 
 ```text
-source approval + tokenizer analysis + SFT readiness
+source approval + tokenizer analysis + benchmark separation + SFT data scale-up
 ```
 
-## KILM Sandbox
+## Data And Evaluation Direction
 
-The tiny end-to-end LM sandbox now lives in its own repo:
+The repo now treats data as the main project bottleneck.
 
-https://github.com/Jonathan-321/kilm
+Current SFT status:
 
-That repo contains approved-corpus fetching, corpus preparation, character and
-BPE tokenizer paths, morphology-focused tokenizer examples, explicit
-train/validation runs, learning-rate scheduling, gradient clipping, interval
-checkpoints, sampling, run reports, review packets, CI, and tests. Its first
-approved-data baselines use Digital Umuganda TTS text and the Kinyarwanda side
-of the Digital Umuganda MT dataset. TTS-only training improved validation loss
-but failed sample quality. The stronger MT run uses 44,527 clean prepared lines,
-a 512-vocab BPE tokenizer, and the `baseline_gpu` config; its 10,000-step
-continuation moved validation perplexity from 43.7940 to 21.0469. The output is
-still not learner-ready, but it is now marked `needs-linguistic-review` rather
-than `failed-smoke`.
+- 50 tutor evaluation prompts exist, with 26 held out for benchmarking.
+- A JSONL schema and validator exist for future SFT examples.
+- No reviewed SFT conversation dataset is committed yet.
+- The first seed gate is 100 reviewed examples.
+- The first serious tutor SFT target is about 1,000 reviewed examples.
 
-This repo keeps only the planning record and Track A gates so the sandbox can
-evolve without turning `kinyalm` into an experiment dump.
+External benchmark candidates are tracked in
+[open-kinyarwanda-benchmarks.md](docs/evaluation/open-kinyarwanda-benchmarks.md)
+and logged in [source-log.md](docs/data/source-log.md). These rows are
+evaluation-only unless the team explicitly approves a training split. Do not
+copy benchmark prompts or benchmark test rows into `data/sft/`.
 
 ## CS336 Boundary
 

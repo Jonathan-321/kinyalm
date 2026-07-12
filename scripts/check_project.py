@@ -13,12 +13,18 @@ if str(SRC) not in sys.path:
 
 def main() -> int:
     from kinyalm.data.examples import load_tsv_examples
+    from kinyalm.evaluation import load_benchmark_manifest, validate_benchmark_manifest
 
     examples_path = ROOT / "docs" / "tokenizer" / "eval-examples.tsv"
     examples = load_tsv_examples(examples_path)
     task_bank_path = ROOT / "docs" / "evaluation" / "learning-task-bank.md"
     schema_path = ROOT / "docs" / "data" / "sft-data-schema.md"
+    benchmark_manifest_path = (
+        ROOT / "configs" / "evaluation" / "kinyarwanda_benchmarks.json"
+    )
     task_count, benchmark_count = count_task_bank_rows(task_bank_path)
+    benchmark_specs = load_benchmark_manifest(benchmark_manifest_path)
+    benchmark_result = validate_benchmark_manifest(benchmark_specs)
 
     if task_count < 50:
         raise SystemExit(f"expected at least 50 tutor tasks, found {task_count}")
@@ -28,6 +34,9 @@ def main() -> int:
         )
     if not schema_path.exists():
         raise SystemExit(f"missing SFT schema: {schema_path}")
+    if not benchmark_result.ok:
+        errors = "; ".join(benchmark_result.errors)
+        raise SystemExit(f"invalid benchmark manifest: {errors}")
 
     print(f"Loaded {len(examples)} tokenizer evaluation examples.")
     print(
@@ -36,8 +45,16 @@ def main() -> int:
         f"({benchmark_count} benchmark-only)."
     )
     print(f"Found SFT schema at {schema_path.relative_to(ROOT)}.")
+    print(
+        "Loaded "
+        f"{len(benchmark_specs)} external benchmark specs from "
+        f"{benchmark_manifest_path.relative_to(ROOT)}."
+    )
     print("First implementation target: tokenizer analysis on reviewed examples.")
-    print("Reminder: keep raw training data and KILM experiments out of this repo.")
+    print(
+        "Reminder: keep raw training data, benchmark test rows, and experiment "
+        "artifacts out of this repo."
+    )
     return 0
 
 

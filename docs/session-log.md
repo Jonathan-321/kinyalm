@@ -93,46 +93,19 @@ Exploration update:
 - Updated the source log so datasets with no visible license stay blocked for
   training until review is complete.
 
-Track A sandbox update:
+Feasibility update:
 
-- Moved the runnable sandbox into standalone repo
-  `https://github.com/Jonathan-321/kilm`.
-- KILM contains the review-only toy corpus, character and BPE tokenizer paths,
-  tiny causal Transformer, runner, run notes, and tests.
-- Verified the BPE path on the toy corpus: validation loss dropped from 4.3828
-  to 1.8230, and token count dropped from 558 character tokens to 386 BPE
-  tokens.
-- Added KILM corpus preparation, explicit train/validation corpus support,
-  checkpoint save/resume, checkpoint sampling, run reports, comparison reports,
-  Makefile shortcuts, and GitHub Actions CI.
-- Prepared-split toy smoke run works with separate train/validation files:
-  BPE validation loss moved from 4.3952 to 3.7307 on a tiny 2-line validation
-  split. This is a wiring check, not model-quality evidence.
-- Added the approved-corpus baseline path in KILM:
-  - Digital Umuganda TTS sentence text imports into ignored local data.
-  - The full local TTS import prepares into 3,922 unique lines, split into
-    3,530 train / 392 validation lines.
-  - A 512-vocab BPE tokenizer compresses the full prepared text from 340,384
-    char tokens to 134,090 BPE tokens.
-  - Morphology-focused tokenizer examples now produce a reviewable split
-    report.
-  - The 20-step sanity run moved validation perplexity from 602.1208 to
-    522.7661.
-  - The `small` MPS baseline moved validation perplexity from 605.7486 to
-    137.0228 over 200 steps.
-  - A 10,000-step continuation moved validation perplexity from 139.1711 to
-    59.5324, but generated samples still failed the smoke check.
-  - The Digital Umuganda MT Kinyarwanda side needed cp1252 decoding; after the
-    importer fix, KILM prepared 44,527 clean lines with zero replacement
-    characters.
-  - The MT `baseline_gpu` run used 764,213 train tokens, 15,420 validation
-    tokens, block size 256, and 6 layers.
-  - Its 2,000-step run moved validation perplexity from 599.4842 to 42.1314.
-  - Its 10,000-step continuation moved validation perplexity from 43.7940 to
-    21.0469, and the sample is now marked `needs-linguistic-review`.
-  - Run metadata records learning-rate schedule, gradient clipping, checkpoint
-    interval, data card, model card, and sample-review TSV.
-- This repo now keeps only the planning record and Track A gates.
+- Toy and approved-corpus runs proved that the basic tokenizer, batching,
+  training, checkpointing, sampling, and reporting mechanics can be wired up.
+- Digital Umuganda TTS sentence text can be prepared as 3,922 unique lines for
+  tokenizer and small-LM experiments.
+- The Digital Umuganda MT Kinyarwanda side needs cp1252 decoding before clean
+  UTF-8 processing; after decoding, it yields 44,527 clean lines with zero
+  replacement characters.
+- Early sample checks showed the central lesson for this repo: lower validation
+  loss is not proof of useful learner-facing Kinyarwanda.
+- This repo keeps team-ready decisions, gates, source review, benchmark
+  separation, and reproducible project scripts rather than experiment dumps.
 
 Team execution update:
 

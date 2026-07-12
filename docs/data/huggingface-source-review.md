@@ -7,10 +7,10 @@ does not download dataset contents and does not approve any dataset for
 training by itself.
 
 Update 2026-07-05: the project source log now approves Digital Umuganda TTS
-sentence text for the KILM baseline path after checking its dataset LICENSE,
-and approves the Kinyarwanda side of the Digital Umuganda MT dataset with
-`cc-by-4.0` attribution requirements. The table below remains the original
-first-pass metadata scan.
+sentence text for tokenizer and small-LM experiments after checking its dataset
+LICENSE, and approves the Kinyarwanda side of the Digital Umuganda MT dataset
+with `cc-by-4.0` attribution requirements. The table below remains the
+original first-pass metadata scan.
 
 ## Summary
 

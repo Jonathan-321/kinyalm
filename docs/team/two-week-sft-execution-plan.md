@@ -17,8 +17,8 @@ answer.
 
 By July 21, the project should have one of these two outcomes:
 
-1. Best case: a first SFT adapter trained, benchmarked, reviewed, and ready for
-   a second improvement run.
+1. Best case: a seed SFT adapter trained, benchmarked, reviewed, and ready for
+   the 1,000-example data expansion.
 2. Blocked case: a clear written blocker showing exactly what stopped training
    and what decision or resource is needed next.
 
@@ -30,6 +30,9 @@ The plan is not to spend two weeks debating architecture. The plan is:
   configuration.
 - Week 2: package the dataset, launch the first fine-tune, run benchmark
   prompts, review outputs, and prepare the next data fix.
+
+The 100-example seed is only a gate for the pipeline and review process. A
+serious tutor run should aim for about 1,000 reviewed examples after this.
 
 Every task below has a file path, a person, and a visible output.
 
@@ -49,7 +52,9 @@ These are the files the team should produce or update.
 | --- | --- | --- |
 | `docs/data/source-log.md` | Tessy | Shows which sources can be trained on, which are reference-only, and which are blocked. |
 | `docs/data/sft-data-schema.md` | Jonathan | Defines the exact JSONL format for conversation examples. |
-| `data/sft/seed_conversations.jsonl` | Jonathan | First small set of manually written or approved SFT examples. Do not commit if it includes unapproved source material. |
+| `data/sft/seed_conversations.jsonl` | Jonathan | First 100-example reviewed seed set. Do not commit if it includes unapproved source material. |
+| `docs/data/data-overhaul-plan.md` | Jonathan / Tessy | Plan for scaling from the seed set toward about 1,000 reviewed SFT examples. |
+| `docs/evaluation/open-kinyarwanda-benchmarks.md` | Jonathan | Open external benchmark shortlist; keep these rows out of SFT training. |
 | `docs/evaluation/learning-task-bank.md` | Jonathan | Held-out tutor benchmark prompts. These must not be copied into training data. |
 | `docs/evaluation/evaluation-plan.md` | Tessy | Human review rubric for scoring model answers. |
 | `docs/tokenizer/eval-examples.tsv` | Bonheur | Real Kinyarwanda words/sentences to check tokenizer behavior. |
@@ -126,6 +131,7 @@ Done means:
 - There are at least 100 valid JSONL lines.
 - The examples cover more than translation.
 - No benchmark-only prompt is copied into the training set.
+- The team knows this is the seed gate, not the final useful SFT scale.
 
 #### Task 3: Expand The Held-Out Benchmark To 50 Prompts
 

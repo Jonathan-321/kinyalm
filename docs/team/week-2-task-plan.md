@@ -19,6 +19,8 @@ By the end of this week, the team should have:
 - approved sources clearly logged,
 - a first SFT conversation dataset format,
 - a held-out Kinyarwanda tutor benchmark,
+- an external Kinyarwanda benchmark shortlist,
+- a staged plan for scaling from 100 reviewed examples toward about 1,000,
 - a QLoRA training configuration ready for GPU use,
 - a smoke-test path that proves the training script can start without crashing.
 
@@ -41,6 +43,8 @@ By the end of this week, the team should have:
 | Source approval update | Tessy Mugisha | Jonathan Muhire | Jul 10 | `docs/data/source-log.md` marks each priority source as approved, reference-only, blocked, investigate, or rejected. |
 | SFT source decision | Tessy Mugisha | Jonathan Muhire | Jul 10 | Candidate conversation, translation, and lesson-example sources are marked as usable for SFT, human-reference-only, permission-needed, or blocked. |
 | Tutor benchmark bank | Jonathan Muhire | Tessy Mugisha | Jul 10 | `docs/evaluation/learning-task-bank.md` has at least 50 tutor prompts grouped by task type. |
+| External benchmark shortlist | Jonathan Muhire | Bonheur Byiringiro | Jul 12 | `docs/evaluation/open-kinyarwanda-benchmarks.md` lists open Kinyarwanda evaluation sets and keeps them out of training. |
+| SFT data scale plan | Jonathan Muhire / Tessy Mugisha | Bonheur Byiringiro | Jul 12 | `docs/data/data-overhaul-plan.md` defines the 100-row seed gate and the 1,000-row useful target. |
 | Fluent-speaker rubric | Tessy Mugisha | Bonheur Byiringiro | Jul 11 | `docs/evaluation/evaluation-plan.md` explains how reviewers score Kinyarwanda answers. |
 | Tokenizer morphology packet | Bonheur Byiringiro | Jonathan Muhire | Jul 11 | `docs/tokenizer/eval-examples.tsv` contains real morphology examples and a short summary of what good tokenization should preserve. |
 | QLoRA SFT run plan | Bonheur Byiringiro / Jonathan Muhire | Tessy Mugisha | Jul 11 | `docs/model/sft-run-plan.md` names the base model, dataset format, training settings, expected GPU needs, and fallback settings. |

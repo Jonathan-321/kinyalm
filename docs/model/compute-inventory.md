@@ -54,11 +54,14 @@ Suggested target:
 - sample generation,
 - run comparison report.
 
-KILM now implements these mechanics on approved TTS and MT text. The MT
-`baseline_gpu` MPS run is the current best result: validation perplexity moved
-from 43.7940 to 21.0469 during the 10,000-step continuation. The remaining
-compute question is whether another larger run is worth it before tokenizer
-performance and data cleanup improve.
+For the tutor path, the remaining compute question is not just "can we launch a
+job?" It is whether we can run a small QLoRA experiment after the data is
+reviewed. The next useful compute proof is:
+
+- JSONL validation passes,
+- CPU and GPU smoke jobs start,
+- the chosen base model fits on available hardware,
+- a tiny run writes checkpoints and logs without exhausting memory.
 
 ### Gold: Stretch Run
 

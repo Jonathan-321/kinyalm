@@ -76,7 +76,8 @@ but the source text itself should not be converted directly into training data.
 
 ## First Seed Dataset Target
 
-The first seed file should have at least 100 reviewed conversation examples:
+The first seed file should have at least 100 reviewed conversation examples.
+That is only the validation gate for the data process, not the final SFT target.
 
 | Category | Target Count |
 | --- | ---: |
@@ -91,6 +92,21 @@ The first seed file should have at least 100 reviewed conversation examples:
 
 Start as `needs-review`. Tessy or another fluent speaker should move rows to
 `approved`, `needs-fix`, `rejected`, or `not-sure`.
+
+## Useful SFT Dataset Target
+
+For a model that has a real chance of learning tutor behavior, aim for about
+1,000 reviewed examples before the first serious SFT run.
+
+The detailed scale-up plan lives in:
+
+```text
+docs/data/data-overhaul-plan.md
+```
+
+Do not reach 1,000 by copying benchmark prompts or dumping unreviewed generated
+text into the dataset. The useful target only counts examples that pass source
+and fluent-speaker review.
 
 ## Validation
 
