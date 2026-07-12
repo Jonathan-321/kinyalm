@@ -41,9 +41,11 @@ Detailed owner notes live in `docs/team/week-2-task-plan.md`.
 | W2-005 | Draft tokenizer and morphology summary | Bonheur Byiringiro | todo | Create `docs/tokenizer/week-2-tokenizer-summary.md`. |
 | W2-006 | Write QLoRA SFT run plan | Bonheur Byiringiro / Jonathan Muhire | in-progress | Draft added in `docs/model/sft-run-plan.md`; Bonheur still needs to fill the final base-model decision. |
 | W2-007 | Expand tutor benchmark to 50 tasks | Jonathan Muhire | done | `docs/evaluation/learning-task-bank.md` now has 50 prompts and 26 benchmark-only prompts. |
-| W2-008 | Define SFT dataset schema and seed examples | Jonathan Muhire | in-progress | Schema and validator added; 100 reviewed seed examples still need authoring and fluent-speaker review. |
+| W2-008 | Define SFT dataset schema and seed examples | Jonathan Muhire | in-progress | Schema and validator added; 100 reviewed seed examples are the first gate, and the useful SFT target is about 1,000 reviewed examples. |
 | W2-009 | Keep Week 2 board current | Jonathan Muhire | in-progress | Board updated for the SFT-readiness branch. |
 | W2-010 | Prepare Week 2 written update | Jonathan Muhire | todo | Create `docs/weekly/week-2-update.md` by Jul 12. |
+| W2-011 | Add open Kinyarwanda benchmark shortlist | Jonathan Muhire | done | Added Belebele, FLORES-200, IrokoBench, AfriSenti, and KINNEWS as benchmark-only candidates. |
+| W2-012 | Plan SFT data overhaul | Jonathan Muhire / Tessy Mugisha | in-progress | Added staged 100 -> 300 -> 1,000 reviewed-example targets and category mix. |
 
 ## Week 2: Friday Demo Target
 
@@ -53,6 +55,7 @@ Detailed owner notes live in `docs/team/week-2-task-plan.md`.
 | W2-D02 | Tokenizer examples and fragmentation notes | Bonheur Byiringiro | todo | Show at least 8 concrete Kinyarwanda examples. |
 | W2-D03 | Tutor benchmark bank | Jonathan Muhire | done | 50 prompts, categories, and held-out examples are in `docs/evaluation/learning-task-bank.md`. |
 | W2-D04 | SFT run plan | Jonathan Muhire / Bonheur Byiringiro | in-progress | Schema, validator, QLoRA draft, and OSCER smoke scripts exist; final base model and seed data are still pending. |
+| W2-D05 | External benchmark shortlist | Jonathan Muhire | done | Candidate open Kinyarwanda benchmarks are logged as evaluation-only. |
 
 ## Do Not Start Yet
 

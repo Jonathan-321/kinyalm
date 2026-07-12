@@ -23,6 +23,10 @@ user/assistant examples so it behaves like a Kinyarwanda learning tutor.
   - 26 prompts are marked `benchmark-only`,
   - benchmark rows must not be copied into SFT training data.
 - Jonathan added the SFT JSONL schema and validator.
+- Jonathan added an open Kinyarwanda benchmark shortlist covering Belebele,
+  FLORES-200, IrokoBench, AfriSenti-SemEval, and KINNEWS.
+- Jonathan added the data overhaul plan: 100 reviewed examples for the seed
+  gate, then about 1,000 reviewed examples for a serious SFT run.
 - Jonathan added OSCER smoke-test scripts and quickstart notes.
 - Jonathan drafted the first SFT run plan.
 
@@ -33,8 +37,10 @@ user/assistant examples so it behaves like a Kinyarwanda learning tutor.
 | Source approval | partial | TTS and MT sources approved; remaining sources need SFT-use decisions. |
 | Tokenizer examples | ready for first analysis | Bonheur's examples are merged into this branch. |
 | Tutor benchmark | ready | 50 prompts, with 26 held out for evaluation. |
+| External benchmark list | ready for first loader | Benchmark sources are logged as evaluation-only. |
 | SFT schema | ready | `docs/data/sft-data-schema.md` defines the JSONL format. |
 | Seed SFT data | not ready | 100 reviewed examples still need to be authored and checked. |
+| Useful SFT pack | not ready | About 1,000 reviewed examples are needed before a serious tutor SFT run. |
 | Compute path | partial | OSCER scripts exist; login/authentication still needs to work. |
 
 ## Main Blockers
@@ -53,4 +59,5 @@ By the next checkpoint, the team should have either:
 2. a clear written blocker explaining what stopped training.
 
 The highest-value next task is creating and reviewing the first 100
-conversation examples in `data/sft/seed_conversations.jsonl`.
+conversation examples in `data/sft/seed_conversations.jsonl`, while using
+`docs/data/data-overhaul-plan.md` to scale toward 1,000 reviewed rows.

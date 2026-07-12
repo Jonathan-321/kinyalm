@@ -22,12 +22,6 @@ Keep separate:
 - large outputs,
 - one-person notebooks that are not ready for review.
 
-The runnable sandbox now lives outside this repo:
-
-```text
-https://github.com/Jonathan-321/kilm
-```
-
 ## Current State
 
 Done:
@@ -69,7 +63,7 @@ Not allowed yet:
 - commit raw data,
 - scrape lesson pages without permission,
 - fine-tune a tutor model,
-- claim model quality from toy/sandbox outputs.
+- claim model quality from toy outputs or training loss alone.
 
 ## Immediate Workstreams
 
@@ -198,8 +192,7 @@ Next actions:
 2. Record decisions in the repo.
 3. Keep professor feedback visible once received.
 4. Make sure blocked data stays blocked.
-5. Keep KILM sandbox updates separate from this repo unless there is a
-   team-ready decision to record.
+5. Keep benchmark sources separate from SFT training data.
 
 First useful outcome:
 
@@ -221,11 +214,10 @@ At least one small corpus is approved for tokenizer experiments.
 If this fails, use only speaker-written examples and reference-only notes until
 permission is clear.
 
-Current status: Digital Umuganda TTS sentence text is approved for the KILM
-baseline path. KILM has run the full local TTS import as 3,922 prepared lines
-with 3,530 train / 392 validation lines. Digital Umuganda MT is also approved
-for Kinyarwanda-side import with attribution. After fixing cp1252 decoding,
-KILM prepared 44,527 clean MT lines with zero replacement characters.
+Current status: Digital Umuganda TTS sentence text is approved for tokenizer
+analysis and small-LM experiments. Digital Umuganda MT is approved for
+Kinyarwanda-side import with attribution. After fixing cp1252 decoding, the MT
+source can be prepared as 44,527 clean lines with zero replacement characters.
 
 ### Gate 2: Tokenizer Gate
 
@@ -235,11 +227,10 @@ Pass condition:
 BPE tokenizer round-trips text and has a clear analysis report.
 ```
 
-Current status: KILM has rerun tokenizer analysis on the full approved TTS
-split. A 512-vocab BPE tokenizer compressed 340,384 character tokens to 134,090
-BPE tokens, and morphology-focused examples now have a reviewable split report.
-The clean MT run used a 512-vocab BPE tokenizer over 779,633 tokens. Bonheur
-should review the example set and flag bad splits before further scale-up.
+Current status: the repo has 38 tokenizer evaluation examples, including
+noun-class, verb morphology, apostrophe, and elision cases. Bonheur should
+review the example set, flag bad or unnatural examples, and summarize the
+tokenizer risks before further scale-up.
 
 If this fails, fix tokenizer behavior before model training.
 
@@ -253,16 +244,11 @@ Tiny model trains reproducibly with decreasing validation loss.
 
 If this fails, debug data, batching, tokenizer, or model config before scaling.
 
-Current status: KILM can prepare approved corpus text, run explicit
-train/validation training, save/resume checkpoints, sample from checkpoints,
-write run reports, and generate data/model cards plus a sample-review TSV. The
-approved-data `small` MPS run moved validation perplexity from 605.7486 to
-137.0228 over 200 steps. A 10,000-step continuation moved validation perplexity
-from 139.1711 to 59.5324, but the generated sample still failed smoke review.
-The MT `baseline_gpu` run then moved validation perplexity from 599.4842 to
-42.1314 in 2,000 steps, and its 10,000-step continuation moved from 43.7940 to
-21.0469. The sample is still not learner-ready, but it is now structured enough
-for linguistic review.
+Current status: the project has SFT schema, validation code, OSCER smoke-test
+scripts, and a first QLoRA run plan. The missing inputs are reviewed SFT
+examples, final base-model choice, and working GPU access. Early feasibility
+work showed that decreasing validation loss is not enough; tutor usefulness
+still needs held-out prompts and fluent-speaker review.
 
 ### Gate 4: Usefulness Gate
 
@@ -279,13 +265,13 @@ If this fails, keep Track B as a retrieval-first tutor fallback.
 The next team-facing move is:
 
 ```text
-Review MT baseline and clean the next data/model path.
+Build the reviewed SFT seed pack and keep external benchmarks held out.
 ```
 
 Concretely:
 
-1. Tessy records attribution/domain notes for the approved sources.
-2. Bonheur validates tokenizer morphology examples and flags bad splits.
-3. Tessy reviews the MT sample for real fluency/meaning, not just surface shape.
-4. Jonathan and Bonheur choose the next change: data cleanup, tokenizer speed,
-   more approved text, or another larger run.
+1. Jonathan drafts 100 schema-valid SFT rows marked `needs-review`.
+2. Tessy reviews source status and language quality before rows enter training.
+3. Bonheur finalizes the base-model recommendation and QLoRA constraints.
+4. Jonathan keeps the 1,000-example target and benchmark separation visible in
+   the task board.

@@ -404,55 +404,33 @@ sample corpus.
 
 Everything else depends on that data foundation.
 
-## Sandbox Exploration
+## Evaluation And Data Scale Direction
 
-Track A now has a standalone sandbox repo:
+The main bottleneck is no longer "can we sketch a training loop?" It is whether
+the project has enough reviewed data and honest evaluation to support a useful
+Kinyarwanda tutor demo.
 
-```text
-https://github.com/Jonathan-321/kilm
-```
+Current direction:
 
-KILM is for learning and feasibility checks only. It now covers approved-corpus
-fetching, corpus preparation, character and BPE tokenizer paths, morphology
-tokenizer review examples, explicit train/validation corpora, tiny causal LM
-training, learning-rate scheduling, gradient clipping, interval checkpoints,
-sampling, run reports, data/model cards, sample-review TSVs, and CI.
+- use approved sources only after source-log review,
+- keep external benchmarks separate from SFT examples,
+- start with a 100-row reviewed SFT seed file,
+- scale toward about 1,000 reviewed examples before treating SFT results as
+  meaningful,
+- judge tutor outputs with held-out prompts and fluent-speaker review.
 
-Current approved-data baseline:
-
-```text
-Digital Umuganda TTS subset:
-3,922 prepared lines
-512-vocab BPE
-200-step small MPS run
-validation perplexity 605.7486 -> 137.0228
-10,000-step continuation
-validation perplexity 139.1711 -> 59.5324
-sample quality failed smoke check
-
-Digital Umuganda MT Kinyarwanda side:
-44,527 clean prepared lines
-43,636 train / 891 validation
-512-vocab BPE
-baseline_gpu config, block size 256
-2,000-step MPS run
-validation perplexity 599.4842 -> 42.1314
-10,000-step continuation
-validation perplexity 43.7940 -> 21.0469
-sample marked needs-linguistic-review
-```
-
-Keep the runnable sandbox and generated artifacts there; bring back only
-decisions, gates, and short status summaries to this planning repo.
-
-The sandbox should answer:
+Open benchmark candidates are tracked in:
 
 ```text
-Does the pipeline run, produce losses, and generate samples?
+docs/evaluation/open-kinyarwanda-benchmarks.md
 ```
 
-It should not be used to claim:
+The data scale-up plan is tracked in:
 
 ```text
-We have a useful Kinyarwanda model.
+docs/data/data-overhaul-plan.md
 ```
+
+Early feasibility work showed an important lesson: validation loss can improve
+while generated Kinyarwanda is still not learner-ready. The project should not
+claim tutor quality from training loss alone.

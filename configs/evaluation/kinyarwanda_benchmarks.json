@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "benchmarks": [
+    {
+      "id": "belebele-kin-latn",
+      "name": "Belebele Kinyarwanda",
+      "source": "facebook/belebele",
+      "source_url": "https://huggingface.co/datasets/facebook/belebele",
+      "subset": "kin_Latn",
+      "task_type": "multiple-choice-reading-comprehension",
+      "license": "cc-by-sa-4.0",
+      "status": "benchmark-only",
+      "priority": "high",
+      "splits": {
+        "test": 900
+      },
+      "metrics": [
+        "accuracy"
+      ],
+      "notes": "Evaluate reading comprehension and answer selection. Do not train on held-out rows."
+    },
+    {
+      "id": "flores200-kin-latn",
+      "name": "FLORES-200 Kinyarwanda",
+      "source": "facebook/flores",
+      "source_url": "https://huggingface.co/datasets/facebook/flores",
+      "subset": "kin_Latn",
+      "task_type": "translation",
+      "license": "cc-by-sa-4.0",
+      "status": "benchmark-only",
+      "priority": "high",
+      "splits": {
+        "dev": 997,
+        "devtest": 1012,
+        "test": 992
+      },
+      "metrics": [
+        "chrf",
+        "spbleu",
+        "human-spot-check"
+      ],
+      "notes": "Evaluate English to Kinyarwanda and Kinyarwanda to English translation."
+    },
+    {
+      "id": "afrixnli-kin",
+      "name": "IrokoBench AfriXNLI Kinyarwanda",
+      "source": "masakhane/afrixnli",
+      "source_url": "https://huggingface.co/datasets/masakhane/afrixnli",
+      "subset": "kin",
+      "task_type": "natural-language-inference",
+      "license": "apache-2.0",
+      "status": "benchmark-only",
+      "priority": "high",
+      "splits": {
+        "validation": 450,
+        "test": 600
+      },
+      "metrics": [
+        "accuracy"
+      ],
+      "notes": "Evaluate entailment, contradiction, and neutral sentence-pair reasoning."
+    },
+    {
+      "id": "afrimgsm-kin",
+      "name": "IrokoBench AfriMGSM Kinyarwanda",
+      "source": "masakhane/afrimgsm",
+      "source_url": "https://huggingface.co/datasets/masakhane/afrimgsm",
+      "subset": "kin",
+      "task_type": "math-reasoning",
+      "license": "apache-2.0",
+      "status": "benchmark-only",
+      "priority": "medium",
+      "splits": {
+        "train": 8,
+        "test": 250
+      },
+      "metrics": [
+        "exact-match",
+        "answer-accuracy"
+      ],
+      "notes": "Use test rows as held-out evaluation. The small train split is for task format inspection only unless explicitly approved."
+    },
+    {
+      "id": "afrimmlu-kin",
+      "name": "IrokoBench AfriMMLU Kinyarwanda",
+      "source": "masakhane/afrimmlu",
+      "source_url": "https://huggingface.co/datasets/masakhane/afrimmlu",
+      "subset": "kin",
+      "task_type": "multiple-choice-knowledge-qa",
+      "license": "apache-2.0",
+      "status": "benchmark-only",
+      "priority": "medium",
+      "splits": {
+        "dev": 25,
+        "validation": 83,
+        "test": 500
+      },
+      "metrics": [
+        "accuracy"
+      ],
+      "notes": "Evaluate multiple-choice knowledge questions across subject areas."
+    },
+    {
+      "id": "afrisenti-semeval-kin",
+      "name": "AfriSenti-SemEval Kinyarwanda",
+      "source": "afrisenti-semeval/afrisent-semeval-2023",
+      "source_url": "https://github.com/afrisenti-semeval/afrisent-semeval-2023",
+      "subset": "kin",
+      "task_type": "sentiment-classification",
+      "license": "cc-by-4.0",
+      "status": "benchmark-only",
+      "priority": "medium",
+      "splits": {
+        "train": null,
+        "dev": null,
+        "test": null
+      },
+      "metrics": [
+        "macro-f1",
+        "accuracy"
+      ],
+      "notes": "Kinyarwanda split counts need repository-level confirmation before running; use for classification, not tutor quality."
+    },
+    {
+      "id": "kinnews",
+      "name": "KINNEWS",
+      "source": "Andrews2017/KINNEWS-and-KIRNEWS-Corpus",
+      "source_url": "https://github.com/Andrews2017/KINNEWS-and-KIRNEWS-Corpus",
+      "subset": "kinnews",
+      "task_type": "news-topic-classification",
+      "license": "mit",
+      "status": "benchmark-only",
+      "priority": "medium",
+      "splits": {
+        "all": 21268
+      },
+      "metrics": [
+        "macro-f1",
+        "accuracy"
+      ],
+      "notes": "Use for Kinyarwanda news-domain classification only. Do not use as tutor SFT data."
+    }
+  ]
+}

@@ -18,3 +18,7 @@ Before adding `seed_conversations.jsonl`:
    ```
 
 Training rows must have `review_status=approved` before any fine-tune starts.
+
+The first seed gate is 100 reviewed examples. A serious tutor SFT run should
+target about 1,000 reviewed examples, following
+`docs/data/data-overhaul-plan.md`.
