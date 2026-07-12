@@ -27,8 +27,8 @@ has stronger availability or experience for a role.
 | Project Lead / Coordinator | Jonathan Muhire | Tessy Mugisha | Meeting rhythm, professor email, issue tracker |
 | Data Lead | Tessy Mugisha | Jonathan Muhire | Data source log and licensing notes |
 | Tokenizer Lead | Bonheur Byiringiro | Jonathan Muhire | Tokenizer task breakdown and evaluation examples |
-| Modeling Lead | Bonheur Byiringiro | Jonathan Muhire | Tiny LM implementation plan and compute assumptions |
-| Tutor / UX Lead | Jonathan Muhire | Tessy Mugisha | Tutor MVP task list and lesson-source needs |
+| Modeling Lead | Bonheur Byiringiro | Jonathan Muhire | SFT base-model choice, QLoRA settings, and compute assumptions |
+| Tutor / UX Lead | Jonathan Muhire | Tessy Mugisha | Tutor task list, SFT conversation format, and demo prompts |
 | Evaluation Lead | Tessy Mugisha | Bonheur Byiringiro | Human evaluation rubric and 20 starter prompts |
 | Documentation Lead | Jonathan Muhire | Tessy Mugisha | README, weekly updates, final report outline |
 
@@ -59,16 +59,17 @@ has stronger availability or experience for a role.
 
 ### Modeling Lead
 
-- own Transformer LM path,
-- create tiny training configs,
-- track loss/perplexity,
-- handle checkpoints and sampling.
+- own the SFT training path,
+- choose the base instruct model and fallback model,
+- define QLoRA settings and GPU assumptions,
+- track loss, validation outputs, checkpoints, and sample generations.
 
 ### Tutor / UX Lead
 
 - define tutor capabilities,
-- organize approved lesson notes,
-- build retrieval-first flow,
+- define the SFT conversation schema,
+- organize approved prompt/answer examples,
+- prepare held-out demo tasks,
 - prepare demo tasks.
 
 ### Evaluation Lead

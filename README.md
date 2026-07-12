@@ -13,20 +13,23 @@ Track B: practical Kinyarwanda tutor MVP
 Track A follows the spirit of Stanford CS336: tokenizer, decoder-only
 Transformer, loss, optimizer, training loop, checkpointing, sampling, and
 evaluation. Track B uses retrieval over approved Kinyarwanda learning material
-first, with fine-tuning only if time, data, and compute make that realistic.
+first, with supervised fine-tuning only after source approval, seed examples,
+and evaluation prompts are ready.
 
 ## Start Here
 
-Week 1 is not about training a model yet. It is about making the project
-workable.
+The current project push is SFT readiness: define the conversation format,
+prepare held-out evaluation prompts, confirm source permissions, and prove the
+compute path before training.
 
 1. Read [project-charter.md](docs/project/project-charter.md).
 2. Read the full [master-plan.md](docs/project/master-plan.md).
 3. Follow the [team-execution-plan.md](docs/project/team-execution-plan.md).
-4. Check team ownership in [roles.md](docs/team/roles.md).
-5. Work through [week-1-kickoff.md](docs/team/week-1-kickoff.md).
+4. Use the [two-week SFT execution plan](docs/team/two-week-sft-execution-plan.md).
+5. Check team ownership in [roles.md](docs/team/roles.md).
 6. Record every data source in [source-log.md](docs/data/source-log.md).
-7. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+7. Follow the SFT schema in [sft-data-schema.md](docs/data/sft-data-schema.md).
+8. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 
 ## Contributors
 
@@ -44,6 +47,7 @@ data/
   interim/                # intermediate cleaned data, not committed by default
   processed/              # final small shareable samples and manifests
   external/               # third-party references, tracked by source log
+  sft/                    # small reviewed SFT JSONL files only
 docs/
   data/                   # source log, data card template
   evaluation/             # evaluation rubric and test prompt plan
@@ -94,7 +98,14 @@ PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q
 ```
 
 These checks do not train a tokenizer or use unapproved data. They only verify
-that the starter example set and tokenizer-analysis helpers are wired correctly.
+that the starter example set, tutor benchmark, SFT schema, and tokenizer-analysis
+helpers are wired correctly.
+
+Validate a future SFT seed file:
+
+```bash
+python3 scripts/validate_sft_jsonl.py data/sft/seed_conversations.jsonl
+```
 
 Review Hugging Face candidate metadata:
 
@@ -113,7 +124,7 @@ docs/project/team-execution-plan.md
 The immediate focus is:
 
 ```text
-data approval + tokenizer analysis
+source approval + tokenizer analysis + SFT readiness
 ```
 
 ## KILM Sandbox
