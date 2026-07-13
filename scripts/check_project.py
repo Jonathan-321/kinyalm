@@ -20,6 +20,7 @@ def main() -> int:
     task_bank_path = ROOT / "docs" / "evaluation" / "learning-task-bank.md"
     schema_path = ROOT / "docs" / "data" / "sft-data-schema.md"
     storage_workflow_path = ROOT / "docs" / "data" / "shared-storage-workflow.md"
+    hf_datalake_path = ROOT / "docs" / "data" / "huggingface-datalake.md"
     manifest_template_path = (
         ROOT / "data" / "manifests" / "dataset-manifest.template.json"
     )
@@ -40,6 +41,8 @@ def main() -> int:
         raise SystemExit(f"missing SFT schema: {schema_path}")
     if not storage_workflow_path.exists():
         raise SystemExit(f"missing shared storage workflow: {storage_workflow_path}")
+    if not hf_datalake_path.exists():
+        raise SystemExit(f"missing Hugging Face datalake guide: {hf_datalake_path}")
     if not manifest_template_path.exists():
         raise SystemExit(f"missing dataset manifest template: {manifest_template_path}")
     if not benchmark_result.ok:
@@ -57,6 +60,7 @@ def main() -> int:
         "Found shared storage workflow at "
         f"{storage_workflow_path.relative_to(ROOT)}."
     )
+    print(f"Found HF datalake guide at {hf_datalake_path.relative_to(ROOT)}.")
     print(
         "Loaded "
         f"{len(benchmark_specs)} external benchmark specs from "
