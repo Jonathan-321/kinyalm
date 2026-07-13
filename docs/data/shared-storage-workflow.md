@@ -66,11 +66,17 @@ Rules:
 ## Hugging Face Dataset Layout
 
 Use Hugging Face for clean and licensed releases, not for every draft.
+For team-scale review handoff, use the private data lake workflow in:
+
+```text
+docs/data/huggingface-datalake.md
+```
 
 Recommended repos:
 
 | Repo | Visibility | Purpose |
 | --- | --- | --- |
+| `Jonnyyy/kinyalm-data-lake` | private | Shared review datalake for draft batches and manifests. |
 | `Jonathan-321/kinyalm-sft-drafts` | private | Optional draft handoff if Drive is not enough. |
 | `Jonathan-321/kinyalm-sft-reviewed` | private first, public only when safe | Reviewed SFT files. |
 | `Jonathan-321/kinyalm-eval` | private or public | Evaluation prompts and benchmark wrappers. |

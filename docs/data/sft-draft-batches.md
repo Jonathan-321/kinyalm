@@ -16,8 +16,10 @@ training datasets until fluent-speaker review promotes individual rows.
 | Review Manifest | `data/manifests/sft-drafts-2026-07-13-batch-001-review-sheet.json` |
 | Upload Package | `/Users/jonathanmuhire/KinyaLMData/packages/sft-drafts-2026-07-13-batch-001-review-package.zip` |
 | Package Manifest | `data/manifests/sft-drafts-2026-07-13-batch-001-review-package.json` |
+| HF Data Lake | `https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake` |
+| HF Upload Manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 | Can Train? | no |
-| Next Action | Upload package, JSONL, and review TSV to Google Drive review queue after Drive access is reauthenticated. |
+| Next Action | Share private HF dataset access with Tessy and Bonheur; optionally mirror to Google Drive after Drive access is reauthenticated. |
 
 Promotion command after review:
 
