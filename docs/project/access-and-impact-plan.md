@@ -34,10 +34,34 @@ Batch 001 has 286 draft SFT rows. The first measurable target is:
 | --- | --- | --- |
 | Share link | Jonathan | Tessy, Bonheur, and extra reviewers have the HF link |
 | Accept gated access | Each reviewer | Reviewer can download the TSV |
+| Stage new data | Contributor | Files packaged under `incoming/<username>/<batch-id>/` |
+| Submit contribution | Contributor | HF PR or GitHub issue with source/permission notes |
+| Triage contribution | Jonathan, data owner | Accepted files move to draft/review folders |
 | Review rows | Tessy, Bonheur, extra reviewers | TSV rows have status, scores, and notes |
 | Promote approved rows | Jonathan | `train.jsonl`, `validation.jsonl`, and promotion summary |
 | Train smoke run | Bonheur | First small SFT run on approved-only rows |
 | Error review | Tessy, Jonathan | Failure tags and next data-generation targets |
+
+## Write Access Plan
+
+Use HF pull requests for immediate teammate uploads. This lets Tessy and Bonheur
+add data without waiting for shared write permissions.
+
+Use a shared HF organization once either of these becomes true:
+
+- teammates need to upload frequently,
+- Jonathan is becoming a bottleneck for merging incoming data.
+
+Required inputs for the org path:
+
+```text
+HF org name
+Tessy HF username
+Bonheur HF username
+```
+
+Until then, all team uploads should go through `incoming/` and include a
+`CONTRIBUTION.md` file.
 
 ## Reviewer Throughput
 

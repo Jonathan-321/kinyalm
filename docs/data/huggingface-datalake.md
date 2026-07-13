@@ -117,6 +117,35 @@ They should sign in to Hugging Face and accept the gated access prompt. A shared
 Hugging Face organization is still better once the team needs shared write/admin
 access instead of read/download access.
 
+## Adding Data
+
+Public-gated access lets teammates read and download. It does not automatically
+give them direct write access.
+
+For teammate uploads, use:
+
+```text
+docs/team/hf-data-contribution-workflow.md
+```
+
+Fast path:
+
+1. teammate stages a package under `incoming/<username>/<batch-id>/`,
+2. teammate opens an HF pull request or a GitHub issue with the upload details,
+3. Jonathan or the data owner checks source/review status,
+4. accepted files are moved into the appropriate datalake folder.
+
+Helper command:
+
+```bash
+python3 scripts/stage_hf_contribution.py ./my-data-file.jsonl \
+  --contributor Tessy \
+  --batch-id batch-002 \
+  --github-username TessyMugisha \
+  --training-permission unknown \
+  --redistribution-permission unknown
+```
+
 Reviewer instructions:
 
 ```text
