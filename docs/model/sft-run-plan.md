@@ -21,7 +21,7 @@ Not ready:
 
 - no approved SFT conversation dataset exists yet,
 - no 1,000-example reviewed SFT pack exists yet,
-- no final base model has been selected,
+- the base model recommendation below still needs team sign-off,
 - OSCER login is still blocked by authentication,
 - benchmark answers still need fluent-speaker scoring instructions reviewed.
 
@@ -40,11 +40,38 @@ Bonheur owns the final recommendation. The first candidate should be:
 Do not choose a model only because it is popular. Choose the smallest model that
 can run reliably and produce reviewable outputs.
 
-Decision table to fill before training:
+Decision table (Bonheur, 2026-07-12; needs team sign-off):
 
 | Candidate | Size | License | Context Length | Why It Might Work | Risk | Decision |
 | --- | ---: | --- | ---: | --- | --- | --- |
-| TBD | TBD | TBD | TBD | TBD | TBD | pending |
+| google/gemma-2-9b-it | 9B | Gemma Terms of Use (fine-tuning and class demo allowed) | 8k | Tied-best tokenizer on our confirmed examples; strong record on African-language fine-tunes; instruction-tuned, so it ships a chat template that a ~100-example seed run cannot teach from scratch. | Gated repo (needs an HF token with accepted access); Gemma-2 needs `eager` attention during training. | recommended |
+| google/gemma-2-2b-it | 2B | Gemma Terms of Use | 8k | Same tokenizer and family as the primary, so falling back invalidates none of the data prep or tokenizer analysis; fits much smaller GPUs. | Weaker base quality. | fallback if OOM/cost |
+| Qwen/Qwen2.5-7B-Instruct | 7B | Apache-2.0 | 32k | Cleanest license of the candidates; ungated. | Worst tokenizer of the three on Kinyarwanda (3.28 tokens/word). | alternative if Gemma terms are a problem |
+| CohereLabs/aya-expanse-8b | 8B | CC-BY-NC-4.0 | 8k | Multilingual instruction model. | Its 23 languages do NOT include Kinyarwanda (the "Aya covers Kinyarwanda" fact belongs to Aya-101, a 13B mT5 seq2seq that is a poor QLoRA chat base); non-commercial license; gated. | rejected |
+
+### Tokenizer Evidence
+
+`scripts/compare_tokenizers.py` runs candidate tokenizers over the 37
+confirmed examples in `docs/tokenizer/eval-examples.tsv` (tokenizer files
+only, CPU-friendly). Results, 2026-07-12:
+
+| Tokenizer | Vocab size | Tokens/word (all) | Tokens/word (morphology) |
+| --- | ---: | ---: | ---: |
+| CohereForAI/aya-101 (reference only) | 250k | 2.77 | 2.94 |
+| google/gemma-2-9b | 256k | 3.09 | 3.06 |
+| CohereLabs/aya-expanse-8b | 255k | 3.11 | 3.00 |
+| Qwen/Qwen2.5-7B | 152k | 3.28 | 3.12 |
+
+What the numbers mean:
+
+- No candidate tokenizer respects Kinyarwanda morphology. All of them split
+  `umwarimu` as `um|war|imu`; noun-class prefixes and verb affixes do not
+  survive as pieces.
+- Every candidate costs roughly 3 tokens per Kinyarwanda word, so tokenizer
+  compactness does not separate the finalists. The decision rests on language
+  exposure, license, and fallback consistency instead.
+- Even Aya-101, whose tokenizer actually saw Kinyarwanda, only reaches 2.77.
+  Re-run the script to regenerate the full piece-level report.
 
 ## Dataset Inputs
 
@@ -96,6 +123,10 @@ Initial settings to try:
 | warmup ratio | 0.03 | 0.03 |
 
 These are starting points, not proof of quality.
+
+Gemma-2 specific: train with attention implementation `eager`. Gemma-2 uses
+logit soft-capping that is incompatible with flash/sdpa attention during
+training and silently degrades results.
 
 ## Smoke Test
 
