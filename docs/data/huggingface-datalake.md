@@ -6,7 +6,7 @@ for review-ready artifacts.
 Default repo:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
 The repo page is visible, but file access requires a logged-in Hugging Face
@@ -20,7 +20,7 @@ Current status:
 | Visibility | public-gated |
 | Gated access | automatic approval |
 | Latest verified upload | Batch 001 |
-| HF commit | `a47d1d7004bfe7a5d4bce36b64fac1ad59670218` |
+| HF commit | `d43972e7272b0f222094819ee70a9a1677cc4e6e` |
 | Upload manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 
 ## Local Staging
@@ -61,7 +61,7 @@ Prerequisites:
 
 - `huggingface_hub` is installed,
 - the maintainer is logged in with `hf auth login` or `huggingface-cli login`,
-- the token/account has write access to `Jonnyyy/kinyalm-data-lake`,
+- the token/account has repository write access in the `kinyalm` organization,
 - local inputs exist under `~/KinyaLMData/drafts`, `~/KinyaLMData/reviewed`,
   and `~/KinyaLMData/packages`,
 - matching manifests exist under `data/manifests`.
@@ -76,7 +76,7 @@ Then run:
 
 ```bash
 python3 scripts/upload_hf_datalake.py \
-  --repo-id Jonnyyy/kinyalm-data-lake \
+  --repo-id kinyalm/kinyalm-data-lake \
   --commit-message "Upload Batch 001 draft review package"
 ```
 
@@ -110,17 +110,17 @@ If the commit changes, update the status table above and the upload manifest in
 For fastest team access, send teammates:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
-They should sign in to Hugging Face and accept the gated access prompt. A shared
-Hugging Face organization is still better once the team needs shared write/admin
-access instead of read/download access.
+They should sign in to Hugging Face and accept the gated access prompt. The
+dataset is owned by the `kinyalm` organization. Teammates need organization
+membership with repository write access before they can upload directly.
 
 ## Adding Data
 
-Public-gated access lets teammates read and download. It does not automatically
-give them direct write access.
+Public-gated access lets teammates read and download. Organization membership
+and repository write permission are separate requirements for direct uploads.
 
 For teammate uploads, use:
 
@@ -131,7 +131,7 @@ docs/team/hf-data-contribution-workflow.md
 Fast path:
 
 1. teammate stages a package under `incoming/<username>/<batch-id>/`,
-2. teammate opens an HF pull request or a GitHub issue with the upload details,
+2. teammate uploads through the organization or opens an HF pull request,
 3. Jonathan or the data owner checks source/review status,
 4. accepted files are moved into the appropriate datalake folder.
 

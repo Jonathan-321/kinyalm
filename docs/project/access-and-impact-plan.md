@@ -5,7 +5,7 @@
 The KinyaLM datalake is public-gated:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
 Anyone can view the dataset page. Files require a logged-in Hugging Face account
@@ -44,24 +44,20 @@ Batch 001 has 286 draft SFT rows. The first measurable target is:
 
 ## Write Access Plan
 
-Use HF pull requests for immediate teammate uploads. This lets Tessy and Bonheur
-add data without waiting for shared write permissions.
+The shared `kinyalm` Hugging Face organization and public-gated datalake are
+active. Regular contributors should receive organization repository write
+access. Outside contributors and teammates waiting for an invite should use HF
+pull requests.
 
-Use a shared HF organization once either of these becomes true:
-
-- teammates need to upload frequently,
-- Jonathan is becoming a bottleneck for merging incoming data.
-
-Required inputs for the org path:
+Remaining inputs for teammate invitations:
 
 ```text
-HF org name
 Tessy HF username
 Bonheur HF username
 ```
 
-Until then, all team uploads should go through `incoming/` and include a
-`CONTRIBUTION.md` file.
+All uploads, including direct organization uploads, must go through `incoming/`
+and include a `CONTRIBUTION.md` file.
 
 ## Reviewer Throughput
 

@@ -16,10 +16,10 @@ training datasets until fluent-speaker review promotes individual rows.
 | Review Manifest | `data/manifests/sft-drafts-2026-07-13-batch-001-review-sheet.json` |
 | Upload Package | `/Users/jonathanmuhire/KinyaLMData/packages/sft-drafts-2026-07-13-batch-001-review-package.zip` |
 | Package Manifest | `data/manifests/sft-drafts-2026-07-13-batch-001-review-package.json` |
-| HF Data Lake | `https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake` |
+| HF Data Lake | `https://huggingface.co/datasets/kinyalm/kinyalm-data-lake` |
 | HF Upload Manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 | Can Train? | no |
-| Next Action | Send Tessy and Bonheur the public-gated HF datalake link; they should sign in to Hugging Face and accept access. Optionally mirror to Google Drive after Drive access is reauthenticated. |
+| Next Action | Invite Tessy and Bonheur using their Hugging Face usernames, then begin review and `incoming/` contributions. Optionally mirror to Google Drive after Drive access is reauthenticated. |
 
 Promotion command after review:
 

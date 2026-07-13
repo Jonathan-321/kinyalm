@@ -50,7 +50,7 @@ python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.m
 Reviewer access:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 docs/team/hf-datalake-reviewer-onboarding.md
 docs/team/hf-data-contribution-workflow.md
 docs/team/access-message-templates.md

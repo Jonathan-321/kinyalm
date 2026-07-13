@@ -21,7 +21,7 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 
-DEFAULT_REPO_ID = "Jonnyyy/kinyalm-data-lake"
+DEFAULT_REPO_ID = "kinyalm/kinyalm-data-lake"
 DEFAULT_STAGE_DIR = Path("~/KinyaLMData/hf_datalake/kinyalm-data-lake").expanduser()
 DEFAULT_BATCH_ID = "sft-drafts-2026-07-13-batch-001"
 
