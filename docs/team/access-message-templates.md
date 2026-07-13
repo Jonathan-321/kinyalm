@@ -7,7 +7,7 @@ Use these messages when inviting teammates or outside Kinyarwanda reviewers.
 ```text
 Hey, the KinyaLM review datalake is ready here:
 
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 
 Please sign in to Hugging Face and accept the gated access prompt. Start with
 the Batch 001 review TSV:
@@ -31,7 +31,7 @@ speaker review before any data is used for training.
 
 The draft review dataset is here:
 
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 
 It is public-gated, so you can sign in to Hugging Face and accept access. We are
 not asking you to approve everything. The useful review is: which rows are
@@ -46,7 +46,7 @@ When done, send the edited TSV back to Jonathan as TSV/tab-separated text.
 ```text
 KinyaLM now has a public-gated Hugging Face review datalake:
 
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 
 Batch 001 has 286 draft SFT examples. They are not approved training data yet.
 The next milestone is fluent-speaker review, then promotion of approved rows

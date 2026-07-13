@@ -7,7 +7,7 @@ This guide is for teammates and Kinyarwanda speakers reviewing Batch 001.
 Open:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
 Sign in to Hugging Face and accept the gated access prompt. The dataset page is

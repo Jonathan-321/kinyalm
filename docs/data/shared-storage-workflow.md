@@ -9,7 +9,7 @@ Use three storage layers:
 | --- | --- | --- | --- |
 | Local data lake | `~/KinyaLMData` or an external drive | Working copies, raw downloads, generated drafts, cleaned files | no |
 | Google Drive | shared team folder | Team review, handoff, spreadsheet-style collaboration | manifest only |
-| Hugging Face Dataset repo | `Jonathan-321/kinyalm-*` or team org | Clean, licensed, publishable dataset versions | manifest and dataset card |
+| Hugging Face Dataset repo | `kinyalm/*` organization repos | Clean, licensed, publishable dataset versions | manifest and dataset card |
 
 ## Recommended Local Layout
 
@@ -76,10 +76,10 @@ Recommended repos:
 
 | Repo | Visibility | Purpose |
 | --- | --- | --- |
-| `Jonnyyy/kinyalm-data-lake` | public-gated | Shared review datalake for draft batches and manifests. |
-| `Jonathan-321/kinyalm-sft-drafts` | private | Optional draft handoff if Drive is not enough. |
-| `Jonathan-321/kinyalm-sft-reviewed` | private first, public only when safe | Reviewed SFT files. |
-| `Jonathan-321/kinyalm-eval` | private or public | Evaluation prompts and benchmark wrappers. |
+| `kinyalm/kinyalm-data-lake` | public-gated | Shared review datalake for draft batches and manifests. |
+| `kinyalm/kinyalm-sft-drafts` | private | Optional draft handoff if Drive is not enough. |
+| `kinyalm/kinyalm-sft-reviewed` | private first, public only when safe | Reviewed SFT files. |
+| `kinyalm/kinyalm-eval` | private or public | Evaluation prompts and benchmark wrappers. |
 
 Each HF dataset repo should include:
 

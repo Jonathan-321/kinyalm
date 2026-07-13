@@ -1,10 +1,10 @@
 {
   "dataset_id": "hf-datalake-sft-drafts-2026-07-13-batch-001",
-  "created_at_utc": "2026-07-13T22:22:16+00:00",
+  "created_at_utc": "2026-07-13T23:56:05+00:00",
   "stage": "hf-datalake-upload",
   "owner": "Jonathan",
   "storage": "huggingface",
-  "storage_uri": "https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake",
+  "storage_uri": "https://huggingface.co/datasets/kinyalm/kinyalm-data-lake",
   "local_path_hint": "/Users/jonathanmuhire/KinyaLMData/hf_datalake/kinyalm-data-lake",
   "path_type": "directory",
   "file_count": 10,
@@ -19,6 +19,6 @@
   "contains_private_or_sensitive_data": false,
   "license": "not-applicable",
   "attribution": "",
-  "notes": "Public-gated Hugging Face datalake upload for Batch 001. HF commit a47d1d7004bfe7a5d4bce36b64fac1ad59670218. Contains draft rows only; not approved for training.",
-  "next_action": "Send Tessy and Bonheur the public-gated HF datalake link, then collect review TSV decisions."
+  "notes": "Public-gated Hugging Face organization datalake upload for Batch 001. HF commit d43972e7272b0f222094819ee70a9a1677cc4e6e. Contains draft rows only; not approved for training.",
+  "next_action": "Invite Tessy and Bonheur using their Hugging Face usernames, then collect review TSV decisions and incoming contributions."
 }

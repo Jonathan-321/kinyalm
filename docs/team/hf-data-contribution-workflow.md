@@ -8,35 +8,36 @@ KinyaLM Hugging Face datalake.
 The current datalake is:
 
 ```text
-https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
-It is public-gated. Teammates can read and download after accepting access, but
-they do not automatically get write access.
+It is public-gated and owned by the `kinyalm` Hugging Face organization.
+Teammates can read and download after accepting access. Direct uploads require
+organization membership with repository write access.
 
 There are two contribution paths:
 
 | Path | Best for | Who merges |
 | --- | --- | --- |
-| HF pull request | fastest without shared write access | Jonathan |
-| Shared HF organization | direct team uploads | org members with write/admin |
+| Organization upload | regular team contributions | data owner or maintainer |
+| HF pull request | contributors without organization write access | org maintainer |
 
-## Path A: HF Pull Request
+## Path A: Organization Upload
 
-Use this now if teammates do not have write access to the dataset repo.
+Use this for Tessy, Bonheur, and other regular contributors after they join the
+`kinyalm` organization.
 
-1. Open the dataset:
+1. Ask an organization owner to add the contributor's exact Hugging Face
+   username with repository write access.
+2. Open the dataset:
 
    ```text
-   https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+   https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
    ```
 
-2. Sign in and accept gated access.
-3. Go to `Community`.
-4. Create a pull request or PR branch.
-5. Add files under `incoming/<github-or-hf-username>/<batch-id>/`.
-6. Include a `CONTRIBUTION.md` file.
-7. Do not modify existing approved or review files unless the PR is specifically
+3. Add files under `incoming/<hf-username>/<batch-id>/`.
+4. Include a `CONTRIBUTION.md` file.
+5. Do not modify existing approved or review files unless the upload is specifically
    for reviewer corrections.
 
 Suggested upload layout:
@@ -49,37 +50,22 @@ incoming/tessy/batch-002/
   review-plan.md
 ```
 
-Jonathan reviews the PR, checks source status, and moves accepted files into the
-right datalake folder.
+The data owner checks source status and moves accepted files into the right
+datalake folder.
 
-## Path B: Shared HF Organization
+## Path B: HF Pull Request
 
-Use this once the team wants direct write access.
+Use this for outside contributors or while a teammate is waiting for an
+organization invitation.
 
-1. Create a Hugging Face organization, for example:
+1. Sign in and accept gated access.
+2. Go to `Community` and open a pull request.
+3. Add files under `incoming/<hf-username>/<batch-id>/`.
+4. Include `CONTRIBUTION.md` with source, permission, review, and safety notes.
+5. Ask an organization maintainer to review and merge the pull request.
 
-   ```text
-   kinyalm-team
-   ```
-
-2. Invite Tessy and Bonheur with write access.
-3. Transfer or mirror the dataset to:
-
-   ```text
-   kinyalm-team/kinyalm-data-lake
-   ```
-
-4. Update repo defaults:
-
-   ```bash
-   python3 scripts/upload_hf_datalake.py \
-     --repo-id kinyalm-team/kinyalm-data-lake \
-     --commit-message "Sync datalake to team org"
-   ```
-
-Direct write access should still use the same folder rules. Team uploads go to
-`incoming/` first. Jonathan or the data owner promotes clean files after source
-and review checks.
+Both paths use the same folder rules. Direct write access never bypasses
+`incoming/`, source review, or the training promotion gate.
 
 ## Contributor Rules
 
