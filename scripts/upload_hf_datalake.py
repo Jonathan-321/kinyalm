@@ -1,8 +1,8 @@
 """Stage and upload the KinyaLM shared datalake to Hugging Face.
 
 The script creates a local staging folder from approved manifest entries and
-uploads it to a private Hugging Face Dataset repository. Draft rows stay marked
-as draft; this is a review datalake, not approved training data.
+uploads it to a public-gated Hugging Face Dataset repository. Draft rows stay
+marked as draft; this is a review datalake, not approved training data.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import json
 import os
 import shutil
 import sys
+import warnings
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -30,7 +31,12 @@ def main() -> int:
     parser.add_argument("--repo-id", default=DEFAULT_REPO_ID)
     parser.add_argument("--stage-dir", type=Path, default=DEFAULT_STAGE_DIR)
     parser.add_argument("--batch-id", default=DEFAULT_BATCH_ID)
-    parser.add_argument("--private", action="store_true", default=True)
+    parser.add_argument(
+        "--visibility",
+        choices=("public-gated", "private", "public"),
+        default="public-gated",
+        help="HF repo visibility/access mode to enforce before upload.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--commit-message", default="Upload KinyaLM datalake batch")
     args = parser.parse_args()
@@ -47,7 +53,7 @@ def main() -> int:
     upload_to_hf(
         stage_dir=args.stage_dir.expanduser(),
         repo_id=args.repo_id,
-        private=args.private,
+        visibility=args.visibility,
         commit_message=args.commit_message,
     )
     print(f"uploaded datalake to https://huggingface.co/datasets/{args.repo_id}")
@@ -116,7 +122,7 @@ def upload_to_hf(
     *,
     stage_dir: Path,
     repo_id: str,
-    private: bool,
+    visibility: str,
     commit_message: str,
 ) -> None:
     # The local hf_xet wheel can be architecture-specific. Plain HTTP uploads
@@ -125,8 +131,33 @@ def upload_to_hf(
 
     from huggingface_hub import HfApi, create_repo
 
+    private = visibility == "private"
+    gated = "auto" if visibility == "public-gated" else False
+
     create_repo(repo_id, repo_type="dataset", private=private, exist_ok=True)
     api = HfApi()
+    api.update_repo_settings(
+        repo_id=repo_id,
+        repo_type="dataset",
+        private=private,
+        gated=gated,
+    )
+    info = api.dataset_info(repo_id)
+    if info.private != private:
+        # Some hub versions do not flip personal dataset visibility through
+        # update_repo_settings, so keep a compatibility fallback.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            api.update_repo_visibility(
+                repo_id=repo_id,
+                repo_type="dataset",
+                private=private,
+            )
+        api.update_repo_settings(
+            repo_id=repo_id,
+            repo_type="dataset",
+            gated=gated,
+        )
     api.upload_folder(
         folder_path=str(stage_dir),
         repo_id=repo_id,
@@ -153,7 +184,9 @@ size_categories:
 
 # KinyaLM Data Lake
 
-This private dataset repository stores KinyaLM data artifacts for team review.
+This public-gated dataset repository stores KinyaLM data artifacts for team
+review. Visitors can see the dataset page, but file access requires a
+logged-in Hugging Face account and gated access acceptance.
 
 Current contents:
 
@@ -186,15 +219,16 @@ python3 scripts/promote_reviewed_sft.py \\
 ## Source And License Notes
 
 Batch 001 is synthetic draft data generated for review. It is not redistributed
-as a public training dataset and should remain private until the team confirms
-quality and release terms.
+as an approved public training dataset until the team confirms quality and
+release terms.
 """
 
 
 def index_json(*, batch_id: str) -> str:
     index = {
         "datalake": "KinyaLM Data Lake",
-        "visibility": "private",
+        "visibility": "public-gated",
+        "gated_access": "auto",
         "batches": [
             {
                 "batch_id": batch_id,

@@ -1,7 +1,7 @@
 # Hugging Face Data Lake
 
-KinyaLM uses a private Hugging Face Dataset repo as the shared data lake for
-review-ready artifacts.
+KinyaLM uses a public-gated Hugging Face Dataset repo as the shared data lake
+for review-ready artifacts.
 
 Default repo:
 
@@ -9,15 +9,18 @@ Default repo:
 https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
 ```
 
-The repo should remain private while it contains draft examples.
+The repo page is visible, but file access requires a logged-in Hugging Face
+account and gated access acceptance. Batch rows are still drafts and are not
+approved training data.
 
 Current status:
 
 | Field | Value |
 | --- | --- |
-| Visibility | private |
+| Visibility | public-gated |
+| Gated access | automatic approval |
 | Latest verified upload | Batch 001 |
-| HF commit | `a65a71086805273516fec4edc42b370f253de8fb` |
+| HF commit | `09c902031649f1062b6f2b2837ca713a75af77e8` |
 | Upload manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 
 ## Local Staging
@@ -79,8 +82,15 @@ python3 scripts/upload_hf_datalake.py --dry-run
 
 ## Sharing
 
-For team access, add collaborators to the private Hugging Face Dataset repo or
-move the dataset under a shared Hugging Face organization.
+For fastest team access, send teammates:
+
+```text
+https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+```
+
+They should sign in to Hugging Face and accept the gated access prompt. A shared
+Hugging Face organization is still better once the team needs shared write/admin
+access instead of read/download access.
 
 ## Training Rule
 

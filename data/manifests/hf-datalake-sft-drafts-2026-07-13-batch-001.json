@@ -19,6 +19,6 @@
   "contains_private_or_sensitive_data": false,
   "license": "not-applicable",
   "attribution": "",
-  "notes": "Private Hugging Face datalake upload for Batch 001. HF commit a65a71086805273516fec4edc42b370f253de8fb. Contains draft rows only; not approved for training.",
-  "next_action": "Share private HF dataset access with Tessy and Bonheur, then collect review TSV decisions."
+  "notes": "Public-gated Hugging Face datalake upload for Batch 001. HF commit 09c902031649f1062b6f2b2837ca713a75af77e8. Contains draft rows only; not approved for training.",
+  "next_action": "Send Tessy and Bonheur the public-gated HF datalake link, then collect review TSV decisions."
 }
