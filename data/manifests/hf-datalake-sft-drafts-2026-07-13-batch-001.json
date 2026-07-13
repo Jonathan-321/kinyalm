@@ -7,8 +7,8 @@
   "storage_uri": "https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake",
   "local_path_hint": "/Users/jonathanmuhire/KinyaLMData/hf_datalake/kinyalm-data-lake",
   "path_type": "directory",
-  "file_count": 9,
-  "total_bytes": 248235,
+  "file_count": 10,
+  "total_bytes": 249888,
   "sha256": null,
   "row_count": 286,
   "source_status": "team-authored",
@@ -19,6 +19,6 @@
   "contains_private_or_sensitive_data": false,
   "license": "not-applicable",
   "attribution": "",
-  "notes": "Public-gated Hugging Face datalake upload for Batch 001. HF commit 09c902031649f1062b6f2b2837ca713a75af77e8. Contains draft rows only; not approved for training.",
+  "notes": "Public-gated Hugging Face datalake upload for Batch 001. HF commit a47d1d7004bfe7a5d4bce36b64fac1ad59670218. Contains draft rows only; not approved for training.",
   "next_action": "Send Tessy and Bonheur the public-gated HF datalake link, then collect review TSV decisions."
 }

@@ -20,7 +20,7 @@ Current status:
 | Visibility | public-gated |
 | Gated access | automatic approval |
 | Latest verified upload | Batch 001 |
-| HF commit | `09c902031649f1062b6f2b2837ca713a75af77e8` |
+| HF commit | `a47d1d7004bfe7a5d4bce36b64fac1ad59670218` |
 | Upload manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 
 ## Local Staging
@@ -44,6 +44,7 @@ Current uploaded file paths:
 
 ```text
 README.md
+REVIEW_INSTRUCTIONS.md
 datalake-index.json
 data/drafts/sft-drafts-2026-07-13-batch-001/sft-drafts-2026-07-13-batch-001.jsonl
 data/drafts/sft-drafts-2026-07-13-batch-001/sft-drafts-2026-07-13-batch-001.summary.md
@@ -55,6 +56,15 @@ manifests/sft-drafts-2026-07-13-batch-001-review-package.json
 ```
 
 ## Upload Command
+
+Prerequisites:
+
+- `huggingface_hub` is installed,
+- the maintainer is logged in with `hf auth login` or `huggingface-cli login`,
+- the token/account has write access to `Jonnyyy/kinyalm-data-lake`,
+- local inputs exist under `~/KinyaLMData/drafts`, `~/KinyaLMData/reviewed`,
+  and `~/KinyaLMData/packages`,
+- matching manifests exist under `data/manifests`.
 
 First confirm authentication:
 
@@ -80,6 +90,21 @@ Dry-run without uploading:
 python3 scripts/upload_hf_datalake.py --dry-run
 ```
 
+Do not use ungated public visibility for draft rows. The script defaults to
+`public-gated` and requires an explicit override before `--visibility public`
+can be used.
+
+## Post-Upload Checks
+
+After upload, the script prints the verified HF state:
+
+```text
+private=False, gated=auto, sha=<hf-commit>
+```
+
+If the commit changes, update the status table above and the upload manifest in
+`data/manifests/`.
+
 ## Sharing
 
 For fastest team access, send teammates:
@@ -91,6 +116,18 @@ https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
 They should sign in to Hugging Face and accept the gated access prompt. A shared
 Hugging Face organization is still better once the team needs shared write/admin
 access instead of read/download access.
+
+Reviewer instructions:
+
+```text
+docs/team/hf-datalake-reviewer-onboarding.md
+```
+
+Copy-ready invite messages:
+
+```text
+docs/team/access-message-templates.md
+```
 
 ## Training Rule
 

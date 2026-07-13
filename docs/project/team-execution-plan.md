@@ -34,6 +34,9 @@ Done:
 - first-pass source metadata review generated,
 - tokenizer evaluation examples added,
 - tokenizer metrics scaffold added,
+- public-gated Hugging Face datalake created,
+- Batch 001 review package uploaded,
+- reviewer onboarding and access messages added,
 - basic tests passing.
 
 Current checks:
@@ -42,6 +45,14 @@ Current checks:
 python3 scripts/check_project.py
 PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q
 python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
+```
+
+Reviewer access:
+
+```text
+https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
+docs/team/hf-datalake-reviewer-onboarding.md
+docs/team/access-message-templates.md
 ```
 
 ## Main Rule
@@ -249,6 +260,10 @@ scripts, and a first QLoRA run plan. The missing inputs are reviewed SFT
 examples, final base-model choice, and working GPU access. Early feasibility
 work showed that decreasing validation loss is not enough; tutor usefulness
 still needs held-out prompts and fluent-speaker review.
+
+Current review target: Batch 001 has 286 public-gated draft rows. The next
+impact milestone is 100 reviewed rows, at least 75 approved rows, and one
+approved train/validation pack.
 
 ### Gate 4: Usefulness Gate
 
