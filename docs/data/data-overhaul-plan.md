@@ -8,7 +8,9 @@ The right direction is a staged data overhaul:
 1. separate training data from benchmark data,
 2. expand SFT examples to roughly 1,000 reviewed rows,
 3. make every source decision visible,
-4. keep blocked and reference-only material out of training.
+4. keep blocked and reference-only material out of training,
+5. store large files in local/Drive/Hugging Face storage with tracked
+   manifests, not directly in Git.
 
 ## Current Reality
 
@@ -113,3 +115,10 @@ data/sft/seed_conversations.jsonl
 
 Start with 100 rows marked `needs-review`. After Tessy reviews them, split
 approved rows into train and validation sets.
+
+Large drafts and source files should live outside Git. Use the shared storage
+workflow in:
+
+```text
+docs/data/shared-storage-workflow.md
+```
