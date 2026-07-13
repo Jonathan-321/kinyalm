@@ -22,7 +22,7 @@ TASK_TYPES = {
     "culture-register",
 }
 
-SPLITS = {"train", "validation", "benchmark-only"}
+SPLITS = {"draft", "train", "validation", "benchmark-only"}
 SOURCE_STATUSES = {
     "approved",
     "team-authored",

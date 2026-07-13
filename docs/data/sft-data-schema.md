@@ -33,7 +33,7 @@ Each line is one JSON object:
 | --- | --- | --- |
 | `id` | string | Stable unique ID, lowercase with hyphens or numbers. |
 | `task_type` | string | One of the task types below. |
-| `split` | string | `train`, `validation`, or `benchmark-only`. |
+| `split` | string | `draft`, `train`, `validation`, or `benchmark-only`. |
 | `source` | string | `team-authored`, `manual`, or a source name from `source-log.md`. |
 | `source_status` | string | `approved`, `team-authored`, `manual`, `reference-only`, `blocked`, or `investigate`. |
 | `review_status` | string | `needs-review`, `approved`, `needs-fix`, `rejected`, or `not-sure`. |
@@ -67,6 +67,9 @@ A row can be used for `train` or `validation` only when all of these are true:
 4. The row is not copied from `docs/evaluation/learning-task-bank.md` if that
    task is marked `benchmark-only`.
 
+Rows with `split=draft` are for authoring and review only. They must not enter
+a training run.
+
 Rows with `review_status` of `needs-review`, `needs-fix`, `rejected`, or
 `not-sure` must not enter a training run.
 
@@ -90,8 +93,9 @@ That is only the validation gate for the data process, not the final SFT target.
 | Quiz generation | 10 |
 | Uncertainty / humility behavior | 5 |
 
-Start as `needs-review`. Tessy or another fluent speaker should move rows to
-`approved`, `needs-fix`, `rejected`, or `not-sure`.
+Start with `split=draft` and `review_status=needs-review`. Tessy or another
+fluent speaker should move rows to `approved`, `needs-fix`, `rejected`, or
+`not-sure`. Approved rows can then be assigned to `train` or `validation`.
 
 ## Useful SFT Dataset Target
 
