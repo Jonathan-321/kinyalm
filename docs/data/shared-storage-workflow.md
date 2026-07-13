@@ -212,10 +212,11 @@ A file can move into `approved/` only if:
 1. every training row has `review_status=approved`,
 2. every training row has `source_status=approved`, `team-authored`, or
    `manual`,
-3. no row is copied from `benchmark-only` prompts,
-4. the manifest says `can_train=true`,
-5. the source log has any required attribution,
-6. a reviewer has accepted the language quality.
+3. no row has `split=draft`,
+4. no row is copied from `benchmark-only` prompts,
+5. the manifest says `can_train=true`,
+6. the source log has any required attribution,
+7. a reviewer has accepted the language quality.
 
 ## What The Repo Stores
 

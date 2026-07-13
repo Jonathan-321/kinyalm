@@ -26,6 +26,14 @@ def test_valid_benchmark_record_passes():
     assert results[0].ok
 
 
+def test_draft_record_can_need_review_without_passing_training_gate():
+    results = validate_sft_records(
+        [valid_record(split="draft", review_status="needs-review")]
+    )
+
+    assert results[0].ok
+
+
 def test_train_rows_require_approved_review_and_trainable_source():
     results = validate_sft_records(
         [

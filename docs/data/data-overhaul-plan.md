@@ -122,3 +122,9 @@ workflow in:
 ```text
 docs/data/shared-storage-workflow.md
 ```
+
+Generated draft batches are tracked in:
+
+```text
+docs/data/sft-draft-batches.md
+```

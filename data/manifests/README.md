@@ -31,3 +31,12 @@ python3 scripts/create_data_manifest.py PATH_TO_FILE_OR_FOLDER \
 
 Keep manifests in Git even when the dataset itself lives in Drive, Hugging Face,
 or local ignored storage.
+
+After review, promote approved rows with:
+
+```bash
+python3 scripts/promote_reviewed_sft.py \
+  --draft-jsonl ~/KinyaLMData/drafts/sft-drafts-2026-07-13-batch-001.jsonl \
+  --review-tsv ~/KinyaLMData/reviewed/sft-drafts-2026-07-13-batch-001.review.tsv \
+  --out-dir ~/KinyaLMData/approved/sft-approved-batch-001
+```
