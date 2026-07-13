@@ -19,7 +19,7 @@ training datasets until fluent-speaker review promotes individual rows.
 | HF Data Lake | `https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake` |
 | HF Upload Manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
 | Can Train? | no |
-| Next Action | Share private HF dataset access with Tessy and Bonheur; optionally mirror to Google Drive after Drive access is reauthenticated. |
+| Next Action | Send Tessy and Bonheur the public-gated HF datalake link; they should sign in to Hugging Face and accept access. Optionally mirror to Google Drive after Drive access is reauthenticated. |
 
 Promotion command after review:
 
