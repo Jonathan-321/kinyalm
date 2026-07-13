@@ -19,6 +19,10 @@ def main() -> int:
     examples = load_tsv_examples(examples_path)
     task_bank_path = ROOT / "docs" / "evaluation" / "learning-task-bank.md"
     schema_path = ROOT / "docs" / "data" / "sft-data-schema.md"
+    storage_workflow_path = ROOT / "docs" / "data" / "shared-storage-workflow.md"
+    manifest_template_path = (
+        ROOT / "data" / "manifests" / "dataset-manifest.template.json"
+    )
     benchmark_manifest_path = (
         ROOT / "configs" / "evaluation" / "kinyarwanda_benchmarks.json"
     )
@@ -34,6 +38,10 @@ def main() -> int:
         )
     if not schema_path.exists():
         raise SystemExit(f"missing SFT schema: {schema_path}")
+    if not storage_workflow_path.exists():
+        raise SystemExit(f"missing shared storage workflow: {storage_workflow_path}")
+    if not manifest_template_path.exists():
+        raise SystemExit(f"missing dataset manifest template: {manifest_template_path}")
     if not benchmark_result.ok:
         errors = "; ".join(benchmark_result.errors)
         raise SystemExit(f"invalid benchmark manifest: {errors}")
@@ -45,6 +53,10 @@ def main() -> int:
         f"({benchmark_count} benchmark-only)."
     )
     print(f"Found SFT schema at {schema_path.relative_to(ROOT)}.")
+    print(
+        "Found shared storage workflow at "
+        f"{storage_workflow_path.relative_to(ROOT)}."
+    )
     print(
         "Loaded "
         f"{len(benchmark_specs)} external benchmark specs from "

@@ -21,6 +21,8 @@ data/processed/*
 data/external/*
 !data/**/.gitkeep
 !data/README.md
+!data/manifests/
+!data/manifests/**
 
 # Model artifacts and large generated files
 checkpoints/
