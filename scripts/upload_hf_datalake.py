@@ -37,9 +37,17 @@ def main() -> int:
         default="public-gated",
         help="HF repo visibility/access mode to enforce before upload.",
     )
+    parser.add_argument(
+        "--allow-ungated-public",
+        action="store_true",
+        help="Required with --visibility public because drafts should stay gated.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--commit-message", default="Upload KinyaLM datalake batch")
     args = parser.parse_args()
+
+    if args.visibility == "public" and not args.allow_ungated_public:
+        parser.error("--visibility public requires --allow-ungated-public")
 
     staged_files = stage_batch(args.batch_id, args.stage_dir.expanduser())
     print(f"staged {len(staged_files)} files under {args.stage_dir.expanduser()}")
@@ -50,13 +58,19 @@ def main() -> int:
         print("dry run complete; no Hugging Face upload attempted")
         return 0
 
-    upload_to_hf(
+    info = upload_to_hf(
         stage_dir=args.stage_dir.expanduser(),
         repo_id=args.repo_id,
         visibility=args.visibility,
         commit_message=args.commit_message,
     )
     print(f"uploaded datalake to https://huggingface.co/datasets/{args.repo_id}")
+    print(
+        "verified HF state: "
+        f"private={info.private}, "
+        f"gated={getattr(info, 'gated', None)}, "
+        f"sha={info.sha}"
+    )
     return 0
 
 
@@ -115,6 +129,13 @@ def stage_batch(batch_id: str, stage_dir: Path) -> list[Path]:
     index_path.write_text(index_json(batch_id=batch_id), encoding="utf-8")
     copied.append(index_path)
 
+    review_instructions_path = stage_dir / "REVIEW_INSTRUCTIONS.md"
+    review_instructions_path.write_text(
+        review_instructions(batch_id=batch_id),
+        encoding="utf-8",
+    )
+    copied.append(review_instructions_path)
+
     return sorted(copied)
 
 
@@ -124,7 +145,7 @@ def upload_to_hf(
     repo_id: str,
     visibility: str,
     commit_message: str,
-) -> None:
+):
     # The local hf_xet wheel can be architecture-specific. Plain HTTP uploads
     # are enough for these small review packages and avoid that dependency.
     os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
@@ -164,6 +185,7 @@ def upload_to_hf(
         repo_type="dataset",
         commit_message=commit_message,
     )
+    return api.dataset_info(repo_id)
 
 
 def dataset_card(*, batch_id: str) -> str:
@@ -192,6 +214,7 @@ Current contents:
 
 - `{batch_id}` draft SFT JSONL
 - `{batch_id}` review TSV
+- `REVIEW_INSTRUCTIONS.md`
 - `{batch_id}` review package zip
 - manifests with checksums and review status
 
@@ -224,6 +247,66 @@ release terms.
 """
 
 
+def review_instructions(*, batch_id: str) -> str:
+    return f"""# Review Instructions
+
+This datalake contains draft review data for KinyaLM. These rows are not
+approved training data.
+
+## What To Review
+
+Review this TSV:
+
+```text
+review/{batch_id}/{batch_id}.review.tsv
+```
+
+## How To Return Review
+
+Download the TSV, edit it in a spreadsheet editor, save/export it as TSV or
+tab-separated text, and send the completed file back to Jonathan. Do not rename
+columns.
+
+Only edit these columns:
+
+- `review_status`
+- `correctness_1_5`
+- `naturalness_1_5`
+- `helpfulness_1_5`
+- `failure_tags`
+- `reviewer`
+- `reviewer_notes`
+
+Do not edit:
+
+- `id`
+- `task_type`
+- `user_prompt`
+- `assistant_response`
+
+If an answer needs different wording, mark it `needs-fix` and put the exact
+suggested replacement in `reviewer_notes`. The promotion script only promotes
+original draft rows that are marked `approved`.
+
+## Approved Row Rule
+
+Use `approved` only when the row can train as written. Approved rows need:
+
+- correctness, naturalness, and helpfulness scores of 4 or 5,
+- a filled reviewer name,
+- no failure tags.
+
+Use comma-separated failure tags when helpful:
+
+```text
+wrong-translation, wrong-grammar, awkward-kinyarwanda, unclear, too-advanced,
+too-much-english, too-much-kinyarwanda, unsupported-claim,
+hallucinated-culture, overconfident-uncertainty, bad-register, unsafe,
+source-risk, benchmark-leak, privacy-risk, format-error, duplicate, off-task
+```
+"""
+
+
 def index_json(*, batch_id: str) -> str:
     index = {
         "datalake": "KinyaLM Data Lake",
@@ -236,6 +319,7 @@ def index_json(*, batch_id: str) -> str:
                 "review_status": "needs-review",
                 "can_train": False,
                 "paths": {
+                    "review_instructions": "REVIEW_INSTRUCTIONS.md",
                     "draft_jsonl": f"data/drafts/{batch_id}/{batch_id}.jsonl",
                     "summary": f"data/drafts/{batch_id}/{batch_id}.summary.md",
                     "review_tsv": f"review/{batch_id}/{batch_id}.review.tsv",

@@ -21,6 +21,11 @@ def main() -> int:
     schema_path = ROOT / "docs" / "data" / "sft-data-schema.md"
     storage_workflow_path = ROOT / "docs" / "data" / "shared-storage-workflow.md"
     hf_datalake_path = ROOT / "docs" / "data" / "huggingface-datalake.md"
+    reviewer_onboarding_path = (
+        ROOT / "docs" / "team" / "hf-datalake-reviewer-onboarding.md"
+    )
+    access_messages_path = ROOT / "docs" / "team" / "access-message-templates.md"
+    access_impact_path = ROOT / "docs" / "project" / "access-and-impact-plan.md"
     manifest_template_path = (
         ROOT / "data" / "manifests" / "dataset-manifest.template.json"
     )
@@ -43,6 +48,12 @@ def main() -> int:
         raise SystemExit(f"missing shared storage workflow: {storage_workflow_path}")
     if not hf_datalake_path.exists():
         raise SystemExit(f"missing Hugging Face datalake guide: {hf_datalake_path}")
+    if not reviewer_onboarding_path.exists():
+        raise SystemExit(f"missing reviewer onboarding: {reviewer_onboarding_path}")
+    if not access_messages_path.exists():
+        raise SystemExit(f"missing access message templates: {access_messages_path}")
+    if not access_impact_path.exists():
+        raise SystemExit(f"missing access and impact plan: {access_impact_path}")
     if not manifest_template_path.exists():
         raise SystemExit(f"missing dataset manifest template: {manifest_template_path}")
     if not benchmark_result.ok:
@@ -61,6 +72,11 @@ def main() -> int:
         f"{storage_workflow_path.relative_to(ROOT)}."
     )
     print(f"Found HF datalake guide at {hf_datalake_path.relative_to(ROOT)}.")
+    print(
+        "Found HF reviewer onboarding at "
+        f"{reviewer_onboarding_path.relative_to(ROOT)}."
+    )
+    print(f"Found access impact plan at {access_impact_path.relative_to(ROOT)}.")
     print(
         "Loaded "
         f"{len(benchmark_specs)} external benchmark specs from "

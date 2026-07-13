@@ -33,7 +33,13 @@ compute path before training.
    [open-kinyarwanda-benchmarks.md](docs/evaluation/open-kinyarwanda-benchmarks.md).
 9. Use [data-overhaul-plan.md](docs/data/data-overhaul-plan.md) to scale from
    the seed dataset toward a useful SFT pack.
-10. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+10. Use the public-gated HF datalake guide in
+    [huggingface-datalake.md](docs/data/huggingface-datalake.md).
+11. Give reviewers the onboarding guide in
+    [hf-datalake-reviewer-onboarding.md](docs/team/hf-datalake-reviewer-onboarding.md).
+12. Track access and impact in
+    [access-and-impact-plan.md](docs/project/access-and-impact-plan.md).
+13. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 
 ## Contributors
 
@@ -145,7 +151,8 @@ Current SFT status:
 
 - 50 tutor evaluation prompts exist, with 26 held out for benchmarking.
 - A JSONL schema and validator exist for future SFT examples.
-- No reviewed SFT conversation dataset is committed yet.
+- Batch 001 has 286 draft SFT examples in the public-gated HF datalake.
+- No approved SFT conversation dataset is committed yet.
 - The first seed gate is 100 reviewed examples.
 - The first serious tutor SFT target is about 1,000 reviewed examples.
 

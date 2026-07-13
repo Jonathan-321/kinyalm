@@ -24,7 +24,7 @@ should stay local.
 Each line is one JSON object:
 
 ```json
-{"id":"sft-greeting-001","task_type":"greeting","split":"train","source":"team-authored","source_status":"team-authored","review_status":"needs-review","language_mix":"kinyarwanda+english","messages":[{"role":"user","content":"Teach me how to greet someone in Kinyarwanda."},{"role":"assistant","content":"Muraho means hello. You can use it as a general polite greeting."}],"reviewer_notes":""}
+{"id":"sft-greeting-001","task_type":"greeting","split":"draft","source":"team-authored","source_status":"team-authored","review_status":"needs-review","language_mix":"kinyarwanda+english","messages":[{"role":"user","content":"Teach me how to greet someone in Kinyarwanda."},{"role":"assistant","content":"Muraho means hello. You can use it as a general polite greeting."}],"reviewer_notes":""}
 ```
 
 ## Required Fields
