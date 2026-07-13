@@ -52,6 +52,7 @@ Reviewer access:
 ```text
 https://huggingface.co/datasets/Jonnyyy/kinyalm-data-lake
 docs/team/hf-datalake-reviewer-onboarding.md
+docs/team/hf-data-contribution-workflow.md
 docs/team/access-message-templates.md
 ```
 

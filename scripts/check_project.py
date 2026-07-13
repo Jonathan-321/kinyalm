@@ -24,6 +24,9 @@ def main() -> int:
     reviewer_onboarding_path = (
         ROOT / "docs" / "team" / "hf-datalake-reviewer-onboarding.md"
     )
+    contribution_workflow_path = (
+        ROOT / "docs" / "team" / "hf-data-contribution-workflow.md"
+    )
     access_messages_path = ROOT / "docs" / "team" / "access-message-templates.md"
     access_impact_path = ROOT / "docs" / "project" / "access-and-impact-plan.md"
     manifest_template_path = (
@@ -50,6 +53,10 @@ def main() -> int:
         raise SystemExit(f"missing Hugging Face datalake guide: {hf_datalake_path}")
     if not reviewer_onboarding_path.exists():
         raise SystemExit(f"missing reviewer onboarding: {reviewer_onboarding_path}")
+    if not contribution_workflow_path.exists():
+        raise SystemExit(
+            f"missing HF data contribution workflow: {contribution_workflow_path}"
+        )
     if not access_messages_path.exists():
         raise SystemExit(f"missing access message templates: {access_messages_path}")
     if not access_impact_path.exists():
@@ -75,6 +82,10 @@ def main() -> int:
     print(
         "Found HF reviewer onboarding at "
         f"{reviewer_onboarding_path.relative_to(ROOT)}."
+    )
+    print(
+        "Found HF contribution workflow at "
+        f"{contribution_workflow_path.relative_to(ROOT)}."
     )
     print(f"Found access impact plan at {access_impact_path.relative_to(ROOT)}.")
     print(

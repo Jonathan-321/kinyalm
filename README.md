@@ -39,7 +39,9 @@ compute path before training.
     [hf-datalake-reviewer-onboarding.md](docs/team/hf-datalake-reviewer-onboarding.md).
 12. Track access and impact in
     [access-and-impact-plan.md](docs/project/access-and-impact-plan.md).
-13. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+13. Add teammate HF data through
+    [hf-data-contribution-workflow.md](docs/team/hf-data-contribution-workflow.md).
+14. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 
 ## Contributors
 
