@@ -1,6 +1,7 @@
 # HF Datalake Reviewer Onboarding
 
-This guide is for teammates and Kinyarwanda speakers reviewing Batch 001.
+This guide is for teammates and Kinyarwanda speakers reviewing the KinyaLM
+draft batches.
 
 ## Access
 
@@ -40,6 +41,16 @@ Batch 001 has 286 draft rows. The first impact target is:
 That is enough to create the first small approved SFT pack and run a real
 training smoke test.
 
+Batch 002 adds 714 drafts and closes the planned category gap to 1,000 total
+draft rows. It is split into three non-overlapping 238-row first-pass files:
+
+```text
+review/sft-drafts-2026-07-13-batch-002/shards/
+```
+
+Do not let the larger queue delay the first experiment. Finish the first 100
+Batch 001 reviews before trying to clear all of Batch 002.
+
 ## Review Columns
 
 Open the review TSV in a spreadsheet editor. Only edit these columns:
@@ -54,7 +65,8 @@ Open the review TSV in a spreadsheet editor. Only edit these columns:
 | `reviewer` | your name or GitHub username |
 | `reviewer_notes` | short fix note, correction, or reason |
 
-Do not edit `id`, `task_type`, `user_prompt`, or `assistant_response`. If the
+Do not edit `id`, `task_type`, `generation_profile`, `content_key`, `variant`,
+`requested_question_count`, `user_prompt`, or `assistant_response`. If the
 answer needs different wording, mark `review_status` as `needs-fix` and put the
 exact suggested replacement in `reviewer_notes`. The current promotion script
 does not use edited `assistant_response` text.
@@ -117,6 +129,17 @@ To move quickly:
 
 After the first pass, Jonathan promotes only approved rows into
 `~/KinyaLMData/approved/`.
+
+For Batch 002 first-pass review:
+
+| Reviewer | File |
+| --- | --- |
+| Tessy | `part-01-of-03.tsv` |
+| Bonheur | `part-02-of-03.tsv` |
+| Jonathan | `part-03-of-03.tsv` |
+
+These shard assignments are for parallel screening. Rows still need the full
+approval rule above before promotion.
 
 ## What Not To Do
 

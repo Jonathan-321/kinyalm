@@ -32,6 +32,21 @@ python3 scripts/create_data_manifest.py PATH_TO_FILE_OR_FOLDER \
 Keep manifests in Git even when the dataset itself lives in Drive, Hugging Face,
 or local ignored storage.
 
+For a generated SFT draft batch, create all three local manifests and the
+review package together:
+
+```bash
+python3 scripts/package_sft_draft_batch.py \
+  --batch-id sft-drafts-2026-07-13-batch-002
+```
+
+This validates the JSONL before writing:
+
+- the draft manifest,
+- the master review-sheet manifest,
+- a zip containing the review artifacts and any review shards,
+- the package manifest.
+
 After review, promote approved rows with:
 
 ```bash

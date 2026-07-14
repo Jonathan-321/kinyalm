@@ -19,10 +19,12 @@ We currently have:
 - a 50-prompt tutor evaluation bank,
 - a JSONL schema for SFT examples,
 - approved source notes for two DigitalUmuganda datasets,
-- no committed reviewed SFT conversation dataset yet.
+- 1,000 local and Hugging Face draft SFT conversations,
+- three Batch 002 review shards for parallel first-pass review,
+- no approved SFT conversation dataset yet.
 
-So the next real data milestone is not "train now." It is "create the first
-reviewed SFT pack."
+So the next real data milestone is not more draft volume. It is "create the
+first reviewed SFT pack."
 
 ## Dataset Tiers
 
@@ -107,14 +109,15 @@ Do not:
 
 ## Immediate Next Step
 
-Create a local draft:
+Review the first Batch 001 block:
 
 ```text
-data/sft/seed_conversations.jsonl
+review/sft-drafts-2026-07-13-batch-001/sft-drafts-2026-07-13-batch-001.review.tsv
 ```
 
-Start with 100 rows marked `needs-review`. After Tessy reviews them, split
-approved rows into train and validation sets.
+Complete at least 100 rows and aim for 75 approved examples. Then run
+`scripts/promote_reviewed_sft.py` to create the first train/validation pack.
+Batch 002 can proceed in parallel through its three 238-row review shards.
 
 Large drafts and source files should live outside Git. Use the shared storage
 workflow in:

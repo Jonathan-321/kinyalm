@@ -12,20 +12,25 @@ approved training data.
 
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import csv
 import json
 import random
+import re
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from kinyalm.data.sft import validate_sft_records
-
+from kinyalm.data.draft_generation import (  # noqa: E402
+    build_profile_records,
+    find_conversation_collisions,
+    load_generation_profile,
+)
+from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
 DEFAULT_OUTPUT_DIR = Path("~/KinyaLMData/drafts").expanduser()
 DEFAULT_REVIEW_DIR = Path("~/KinyaLMData/reviewed").expanduser()
@@ -38,11 +43,39 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--review-dir", type=Path, default=DEFAULT_REVIEW_DIR)
     parser.add_argument("--seed", type=int, default=336)
+    parser.add_argument(
+        "--profile-file",
+        type=Path,
+        help="Optional YAML profile for a data-driven expansion batch.",
+    )
+    parser.add_argument(
+        "--compare-jsonl",
+        action="append",
+        default=[],
+        type=Path,
+        help="Older JSONL batch to check for exact conversation collisions.",
+    )
+    parser.add_argument(
+        "--review-shards",
+        type=int,
+        default=1,
+        help="Write this many balanced review TSV shards in addition to the master.",
+    )
     args = parser.parse_args()
+    if args.review_shards < 1:
+        parser.error("--review-shards must be at least 1")
 
     rng = random.Random(args.seed)
-    records = build_records(rng)
+    batch_code = batch_code_from_id(args.batch_id)
+    if args.profile_file:
+        profile = load_generation_profile(args.profile_file)
+        records = build_profile_records(profile, rng=rng, batch_code=batch_code)
+        profile_id = profile["profile_id"]
+    else:
+        records = build_records(rng, batch_code=batch_code)
+        profile_id = "foundation-v1"
     validate_records(records)
+    check_existing_collisions(records, args.compare_jsonl)
 
     args.output_dir.expanduser().mkdir(parents=True, exist_ok=True)
     args.review_dir.expanduser().mkdir(parents=True, exist_ok=True)
@@ -52,16 +85,29 @@ def main() -> int:
 
     write_jsonl(records, jsonl_path)
     write_review_tsv(records, review_path)
-    write_summary(records, summary_path)
+    shard_paths = write_review_shards(
+        records,
+        review_path=review_path,
+        shard_count=args.review_shards,
+    )
+    write_summary(
+        records,
+        summary_path,
+        profile_id=profile_id,
+        compared_batches=len(args.compare_jsonl),
+        review_shards=args.review_shards,
+    )
 
     print(f"records: {len(records)}")
     print(f"jsonl: {jsonl_path}")
     print(f"review_tsv: {review_path}")
+    for shard_path in shard_paths:
+        print(f"review_shard: {shard_path}")
     print(f"summary: {summary_path}")
     return 0
 
 
-def build_records(rng: random.Random) -> list[dict]:
+def build_records(rng: random.Random, *, batch_code: str = "b001") -> list[dict]:
     builders = [
         build_greetings,
         build_vocabulary,
@@ -80,8 +126,28 @@ def build_records(rng: random.Random) -> list[dict]:
     rng.shuffle(records)
     for index, record in enumerate(records, start=1):
         category = record["task_type"].replace("-", "")
-        record["id"] = f"sftdraft-b001-{index:04d}-{category}"
+        record["id"] = f"sftdraft-{batch_code}-{index:04d}-{category}"
     return records
+
+
+def batch_code_from_id(batch_id: str) -> str:
+    match = re.search(r"batch-(\d+)$", batch_id)
+    if not match:
+        raise SystemExit(
+            "--batch-id must end with batch-NNN, for example "
+            "sft-drafts-2026-07-13-batch-002"
+        )
+    return f"b{int(match.group(1)):03d}"
+
+
+def check_existing_collisions(records: list[dict], paths: list[Path]) -> None:
+    for path in paths:
+        existing = load_jsonl(path.expanduser())
+        collisions = find_conversation_collisions(records, existing)
+        if collisions:
+            raise SystemExit(
+                f"generated {len(collisions)} conversation collisions with {path}"
+            )
 
 
 def base_record(task_type: str, user: str, assistant: str) -> dict:
@@ -530,8 +596,10 @@ def build_quizzes() -> list[dict]:
                 "What does `Muraho` mean?",
                 "When can you use `Mwaramutse`?",
                 "Translate `Murakoze`.",
+                "What does `Amakuru?` ask?",
+                "Give one simple answer to `Amakuru?`",
             ],
-            ["Hello.", "In the morning.", "Thank you."],
+            ["Hello.", "In the morning.", "Thank you.", "How are you?", "`Ni meza.`"],
         ),
         (
             "classroom words",
@@ -539,8 +607,10 @@ def build_quizzes() -> list[dict]:
                 "What does `ishuri` mean?",
                 "What does `umwarimu` mean?",
                 "What does `igitabo` mean?",
+                "Translate `Mfite ikibazo`.",
+                "Translate `Nkeneye ubufasha`.",
             ],
-            ["School.", "Teacher.", "Book."],
+            ["School.", "Teacher.", "Book.", "I have a question.", "I need help."],
         ),
         (
             "introductions",
@@ -548,8 +618,16 @@ def build_quizzes() -> list[dict]:
                 "Translate `Nitwa Aline`.",
                 "How do you ask What is your name?",
                 "Translate My name is Eric.",
+                "How do you say I am a student?",
+                "Which form is used to give a name: `Ndi` or `Nitwa`?",
             ],
-            ["My name is Aline.", "`Witwa nde?`", "`Nitwa Eric.`"],
+            [
+                "My name is Aline.",
+                "`Witwa nde?`",
+                "`Nitwa Eric.`",
+                "`Ndi umunyeshuri.`",
+                "`Nitwa`.",
+            ],
         ),
         (
             "corrections",
@@ -557,17 +635,27 @@ def build_quizzes() -> list[dict]:
                 "Fix `Ndi kwiga Ikinyarwanda.`",
                 "Fix `Jyewe yitwa Aline.`",
                 "Choose hello: `Muraho` or `Murakoze`?",
+                "Fix `Nitwa umunyeshuri.`",
+                "Fix `Ngiye isoko.`",
             ],
-            ["`Ndiga Ikinyarwanda.`", "`Nitwa Aline.`", "`Muraho`."],
+            [
+                "`Ndiga Ikinyarwanda.`",
+                "`Nitwa Aline.`",
+                "`Muraho`.",
+                "`Ndi umunyeshuri.`",
+                "`Ngiye ku isoko.`",
+            ],
         ),
     ]
     records = []
     for topic, questions, answers in quiz_specs:
-        body = "\n".join(
-            f"{i}. {question}\nAnswer: {answer}"
-            for i, (question, answer) in enumerate(zip(questions, answers), start=1)
-        )
-        for count in [3, 5, 4, 2, 3]:
+        for count in range(1, 6):
+            body = "\n".join(
+                f"{i}. {question}\nAnswer: {answer}"
+                for i, (question, answer) in enumerate(
+                    zip(questions[:count], answers[:count], strict=True), start=1
+                )
+            )
             records.append(
                 base_record(
                     "quiz-generation",
@@ -669,6 +757,10 @@ def write_review_tsv(records: list[dict], path: Path) -> None:
     fieldnames = [
         "id",
         "task_type",
+        "generation_profile",
+        "content_key",
+        "variant",
+        "requested_question_count",
         "user_prompt",
         "assistant_response",
         "review_status",
@@ -687,6 +779,12 @@ def write_review_tsv(records: list[dict], path: Path) -> None:
                 {
                     "id": record["id"],
                     "task_type": record["task_type"],
+                    "generation_profile": record.get("generation_profile", ""),
+                    "content_key": record.get("content_key", ""),
+                    "variant": record.get("variant", ""),
+                    "requested_question_count": record.get(
+                        "requested_question_count", ""
+                    ),
                     "user_prompt": one_line(record["messages"][0]["content"]),
                     "assistant_response": one_line(record["messages"][1]["content"]),
                     "review_status": record["review_status"],
@@ -700,11 +798,37 @@ def write_review_tsv(records: list[dict], path: Path) -> None:
             )
 
 
+def write_review_shards(
+    records: list[dict], *, review_path: Path, shard_count: int
+) -> list[Path]:
+    for stale_path in review_path.parent.glob(
+        f"{review_path.stem}.part-*-of-*.tsv"
+    ):
+        stale_path.unlink()
+    if shard_count == 1:
+        return []
+    shard_paths = []
+    for shard_index in range(shard_count):
+        shard_path = review_path.with_name(
+            f"{review_path.stem}.part-{shard_index + 1:02d}-of-{shard_count:02d}.tsv"
+        )
+        write_review_tsv(records[shard_index::shard_count], shard_path)
+        shard_paths.append(shard_path)
+    return shard_paths
+
+
 def one_line(text: str) -> str:
     return text.replace("\r\n", "\\n").replace("\n", "\\n")
 
 
-def write_summary(records: list[dict], path: Path) -> None:
+def write_summary(
+    records: list[dict],
+    path: Path,
+    *,
+    profile_id: str = "foundation-v1",
+    compared_batches: int = 0,
+    review_shards: int = 1,
+) -> None:
     counts: dict[str, int] = {}
     for record in records:
         counts[record["task_type"]] = counts.get(record["task_type"], 0) + 1
@@ -714,6 +838,9 @@ def write_summary(records: list[dict], path: Path) -> None:
         "Status: generated draft only. Not approved for training.",
         "",
         f"Rows: {len(records)}",
+        f"Generation profile: `{profile_id}`",
+        f"Older batches checked for exact conversation collisions: {compared_batches}",
+        f"Review TSV shards: {review_shards}",
         "",
         "| Task Type | Rows |",
         "| --- | ---: |",

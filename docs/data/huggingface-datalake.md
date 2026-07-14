@@ -19,9 +19,11 @@ Current status:
 | --- | --- |
 | Visibility | public-gated |
 | Gated access | automatic approval |
-| Latest verified upload | Batch 001 |
-| HF commit | `d43972e7272b0f222094819ee70a9a1677cc4e6e` |
-| Upload manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batch-001.json` |
+| Latest verified upload | Corrected Batch 001 + Batch 002 |
+| Draft rows | 1,000 |
+| Remote files | 21, including `.gitattributes` |
+| HF commit | `4879dd0878d06a910cd57eccdf543b1ca984c389` |
+| Upload manifest | `data/manifests/hf-datalake-sft-drafts-2026-07-13-batches-001-002.json` |
 
 ## Local Staging
 
@@ -36,7 +38,7 @@ It includes:
 - `README.md` dataset card,
 - `datalake-index.json`,
 - draft JSONL files,
-- review TSV files,
+- master review TSV files and optional non-overlapping review shards,
 - upload package zip files,
 - manifests with checksums.
 
@@ -53,6 +55,14 @@ packages/sft-drafts-2026-07-13-batch-001-review-package.zip
 manifests/sft-drafts-2026-07-13-batch-001.json
 manifests/sft-drafts-2026-07-13-batch-001-review-sheet.json
 manifests/sft-drafts-2026-07-13-batch-001-review-package.json
+data/drafts/sft-drafts-2026-07-13-batch-002/sft-drafts-2026-07-13-batch-002.jsonl
+data/drafts/sft-drafts-2026-07-13-batch-002/sft-drafts-2026-07-13-batch-002.summary.md
+review/sft-drafts-2026-07-13-batch-002/sft-drafts-2026-07-13-batch-002.review.tsv
+review/sft-drafts-2026-07-13-batch-002/shards/*.tsv
+packages/sft-drafts-2026-07-13-batch-002-review-package.zip
+manifests/sft-drafts-2026-07-13-batch-002.json
+manifests/sft-drafts-2026-07-13-batch-002-review-sheet.json
+manifests/sft-drafts-2026-07-13-batch-002-review-package.json
 ```
 
 ## Upload Command
@@ -77,12 +87,14 @@ Then run:
 ```bash
 python3 scripts/upload_hf_datalake.py \
   --repo-id kinyalm/kinyalm-data-lake \
-  --commit-message "Upload Batch 001 draft review package"
+  --batch-id sft-drafts-2026-07-13-batch-001 \
+  --batch-id sft-drafts-2026-07-13-batch-002 \
+  --commit-message "Publish corrected Batch 001 and Batch 002 review queue"
 ```
 
-The script disables Xet uploads by default because the local `hf_xet` wheel can
-be architecture-specific on macOS. The current Batch 001 files are small enough
-for regular Hub uploads.
+Repeat `--batch-id` for every batch that should appear in the generated dataset
+card and `datalake-index.json`. The script disables Xet uploads by default
+because the local `hf_xet` wheel can be architecture-specific on macOS.
 
 Dry-run without uploading:
 
@@ -114,8 +126,10 @@ https://huggingface.co/datasets/kinyalm/kinyalm-data-lake
 ```
 
 They should sign in to Hugging Face and accept the gated access prompt. The
-dataset is owned by the `kinyalm` organization. Teammates need organization
-membership with repository write access before they can upload directly.
+dataset is owned by the `kinyalm` organization. Official organization
+invitation emails were sent to Tessy and Bonheur on July 13, 2026 with the
+organization's default `write` role. They need to accept the invitation before
+they can upload directly.
 
 ## Adding Data
 

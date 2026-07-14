@@ -41,11 +41,11 @@ Detailed owner notes live in `docs/team/week-2-task-plan.md`.
 | W2-005 | Draft tokenizer and morphology summary | Bonheur Byiringiro | todo | Create `docs/tokenizer/week-2-tokenizer-summary.md`. |
 | W2-006 | Write QLoRA SFT run plan | Bonheur Byiringiro / Jonathan Muhire | in-progress | Draft added in `docs/model/sft-run-plan.md`; Bonheur still needs to fill the final base-model decision. |
 | W2-007 | Expand tutor benchmark to 50 tasks | Jonathan Muhire | done | `docs/evaluation/learning-task-bank.md` now has 50 prompts and 26 benchmark-only prompts. |
-| W2-008 | Define SFT dataset schema and seed examples | Jonathan Muhire | in-progress | Schema and validator added; 100 reviewed seed examples are the first gate, and the useful SFT target is about 1,000 reviewed examples. |
+| W2-008 | Define SFT dataset schema and seed examples | Jonathan Muhire | in-progress | Schema, validator, and 1,000 draft rows now exist. The remaining gate is at least 100 fluent-speaker-reviewed rows, with 75+ approved. |
 | W2-009 | Keep Week 2 board current | Jonathan Muhire | in-progress | Board updated for the SFT-readiness branch. |
 | W2-010 | Prepare Week 2 written update | Jonathan Muhire | todo | Create `docs/weekly/week-2-update.md` by Jul 12. |
 | W2-011 | Add open Kinyarwanda benchmark shortlist | Jonathan Muhire | done | Added Belebele, FLORES-200, IrokoBench, AfriSenti, and KINNEWS as benchmark-only candidates. |
-| W2-012 | Plan SFT data overhaul | Jonathan Muhire / Tessy Mugisha | in-progress | Added staged 100 -> 300 -> 1,000 reviewed-example targets and category mix. |
+| W2-012 | Plan SFT data overhaul | Jonathan Muhire / Tessy Mugisha | in-progress | The 1,000-row draft mix and three Batch 002 review shards are generated. Review and promotion, not more raw generation, are now the bottleneck. |
 
 ## Week 2: Friday Demo Target
 

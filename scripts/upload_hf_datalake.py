@@ -7,13 +7,13 @@ marked as draft; this is a review datalake, not approved training data.
 
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import json
 import os
 import shutil
 import sys
 import warnings
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -30,7 +30,12 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo-id", default=DEFAULT_REPO_ID)
     parser.add_argument("--stage-dir", type=Path, default=DEFAULT_STAGE_DIR)
-    parser.add_argument("--batch-id", default=DEFAULT_BATCH_ID)
+    parser.add_argument(
+        "--batch-id",
+        action="append",
+        dest="batch_ids",
+        help="Batch to stage. Repeat this flag to publish multiple batches together.",
+    )
     parser.add_argument(
         "--visibility",
         choices=("public-gated", "private", "public"),
@@ -49,7 +54,8 @@ def main() -> int:
     if args.visibility == "public" and not args.allow_ungated_public:
         parser.error("--visibility public requires --allow-ungated-public")
 
-    staged_files = stage_batch(args.batch_id, args.stage_dir.expanduser())
+    batch_ids = args.batch_ids or [DEFAULT_BATCH_ID]
+    staged_files = stage_batches(batch_ids, args.stage_dir.expanduser())
     print(f"staged {len(staged_files)} files under {args.stage_dir.expanduser()}")
     for path in staged_files:
         print(f"- {path.relative_to(args.stage_dir.expanduser())}")
@@ -74,14 +80,101 @@ def main() -> int:
     return 0
 
 
-def stage_batch(batch_id: str, stage_dir: Path) -> list[Path]:
-    """Create the local folder layout that will be uploaded to HF."""
+def stage_batches(
+    batch_ids: list[str],
+    stage_dir: Path,
+    *,
+    local_data: Path | None = None,
+    manifest_dir: Path | None = None,
+) -> list[Path]:
+    """Create one complete local datalake containing every requested batch."""
+
+    if not batch_ids:
+        raise ValueError("at least one batch id is required")
+    if len(set(batch_ids)) != len(batch_ids):
+        raise ValueError("batch ids must be unique")
 
     if stage_dir.exists():
         shutil.rmtree(stage_dir)
     stage_dir.mkdir(parents=True)
 
-    local_data = Path("~/KinyaLMData").expanduser()
+    local_data = local_data or Path("~/KinyaLMData").expanduser()
+    manifest_dir = manifest_dir or ROOT / "data" / "manifests"
+    files: list[tuple[Path, Path]] = []
+    row_counts = {}
+    shard_counts = {}
+    for batch_id in batch_ids:
+        files.extend(
+            batch_files(
+                batch_id=batch_id,
+                stage_dir=stage_dir,
+                local_data=local_data,
+                manifest_dir=manifest_dir,
+            )
+        )
+        manifest = json.loads(
+            (manifest_dir / f"{batch_id}.json").read_text(encoding="utf-8")
+        )
+        row_counts[batch_id] = int(manifest["row_count"])
+        shard_counts[batch_id] = len(
+            list(
+                (local_data / "reviewed").glob(
+                    f"{batch_id}.review.part-*-of-*.tsv"
+                )
+            )
+        )
+
+    copied: list[Path] = []
+    for source, destination in files:
+        if not source.exists():
+            raise FileNotFoundError(source)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+        copied.append(destination)
+
+    readme_path = stage_dir / "README.md"
+    readme_path.write_text(
+        dataset_card(batch_ids=batch_ids, row_counts=row_counts),
+        encoding="utf-8",
+    )
+    copied.append(readme_path)
+
+    index_path = stage_dir / "datalake-index.json"
+    index_path.write_text(
+        index_json(
+            batch_ids=batch_ids,
+            row_counts=row_counts,
+            shard_counts=shard_counts,
+        ),
+        encoding="utf-8",
+    )
+    copied.append(index_path)
+
+    review_instructions_path = stage_dir / "REVIEW_INSTRUCTIONS.md"
+    review_instructions_path.write_text(
+        review_instructions(
+            batch_ids=batch_ids, shard_counts=shard_counts
+        ),
+        encoding="utf-8",
+    )
+    copied.append(review_instructions_path)
+
+    return sorted(copied)
+
+
+def stage_batch(batch_id: str, stage_dir: Path) -> list[Path]:
+    """Backward-compatible wrapper for staging one batch."""
+
+    return stage_batches([batch_id], stage_dir)
+
+
+def batch_files(
+    *,
+    batch_id: str,
+    stage_dir: Path,
+    local_data: Path,
+    manifest_dir: Path,
+) -> list[tuple[Path, Path]]:
     files = [
         (
             local_data / "drafts" / f"{batch_id}.jsonl",
@@ -100,43 +193,29 @@ def stage_batch(batch_id: str, stage_dir: Path) -> list[Path]:
             stage_dir / "packages" / f"{batch_id}-review-package.zip",
         ),
         (
-            ROOT / "data" / "manifests" / f"{batch_id}.json",
+            manifest_dir / f"{batch_id}.json",
             stage_dir / "manifests" / f"{batch_id}.json",
         ),
         (
-            ROOT / "data" / "manifests" / f"{batch_id}-review-sheet.json",
+            manifest_dir / f"{batch_id}-review-sheet.json",
             stage_dir / "manifests" / f"{batch_id}-review-sheet.json",
         ),
         (
-            ROOT / "data" / "manifests" / f"{batch_id}-review-package.json",
+            manifest_dir / f"{batch_id}-review-package.json",
             stage_dir / "manifests" / f"{batch_id}-review-package.json",
         ),
     ]
-
-    copied: list[Path] = []
-    for source, destination in files:
-        if not source.exists():
-            raise FileNotFoundError(source)
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
-        copied.append(destination)
-
-    readme_path = stage_dir / "README.md"
-    readme_path.write_text(dataset_card(batch_id=batch_id), encoding="utf-8")
-    copied.append(readme_path)
-
-    index_path = stage_dir / "datalake-index.json"
-    index_path.write_text(index_json(batch_id=batch_id), encoding="utf-8")
-    copied.append(index_path)
-
-    review_instructions_path = stage_dir / "REVIEW_INSTRUCTIONS.md"
-    review_instructions_path.write_text(
-        review_instructions(batch_id=batch_id),
-        encoding="utf-8",
+    shard_paths = sorted(
+        (local_data / "reviewed").glob(f"{batch_id}.review.part-*-of-*.tsv")
     )
-    copied.append(review_instructions_path)
-
-    return sorted(copied)
+    files.extend(
+        (
+            path,
+            stage_dir / "review" / batch_id / "shards" / path.name,
+        )
+        for path in shard_paths
+    )
+    return files
 
 
 def upload_to_hf(
@@ -188,7 +267,18 @@ def upload_to_hf(
     return api.dataset_info(repo_id)
 
 
-def dataset_card(*, batch_id: str) -> str:
+def dataset_card(
+    *, batch_ids: list[str], row_counts: dict[str, int]
+) -> str:
+    """Render a dataset card that describes the complete staged datalake."""
+
+    total_rows = sum(row_counts.values())
+    size_category = "n<1K" if total_rows < 1_000 else "1K<n<10K"
+    batch_lines = "\n".join(
+        f"- `{batch_id}`: {row_counts[batch_id]} draft rows"
+        for batch_id in batch_ids
+    )
+    example_batch = batch_ids[0]
     return f"""---
 license: other
 pretty_name: KinyaLM Data Lake
@@ -201,7 +291,7 @@ tags:
 - data-lake
 - draft
 size_categories:
-- n<1K
+- {size_category}
 ---
 
 # KinyaLM Data Lake
@@ -210,13 +300,16 @@ This public-gated dataset repository stores KinyaLM data artifacts for team
 review. Visitors can see the dataset page, but file access requires a
 logged-in Hugging Face account and gated access acceptance.
 
-Current contents:
+Current batches ({total_rows:,} draft rows total):
 
-- `{batch_id}` draft SFT JSONL
-- `{batch_id}` review TSV
-- `REVIEW_INSTRUCTIONS.md`
-- `{batch_id}` review package zip
-- manifests with checksums and review status
+{batch_lines}
+
+Each batch includes:
+
+- draft SFT JSONL,
+- a master review TSV and any review shards,
+- a review package zip,
+- manifests with checksums and review status.
 
 ## Status
 
@@ -234,20 +327,32 @@ Use the project promotion script after review:
 
 ```bash
 python3 scripts/promote_reviewed_sft.py \\
-  --draft-jsonl ~/KinyaLMData/drafts/{batch_id}.jsonl \\
-  --review-tsv ~/KinyaLMData/reviewed/{batch_id}.review.tsv \\
-  --out-dir ~/KinyaLMData/approved/sft-approved-batch-001
+  --draft-jsonl ~/KinyaLMData/drafts/{example_batch}.jsonl \\
+  --review-tsv ~/KinyaLMData/reviewed/{example_batch}.review.tsv \\
+  --out-dir ~/KinyaLMData/approved/{example_batch}
 ```
 
 ## Source And License Notes
 
-Batch 001 is synthetic draft data generated for review. It is not redistributed
-as an approved public training dataset until the team confirms quality and
-release terms.
+These batches are synthetic draft data generated for review. They are not
+redistributed as approved public training data until the team confirms quality
+and release terms.
 """
 
 
-def review_instructions(*, batch_id: str) -> str:
+def review_instructions(
+    *, batch_ids: list[str], shard_counts: dict[str, int]
+) -> str:
+    """Render review instructions for every staged batch and shard."""
+
+    review_paths = []
+    for batch_id in batch_ids:
+        review_paths.append(f"review/{batch_id}/{batch_id}.review.tsv")
+        if shard_counts[batch_id]:
+            review_paths.append(
+                f"review/{batch_id}/shards/ ({shard_counts[batch_id]} TSV files)"
+            )
+    review_path_text = "\n".join(f"- `{path}`" for path in review_paths)
     return f"""# Review Instructions
 
 This datalake contains draft review data for KinyaLM. These rows are not
@@ -255,17 +360,16 @@ approved training data.
 
 ## What To Review
 
-Review this TSV:
+{review_path_text}
 
-```text
-review/{batch_id}/{batch_id}.review.tsv
-```
+The master TSV contains the full batch. Shards contain non-overlapping subsets
+for parallel first-pass review.
 
 ## How To Return Review
 
 Download the TSV, edit it in a spreadsheet editor, save/export it as TSV or
-tab-separated text, and send the completed file back to Jonathan. Do not rename
-columns.
+tab-separated text, and upload the completed file under `incoming/`. Do not
+rename columns.
 
 Only edit these columns:
 
@@ -281,6 +385,10 @@ Do not edit:
 
 - `id`
 - `task_type`
+- `generation_profile`
+- `content_key`
+- `variant`
+- `requested_question_count`
 - `user_prompt`
 - `assistant_response`
 
@@ -307,27 +415,43 @@ source-risk, benchmark-leak, privacy-risk, format-error, duplicate, off-task
 """
 
 
-def index_json(*, batch_id: str) -> str:
-    index = {
-        "datalake": "KinyaLM Data Lake",
-        "visibility": "public-gated",
-        "gated_access": "auto",
-        "batches": [
+def index_json(
+    *,
+    batch_ids: list[str],
+    row_counts: dict[str, int],
+    shard_counts: dict[str, int],
+) -> str:
+    """Render a machine-readable index for the complete staged datalake."""
+
+    batches = []
+    for batch_id in batch_ids:
+        paths = {
+            "review_instructions": "REVIEW_INSTRUCTIONS.md",
+            "draft_jsonl": f"data/drafts/{batch_id}/{batch_id}.jsonl",
+            "summary": f"data/drafts/{batch_id}/{batch_id}.summary.md",
+            "review_tsv": f"review/{batch_id}/{batch_id}.review.tsv",
+            "package": f"packages/{batch_id}-review-package.zip",
+            "manifests": "manifests/",
+        }
+        if shard_counts[batch_id]:
+            paths["review_shards"] = f"review/{batch_id}/shards/"
+        batches.append(
             {
                 "batch_id": batch_id,
                 "stage": "draft",
                 "review_status": "needs-review",
                 "can_train": False,
-                "paths": {
-                    "review_instructions": "REVIEW_INSTRUCTIONS.md",
-                    "draft_jsonl": f"data/drafts/{batch_id}/{batch_id}.jsonl",
-                    "summary": f"data/drafts/{batch_id}/{batch_id}.summary.md",
-                    "review_tsv": f"review/{batch_id}/{batch_id}.review.tsv",
-                    "package": f"packages/{batch_id}-review-package.zip",
-                    "manifests": "manifests/",
-                },
+                "row_count": row_counts[batch_id],
+                "review_shard_count": shard_counts[batch_id],
+                "paths": paths,
             }
-        ],
+        )
+    index = {
+        "datalake": "KinyaLM Data Lake",
+        "visibility": "public-gated",
+        "gated_access": "auto",
+        "total_draft_rows": sum(row_counts.values()),
+        "batches": batches,
     }
     return json.dumps(index, indent=2, ensure_ascii=False) + "\n"
 

@@ -25,3 +25,15 @@ target about 1,000 reviewed examples, following
 
 Generated draft batches live outside Git and are tracked in
 `docs/data/sft-draft-batches.md`.
+
+Small generation profiles are tracked under `data/sft/draft-profiles/`. They
+contain reviewable source facts and templates, not generated training rows.
+Regenerate Batch 002 with:
+
+```bash
+python3 scripts/generate_sft_draft_batch.py \
+  --batch-id sft-drafts-2026-07-13-batch-002 \
+  --profile-file data/sft/draft-profiles/useful-gap-v1.yaml \
+  --compare-jsonl ~/KinyaLMData/drafts/sft-drafts-2026-07-13-batch-001.jsonl \
+  --review-shards 3
+```

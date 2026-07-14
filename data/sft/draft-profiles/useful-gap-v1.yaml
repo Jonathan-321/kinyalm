@@ -1,0 +1,629 @@
+profile_id: useful-gap-v1
+target_total: 714
+
+# These counts close the exact gap between Batch 001 and the project's planned
+# 1,000-example category mix. Every generated row remains a review-only draft.
+target_counts:
+  greeting: 62
+  dialogue: 85
+  vocabulary: 95
+  grammar-explanation: 115
+  sentence-correction: 115
+  translation-en-rw: 66
+  translation-rw-en: 66
+  quiz-generation: 60
+  culture-register: 25
+  uncertainty: 25
+
+content:
+  greeting:
+    - key: muraho
+      phrase: Muraho
+      meaning: hello.
+      usage: It is a general polite greeting.
+      exchange: "A: `Muraho.`\nB: `Muraho. Amakuru?`"
+    - key: mwaramutse
+      phrase: Mwaramutse
+      meaning: good morning.
+      usage: It is used as a morning greeting.
+      exchange: "A: `Mwaramutse.`\nB: `Mwaramutse. Amakuru?`"
+    - key: mwiriwe
+      phrase: Mwiriwe
+      meaning: good afternoon or good evening.
+      usage: It is used later in the day; a fluent speaker should confirm local timing.
+      exchange: "A: `Mwiriwe.`\nB: `Mwiriwe. Amakuru?`"
+    - key: amakuru
+      phrase: Amakuru?
+      meaning: how are you?
+      usage: It asks how someone is doing in a common conversational way.
+      exchange: "A: `Amakuru?`\nB: `Ni meza, murakoze.`"
+    - key: ni-meza
+      phrase: Ni meza
+      meaning: I am fine or things are good.
+      usage: It is a simple answer to `Amakuru?`.
+      exchange: "A: `Amakuru?`\nB: `Ni meza. Nawe?`"
+    - key: murakoze
+      phrase: Murakoze
+      meaning: thank you.
+      usage: It expresses thanks politely.
+      exchange: "A: `Dore igitabo.`\nB: `Murakoze.`"
+    - key: murakoze-cyane
+      phrase: Murakoze cyane
+      meaning: thank you very much.
+      usage: It adds emphasis to a polite thank-you.
+      exchange: "A: `Ndagufasha.`\nB: `Murakoze cyane.`"
+    - key: nitwa
+      phrase: Nitwa ...
+      meaning: my name is ...
+      usage: It is a beginner pattern for introducing your name.
+      exchange: "A: `Witwa nde?`\nB: `Nitwa Aline.`"
+    - key: witwa-nde
+      phrase: Witwa nde?
+      meaning: what is your name?
+      usage: It asks another person for their name.
+      exchange: "A: `Witwa nde?`\nB: `Nitwa Eric.`"
+    - key: tuzabonana
+      phrase: Tuzabonana
+      meaning: see you later.
+      usage: It is a simple leave-taking phrase.
+      exchange: "A: `Tuzabonana.`\nB: `Yego, tuzabonana.`"
+    - key: ijoro-ryiza
+      phrase: Ijoro ryiza
+      meaning: good night.
+      usage: It is used when wishing someone a good night.
+      exchange: "A: `Ijoro ryiza.`\nB: `Ijoro ryiza.`"
+
+  vocabulary:
+    - key: umwana
+      word: umwana
+      meaning: child
+      example_rw: Umwana arasoma.
+      example_en: The child is reading.
+    - key: abana
+      word: abana
+      meaning: children
+      example_rw: Abana bariga.
+      example_en: The children are studying.
+    - key: umuganga
+      word: umuganga
+      meaning: doctor
+      example_rw: Umuganga ari ku bitaro.
+      example_en: The doctor is at the hospital.
+    - key: ibitaro
+      word: ibitaro
+      meaning: hospital
+      example_rw: Ibitaro biri hano.
+      example_en: The hospital is here.
+    - key: isoko
+      word: isoko
+      meaning: market
+      example_rw: Ngiye ku isoko.
+      example_en: I am going to the market.
+    - key: imodoka
+      word: imodoka
+      meaning: car
+      example_rw: Imodoka iri hano.
+      example_en: The car is here.
+    - key: umuhanda
+      word: umuhanda
+      meaning: road
+      example_rw: Umuhanda ni muremure.
+      example_en: The road is long.
+    - key: ibiryo
+      word: ibiryo
+      meaning: food
+      example_rw: Ndashaka ibiryo.
+      example_en: I want food.
+    - key: amata
+      word: amata
+      meaning: milk
+      example_rw: Mfite amata.
+      example_en: I have milk.
+    - key: umugati
+      word: umugati
+      meaning: bread
+      example_rw: Mfite umugati.
+      example_en: I have bread.
+    - key: igikombe
+      word: igikombe
+      meaning: cup
+      example_rw: Igikombe kiri ku meza.
+      example_en: The cup is on the table.
+    - key: akazi
+      word: akazi
+      meaning: work or job
+      example_rw: Ngiye ku kazi.
+      example_en: I am going to work.
+    - key: amafaranga
+      word: amafaranga
+      meaning: money
+      example_rw: Mfite amafaranga.
+      example_en: I have money.
+    - key: telefoni
+      word: telefoni
+      meaning: telephone or phone
+      example_rw: Telefoni yanjye iri hano.
+      example_en: My phone is here.
+    - key: umunsi
+      word: umunsi
+      meaning: day
+      example_rw: Uyu ni umunsi mwiza.
+      example_en: This is a good day.
+    - key: ijoro
+      word: ijoro
+      meaning: night
+      example_rw: Ijoro ryiza.
+      example_en: Good night.
+    - key: umujyi
+      word: umujyi
+      meaning: city
+      example_rw: Kigali ni umujyi.
+      example_en: Kigali is a city.
+    - key: umudugudu
+      word: umudugudu
+      meaning: village
+      example_rw: Ntuye mu mudugudu.
+      example_en: I live in a village.
+    - key: ururimi
+      word: ururimi
+      meaning: language
+      example_rw: Ikinyarwanda ni ururimi.
+      example_en: Kinyarwanda is a language.
+
+  grammar-explanation:
+    - key: nitwa-name
+      focus: Nitwa Aline
+      explanation: "`Nitwa` is a common beginner form for giving the speaker's name."
+      example: Nitwa Eric.
+      caution: Do not treat it as the general form for every sentence with "I am."
+    - key: witwa-nde
+      focus: Witwa nde?
+      explanation: "This is the conventional beginner question for asking a person's name."
+      example: Witwa nde? Nitwa Aline.
+      caution: A fluent speaker should confirm tone and context.
+    - key: ndi-role
+      focus: Ndi umunyeshuri
+      explanation: "`Ndi` can introduce a role or identity, as in `I am a student`."
+      example: Ndi umwarimu.
+      caution: The form used for giving a name is usually taught separately as `Nitwa`.
+    - key: ndiga-action
+      focus: Ndiga Ikinyarwanda
+      explanation: "`Ndiga` expresses that the speaker studies or is learning."
+      example: Ndiga Ikinyarwanda.
+      caution: Exact tense and aspect explanations need fluent-speaker review.
+    - key: nkunda-preference
+      focus: Nkunda Ikinyarwanda
+      explanation: "`Nkunda` can express that the speaker likes something."
+      example: Nkunda Ikinyarwanda.
+      caution: Keep the first lesson at the whole-phrase level.
+    - key: mfite-possession
+      focus: Mfite igitabo
+      explanation: "`Mfite` is useful for simple possession statements meaning `I have`."
+      example: Mfite ikibazo.
+      caution: Do not explain every internal morpheme until a reviewer confirms it.
+    - key: ndashaka-want
+      focus: Ndashaka amazi
+      explanation: "`Ndashaka` is a useful beginner form for saying `I want`."
+      example: Ndashaka ibiryo.
+      caution: The complement may change when another verb follows.
+    - key: nkeneye-need
+      focus: Nkeneye ubufasha
+      explanation: "`Nkeneye` is a beginner form for saying that the speaker needs something."
+      example: Nkeneye ubufasha.
+      caution: Review longer constructions separately.
+    - key: ngiye-direction
+      focus: Ngiye ku isoko
+      explanation: "`Ngiye` can express that the speaker is going somewhere."
+      example: Ngiye ku kazi.
+      caution: Location markers such as `ku`, `mu`, and `i` depend on the place phrase.
+    - key: ntuye-location
+      focus: Ntuye i Kigali
+      explanation: "`Ntuye` is used here to say where the speaker lives."
+      example: Ntuye i Kigali.
+      caution: Place-name marking should be checked across different locations.
+    - key: sinumva-negative
+      focus: Sinumva
+      explanation: "`Sinumva` is a complete beginner phrase meaning `I do not understand`."
+      example: Sinumva. Subiramo, ndakwinginze.
+      caution: Avoid deriving a universal negative rule from one form.
+    - key: simbizi-negative
+      focus: Simbizi
+      explanation: "`Simbizi` means `I do not know it` or `I do not know that`."
+      example: Simbizi.
+      caution: Context determines what the object refers to.
+    - key: riri-he-location
+      focus: Ishuri riri he?
+      explanation: "The question asks where the school is; `he` contributes the `where` meaning."
+      example: Isoko riri he?
+      caution: The agreement form before `he` changes with the noun.
+    - key: uyu-demonstrative
+      focus: Uyu ni inshuti yanjye
+      explanation: "`Uyu` points to the person introduced in this example."
+      example: Uyu ni inshuti yanjye.
+      caution: Demonstratives change across noun classes, so do not generalize this form to every noun.
+    - key: umwana-abana
+      focus: umwana and abana
+      explanation: "`umwana` is singular `child`, while `abana` is plural `children`."
+      example: Umwana arasoma. Abana barasoma.
+      caution: Treat the pair as a pattern example, not a complete noun-class rule.
+    - key: umunyeshuri-abanyeshuri
+      focus: umunyeshuri and abanyeshuri
+      explanation: "`umunyeshuri` means `student`, and `abanyeshuri` means `students`."
+      example: Umunyeshuri ariga. Abanyeshuri bariga.
+      caution: Subject agreement also changes and needs explicit review.
+    - key: umwarimu-abarimu
+      focus: umwarimu and abarimu
+      explanation: "`umwarimu` means `teacher`, and `abarimu` means `teachers`."
+      example: Umwarimu arigisha. Abarimu barigisha.
+      caution: A reviewer should confirm the full agreement explanation.
+    - key: igitabo-ibitabo
+      focus: igitabo and ibitabo
+      explanation: "`igitabo` means `book`, and `ibitabo` means `books`."
+      example: Igitabo kiri hano. Ibitabo biri hano.
+      caution: Use this as one noun-pair example rather than a universal plural recipe.
+    - key: ishuri-amashuri
+      focus: ishuri and amashuri
+      explanation: "`ishuri` means `school`, and `amashuri` means `schools`."
+      example: Ishuri riri hano. Amashuri ari hano.
+      caution: Noun and agreement changes should be taught together after review.
+    - key: ikibazo-ibibazo
+      focus: ikibazo and ibibazo
+      explanation: "`ikibazo` means `question` or `problem`, and `ibibazo` is plural."
+      example: Mfite ikibazo. Mfite ibibazo.
+      caution: The best English meaning depends on context.
+    - key: umunsi-iminsi
+      focus: umunsi and iminsi
+      explanation: "`umunsi` means `day`, and `iminsi` means `days`."
+      example: Umunsi umwe. Iminsi ibiri.
+      caution: Number agreement deserves a separate reviewed lesson.
+    - key: command-fungura
+      focus: Fungura igitabo
+      explanation: "`Fungura` is used here as a direct command meaning `open`."
+      example: Fungura igitabo.
+      caution: Politeness and plural commands need separate context.
+    - key: please-ndakwinginze
+      focus: ndakwinginze
+      explanation: "`ndakwinginze` adds a polite `please` to a request."
+      example: Subiramo, ndakwinginze.
+      caution: Register and alternatives should be confirmed by fluent speakers.
+
+  sentence-correction:
+    - key: name-agreement
+      incorrect: Jyewe yitwa Aline.
+      corrected: Nitwa Aline.
+      reason: Use the common beginner pattern `Nitwa ...` to give your own name.
+    - key: learning-form
+      incorrect: Ndi kwiga Ikinyarwanda.
+      corrected: Ndiga Ikinyarwanda.
+      reason: The compact beginner form `Ndiga` expresses `I study` or `I am learning` here.
+    - key: want-form
+      incorrect: Ndi nshaka amazi.
+      corrected: Ndashaka amazi.
+      reason: Use `Ndashaka` as the beginner form for `I want`.
+    - key: have-form
+      incorrect: Ndi mfite ikibazo.
+      corrected: Mfite ikibazo.
+      reason: "`Mfite` already expresses `I have` in this sentence."
+    - key: ask-name
+      incorrect: Witwa iki?
+      corrected: Witwa nde?
+      reason: "`Witwa nde?` is the conventional beginner question for a person's name."
+    - key: school-location
+      incorrect: Ishuri iri he?
+      corrected: Ishuri riri he?
+      reason: The location form should agree with `ishuri` in this example.
+    - key: book-location
+      incorrect: Igitabo ari hano.
+      corrected: Igitabo kiri hano.
+      reason: Use `kiri` with `igitabo` in this location statement.
+    - key: teacher-agreement
+      incorrect: Umwarimu barigisha.
+      corrected: Umwarimu arigisha.
+      reason: The singular subject `umwarimu` takes the singular agreement shown here.
+    - key: students-agreement
+      incorrect: Abanyeshuri ariga.
+      corrected: Abanyeshuri bariga.
+      reason: The plural subject `abanyeshuri` takes the plural agreement shown here.
+    - key: child-agreement
+      incorrect: Umwana barasoma.
+      corrected: Umwana arasoma.
+      reason: The singular subject `umwana` takes the singular agreement shown here.
+    - key: hello-thanks
+      incorrect: Murakoze hello.
+      corrected: Muraho.
+      reason: "`Muraho` is a greeting; `Murakoze` means `thank you`."
+    - key: thanks-hello
+      incorrect: Muraho thank you.
+      corrected: Murakoze.
+      reason: "`Murakoze` expresses thanks; `Muraho` means `hello`."
+    - key: role-not-name
+      incorrect: Nitwa umunyeshuri.
+      corrected: Ndi umunyeshuri.
+      reason: Use `Ndi` for the role `I am a student`; reserve `Nitwa` for a name.
+    - key: name-introduction
+      incorrect: Ndi Aline. (when introducing a name)
+      corrected: Nitwa Aline.
+      reason: "`Nitwa Aline` is the clearer beginner pattern for `My name is Aline`."
+    - key: mixed-explain
+      incorrect: Ndashaka explain iri jambo.
+      corrected: Sobanura iri jambo, ndakwinginze.
+      reason: Use a complete Kinyarwanda classroom request instead of inserting the English verb.
+    - key: mixed-repeat
+      incorrect: Please subiramo slowly.
+      corrected: Subiramo buhoro, ndakwinginze.
+      reason: This keeps the request in Kinyarwanda and uses the beginner words for `slowly` and `please`.
+    - key: book-plural-agreement
+      incorrect: Igitabo biri ku meza.
+      corrected: Igitabo kiri ku meza.
+      reason: "`Igitabo` is singular in this sentence, so use the singular agreement shown here."
+    - key: children-agreement
+      incorrect: Abana arasoma.
+      corrected: Abana barasoma.
+      reason: "`Abana` is plural and takes the plural agreement shown here."
+    - key: doctor-agreement
+      incorrect: Umuganga bari ku bitaro.
+      corrected: Umuganga ari ku bitaro.
+      reason: "`Umuganga` is singular in this sentence."
+    - key: market-location
+      incorrect: Isoko iri he?
+      corrected: Isoko riri he?
+      reason: Use the agreement form shown with `isoko` in this location question.
+    - key: kigali-location
+      incorrect: Ntuye Kigali.
+      corrected: Ntuye i Kigali.
+      reason: The place name takes `i` in this beginner location pattern.
+    - key: market-direction
+      incorrect: Ngiye isoko.
+      corrected: Ngiye ku isoko.
+      reason: Use `ku` in this beginner phrase for going to the market.
+    - key: thirst-request
+      incorrect: Mfite inyota amazi.
+      corrected: Mfite inyota. Ndashaka amazi.
+      reason: Separate `I am thirsty` from the follow-up request `I want water`.
+
+  translation-pairs:
+    - {key: how-are-you, english: "How are you?", kinyarwanda: "Amakuru?"}
+    - {key: i-am-fine, english: "I am fine.", kinyarwanda: "Ni meza."}
+    - {key: and-you, english: "And you?", kinyarwanda: "Nawe?"}
+    - {key: "yes", english: "Yes.", kinyarwanda: "Yego."}
+    - {key: "no", english: "No.", kinyarwanda: "Oya."}
+    - {key: please, english: "Please.", kinyarwanda: "Ndakwinginze."}
+    - {key: excuse-me, english: "Excuse me.", kinyarwanda: "Mbabarira."}
+    - {key: do-not-understand, english: "I do not understand.", kinyarwanda: "Sinumva."}
+    - {key: speak-slowly, english: "Please speak slowly.", kinyarwanda: "Vuga buhoro, ndakwinginze."}
+    - {key: school-where, english: "Where is the school?", kinyarwanda: "Ishuri riri he?"}
+    - {key: market-where, english: "Where is the market?", kinyarwanda: "Isoko riri he?"}
+    - {key: market-here, english: "The market is here.", kinyarwanda: "Isoko riri hano."}
+    - {key: hungry, english: "I am hungry.", kinyarwanda: "Ndashonje."}
+    - {key: thirsty, english: "I am thirsty.", kinyarwanda: "Mfite inyota."}
+    - {key: like-kinyarwanda, english: "I like Kinyarwanda.", kinyarwanda: "Nkunda Ikinyarwanda."}
+    - {key: live-kigali, english: "I live in Kigali.", kinyarwanda: "Ntuye i Kigali."}
+    - {key: going-work, english: "I am going to work.", kinyarwanda: "Ngiye ku kazi."}
+    - {key: want-food, english: "I want food.", kinyarwanda: "Ndashaka ibiryo."}
+    - {key: my-friend, english: "This is my friend.", kinyarwanda: "Uyu ni inshuti yanjye."}
+    - {key: child-reads, english: "The child reads a book.", kinyarwanda: "Umwana asoma igitabo."}
+    - {key: teacher-writes, english: "The teacher writes.", kinyarwanda: "Umwarimu arandika."}
+    - {key: student-asks, english: "The student asks a question.", kinyarwanda: "Umunyeshuri abaza ikibazo."}
+    - {key: open-book, english: "Open the book.", kinyarwanda: "Fungura igitabo."}
+    - {key: close-book, english: "Close the book.", kinyarwanda: "Funga igitabo."}
+    - {key: come-here, english: "Come here.", kinyarwanda: "Ngwino hano."}
+    - {key: sit-down, english: "Sit down.", kinyarwanda: "Icara hasi."}
+    - {key: stand-up, english: "Stand up.", kinyarwanda: "Haguruka."}
+    - {key: what-mean, english: "What does this mean?", kinyarwanda: "Ibi bisobanura iki?"}
+    - {key: do-not-know, english: "I do not know.", kinyarwanda: "Simbizi."}
+    - {key: see-you, english: "See you later.", kinyarwanda: "Tuzabonana."}
+    - {key: good-night, english: "Good night.", kinyarwanda: "Ijoro ryiza."}
+    - {key: where-live, english: "Where do you live?", kinyarwanda: "Utuye he?"}
+    - {key: going-market, english: "I am going to the market.", kinyarwanda: "Ngiye ku isoko."}
+
+  dialogue:
+    - key: greet-neighbor
+      scenario: greeting a neighbor
+      dialogue: "A: `Muraho.`\nB: `Muraho. Amakuru?`\nA: `Ni meza, murakoze.`"
+      english_note: The speakers greet each other and say they are well.
+    - key: introduce-classmates
+      scenario: two classmates introducing themselves
+      dialogue: "A: `Muraho. Nitwa Aline.`\nB: `Muraho Aline. Nitwa Eric.`"
+      english_note: Each classmate gives a name.
+    - key: ask-name
+      scenario: asking a new learner's name
+      dialogue: "A: `Witwa nde?`\nB: `Nitwa Keza.`\nA: `Muraho Keza.`"
+      english_note: One speaker asks for and repeats the learner's name.
+    - key: ask-how
+      scenario: asking how a friend is doing
+      dialogue: "A: `Amakuru?`\nB: `Ni meza. Nawe?`\nA: `Ni meza.`"
+      english_note: The friends ask how each other is doing.
+    - key: ask-repeat
+      scenario: asking a teacher to repeat
+      dialogue: "Learner: `Subiramo, ndakwinginze.`\nTeacher: `Yego, ndabisubiramo.`"
+      english_note: The learner politely asks for repetition.
+    - key: speak-slowly
+      scenario: asking someone to speak slowly
+      dialogue: "Learner: `Vuga buhoro, ndakwinginze.`\nTutor: `Yego, ndavuga buhoro.`"
+      english_note: The learner asks the tutor to slow down.
+    - key: ask-meaning
+      scenario: asking what a phrase means
+      dialogue: "Learner: `Ibi bisobanura iki?`\nTutor: `Reka mbisobanure.`"
+      english_note: The learner asks for an explanation.
+    - key: ask-help
+      scenario: asking for help in class
+      dialogue: "Learner: `Nkeneye ubufasha.`\nTutor: `Ni iki ushaka gusobanukirwa?`"
+      english_note: The learner asks for help and the tutor asks what is unclear.
+    - key: find-school
+      scenario: asking where the school is
+      dialogue: "A: `Ishuri riri he?`\nB: `Ishuri riri hano.`"
+      english_note: One speaker asks for the school's location.
+    - key: find-market
+      scenario: asking where the market is
+      dialogue: "A: `Isoko riri he?`\nB: `Isoko riri hano.`"
+      english_note: One speaker asks for the market's location.
+    - key: request-water
+      scenario: asking for water
+      dialogue: "A: `Ndashaka amazi.`\nB: `Yego. Dore amazi.`\nA: `Murakoze.`"
+      english_note: One speaker requests water and says thank you.
+    - key: request-food
+      scenario: asking for food
+      dialogue: "A: `Ndashonje. Ndashaka ibiryo.`\nB: `Yego.`"
+      english_note: The speaker says they are hungry and asks for food.
+    - key: find-hospital
+      scenario: asking where the hospital is
+      dialogue: "A: `Ibitaro biri he?`\nB: `Ibitaro biri hano.`"
+      english_note: One speaker asks for the hospital's location.
+    - key: meet-friend
+      scenario: introducing a friend
+      dialogue: "A: `Uyu ni inshuti yanjye.`\nB: `Muraho.`\nFriend: `Muraho.`"
+      english_note: A speaker introduces a friend.
+    - key: say-goodbye
+      scenario: saying goodbye after class
+      dialogue: "Learner: `Murakoze, mwarimu.`\nTeacher: `Tuzabonana.`\nLearner: `Tuzabonana.`"
+      english_note: The learner thanks the teacher and they say goodbye.
+    - key: check-understanding
+      scenario: checking whether a learner understands
+      dialogue: "Tutor: `Urumva?`\nLearner: `Oya, sinumva.`\nTutor: `Reka nongere mbisobanure.`"
+      english_note: The learner says they do not understand, so the tutor offers another explanation.
+    - key: apologize
+      scenario: apologizing and continuing politely
+      dialogue: "A: `Mbabarira.`\nB: `Yego.`\nA: `Murakoze.`"
+      english_note: One speaker apologizes and then gives thanks.
+
+  quiz-generation:
+    - key: greetings
+      topic: greetings
+      questions:
+        - {question: "What does `Muraho` mean?", answer: "Hello."}
+        - {question: "Which greeting is used in the morning?", answer: "`Mwaramutse`."}
+        - {question: "How can you ask `How are you?`", answer: "`Amakuru?`"}
+        - {question: "Give one simple answer to `Amakuru?`", answer: "`Ni meza.`"}
+        - {question: "Translate `Murakoze cyane`.", answer: "Thank you very much."}
+    - key: introductions
+      topic: introductions
+      questions:
+        - {question: "Translate `Nitwa Aline`.", answer: "My name is Aline."}
+        - {question: "How do you ask a person's name?", answer: "`Witwa nde?`"}
+        - {question: "Complete: `Nitwa ...`", answer: "Add the speaker's name."}
+        - {question: "Which form introduces a role: `Ndi` or `Nitwa`?", answer: "`Ndi`."}
+        - {question: "Translate `Uyu ni inshuti yanjye`.", answer: "This is my friend."}
+    - key: classroom
+      topic: classroom language
+      questions:
+        - {question: "Translate `Subiramo`.", answer: "Repeat."}
+        - {question: "What does `buhoro` add to a request?", answer: "Slowly."}
+        - {question: "Translate `Nkeneye ubufasha`.", answer: "I need help."}
+        - {question: "How do you say `I do not understand`?", answer: "`Sinumva.`"}
+        - {question: "Translate `Fungura igitabo`.", answer: "Open the book."}
+    - key: places
+      topic: places
+      questions:
+        - {question: "What does `ishuri` mean?", answer: "School."}
+        - {question: "What does `isoko` mean?", answer: "Market."}
+        - {question: "What does `ibitaro` mean?", answer: "Hospital."}
+        - {question: "Translate `Isoko riri he?`", answer: "Where is the market?"}
+        - {question: "Translate `Ntuye i Kigali`.", answer: "I live in Kigali."}
+    - key: food-drink
+      topic: food and drink
+      questions:
+        - {question: "What does `ibiryo` mean?", answer: "Food."}
+        - {question: "What does `amata` mean?", answer: "Milk."}
+        - {question: "What does `umugati` mean?", answer: "Bread."}
+        - {question: "Translate `Ndashonje`.", answer: "I am hungry."}
+        - {question: "Translate `Mfite inyota`.", answer: "I am thirsty."}
+    - key: people
+      topic: people
+      questions:
+        - {question: "What does `umwana` mean?", answer: "Child."}
+        - {question: "What does `abana` mean?", answer: "Children."}
+        - {question: "What does `umuganga` mean?", answer: "Doctor."}
+        - {question: "What does `umwarimu` mean?", answer: "Teacher."}
+        - {question: "What does `umunyeshuri` mean?", answer: "Student."}
+    - key: actions
+      topic: common actions
+      questions:
+        - {question: "Translate `Ndiga`.", answer: "I study or I am learning."}
+        - {question: "Translate `Ndashaka`.", answer: "I want."}
+        - {question: "Translate `Mfite`.", answer: "I have."}
+        - {question: "Translate `Ngiye` in `Ngiye ku kazi`.", answer: "I am going."}
+        - {question: "Translate `Haguruka`.", answer: "Stand up."}
+    - key: en-rw
+      topic: English-to-Kinyarwanda translation
+      questions:
+        - {question: "Translate `Yes.`", answer: "`Yego.`"}
+        - {question: "Translate `No.`", answer: "`Oya.`"}
+        - {question: "Translate `I do not know.`", answer: "`Simbizi.`"}
+        - {question: "Translate `Come here.`", answer: "`Ngwino hano.`"}
+        - {question: "Translate `See you later.`", answer: "`Tuzabonana.`"}
+    - key: rw-en
+      topic: Kinyarwanda-to-English translation
+      questions:
+        - {question: "Translate `Nkunda Ikinyarwanda`.", answer: "I like Kinyarwanda."}
+        - {question: "Translate `Ndashaka ibiryo`.", answer: "I want food."}
+        - {question: "Translate `Ngiye ku isoko`.", answer: "I am going to the market."}
+        - {question: "Translate `Ijoro ryiza`.", answer: "Good night."}
+        - {question: "Translate `Utuye he?`", answer: "Where do you live?"}
+    - key: corrections
+      topic: beginner corrections
+      questions:
+        - {question: "Fix `Jyewe yitwa Aline.`", answer: "`Nitwa Aline.`"}
+        - {question: "Fix `Ndi kwiga Ikinyarwanda.`", answer: "`Ndiga Ikinyarwanda.`"}
+        - {question: "Fix `Nitwa umunyeshuri.`", answer: "`Ndi umunyeshuri.`"}
+        - {question: "Fix `Ishuri iri he?`", answer: "`Ishuri riri he?`"}
+        - {question: "Fix `Ngiye isoko.`", answer: "`Ngiye ku isoko.`"}
+    - key: noun-pairs
+      topic: singular and plural noun pairs
+      questions:
+        - {question: "Give the plural of `umwana`.", answer: "`abana`."}
+        - {question: "Give the plural of `umwarimu`.", answer: "`abarimu`."}
+        - {question: "Give the plural of `igitabo`.", answer: "`ibitabo`."}
+        - {question: "Give the plural of `ishuri`.", answer: "`amashuri`."}
+        - {question: "Give the plural of `umunsi`.", answer: "`iminsi`."}
+    - key: uncertainty
+      topic: safe uncertainty behavior
+      questions:
+        - {question: "What should a tutor do when unsure of a spelling?", answer: "Mark it as uncertain and ask for fluent-speaker review."}
+        - {question: "Should the tutor invent a proverb meaning?", answer: "No."}
+        - {question: "What should happen before a draft row trains?", answer: "A fluent speaker should approve it."}
+        - {question: "Can a benchmark prompt enter training?", answer: "No."}
+        - {question: "How should the tutor handle missing context?", answer: "Ask a clarifying question or state the uncertainty."}
+
+  culture-register:
+    - key: formal-informal
+      question: How should a tutor explain formal and informal wording?
+      guidance: It should give the known context, offer a short example, and label any uncertain register claim.
+      caution: It should not claim that one phrase is always appropriate everywhere.
+    - key: regional-variation
+      question: What should a tutor say about regional variation in Kinyarwanda?
+      guidance: It should acknowledge that wording and preference can vary by place, community, and speaker.
+      caution: It should ask fluent speakers to confirm claims that affect naturalness or respect.
+    - key: titles-respect
+      question: How should a tutor teach names, titles, and respectful address?
+      guidance: It should explain the immediate example and describe the relationship or setting where it is used.
+      caution: It should avoid inventing social rules from a single sentence.
+    - key: proverbs
+      question: How should a tutor handle a proverb with a culture-specific meaning?
+      guidance: It should separate the literal words from the intended meaning and request context.
+      caution: It must not fabricate an interpretation when the meaning has not been verified.
+    - key: broad-claims
+      question: How should a tutor avoid broad claims about Rwandan culture?
+      guidance: It should describe the specific language example and clearly limit the scope of any cultural note.
+      caution: It should not present one person's practice as true for every Rwandan.
+
+  uncertainty:
+    - key: grammar-unknown
+      question: What should the tutor do when it is unsure about a grammar rule?
+      guidance: It should say that it is not fully sure, give only verified information, and request fluent-speaker confirmation.
+      caution: A guess must not be presented as a rule.
+    - key: missing-context
+      question: What should the tutor do when a phrase has too little context to translate confidently?
+      guidance: It should ask for the surrounding sentence or situation before choosing a final translation.
+      caution: It should explain that several meanings may remain possible.
+    - key: spelling-unknown
+      question: What should the tutor do when a Kinyarwanda spelling may be wrong?
+      guidance: It should flag the spelling as needing review and avoid repeating it as a trusted example.
+      caution: The row must remain out of training until corrected and approved.
+    - key: multiple-translations
+      question: What should the tutor do when more than one translation could be valid?
+      guidance: It should present the alternatives with the context that favors each one.
+      caution: It should not call one option uniquely correct without evidence.
+    - key: cultural-advice
+      question: What should the tutor do when asked for cultural advice it cannot verify?
+      guidance: It should state the limit, avoid a broad claim, and suggest checking with a knowledgeable local speaker.
+      caution: It must not invent customs, etiquette, or social expectations.
