@@ -41,6 +41,22 @@ Each line is one JSON object:
 | `messages` | array | For the first run, exactly two messages: one `user`, one `assistant`. |
 | `reviewer_notes` | string | Empty string is allowed; reviewers should fill this when they change status. |
 
+## Optional Generation Metadata
+
+Generated draft profiles may add these fields. They make regeneration and
+review grouping easier, but they do not relax the training gate.
+
+| Field | Purpose |
+| --- | --- |
+| `generation_profile` | Versioned profile that produced the draft row. |
+| `content_key` | Stable key for the underlying phrase, fact, or scenario. |
+| `variant` | Prompt/answer presentation variant for that content key. |
+| `requested_question_count` | Quiz-only check that the answer has the requested number of questions. |
+
+Reviewers should not edit these fields. The required `id` is derived from this
+metadata for data-driven batches, so the same profile and seed regenerate the
+same row identities.
+
 ## Task Types
 
 Use these first so evaluation stays organized:
