@@ -33,12 +33,12 @@ Each line is one JSON object:
 | --- | --- | --- |
 | `id` | string | Stable unique ID, lowercase with hyphens or numbers. |
 | `task_type` | string | One of the task types below. |
-| `split` | string | `draft`, `train`, `validation`, or `benchmark-only`. |
+| `split` | string | `draft`, `train`, `validation`, `experimental-train`, `experimental-validation`, or `benchmark-only`. |
 | `source` | string | `team-authored`, `manual`, or a source name from `source-log.md`. |
-| `source_status` | string | `approved`, `team-authored`, `manual`, `reference-only`, `blocked`, or `investigate`. |
-| `review_status` | string | `needs-review`, `approved`, `needs-fix`, `rejected`, or `not-sure`. |
+| `source_status` | string | `approved`, `team-authored`, `manual`, `model-generated`, `reference-only`, `blocked`, or `investigate`. |
+| `review_status` | string | Human workflow: `needs-review`, `approved`, `needs-fix`, `rejected`, or `not-sure`. Experimental model-critic workflow: `critic-accepted` or `critic-repaired`. |
 | `language_mix` | string | `kinyarwanda`, `english`, or `kinyarwanda+english`. |
-| `messages` | array | For the first run, exactly two messages: one `user`, one `assistant`. |
+| `messages` | array | One or more complete `user`/`assistant` turns in alternating order. |
 | `reviewer_notes` | string | Empty string is allowed; reviewers should fill this when they change status. |
 
 ## Optional Generation Metadata
@@ -92,6 +92,20 @@ Rows with `review_status` of `needs-review`, `needs-fix`, `rejected`, or
 Rows with `source_status` of `blocked`, `investigate`, or `reference-only` must
 not enter a training run. `reference-only` can help humans write new examples,
 but the source text itself should not be converted directly into training data.
+
+### Experimental Baseline Gate
+
+The critic-filtered HF baseline is deliberately separate from human-approved
+data. It may use `experimental-train` and `experimental-validation` only when:
+
+1. `source_status` is `model-generated`.
+2. `review_status` is `critic-accepted` or `critic-repaired`.
+3. The training command includes `--experimental`.
+4. The dataset manifest records `human_reviewed=false` and
+   `production_eligible=false`.
+
+These rows support infrastructure tests and baseline comparisons. They do not
+count toward the 100-row seed gate or the 1,000-row fluent-reviewed target.
 
 ## First Seed Dataset Target
 

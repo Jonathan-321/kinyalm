@@ -42,6 +42,8 @@ compute path before training.
 13. Add teammate HF data through
     [hf-data-contribution-workflow.md](docs/team/hf-data-contribution-workflow.md).
 14. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
+15. Use [hf-baseline-run.md](docs/model/hf-baseline-run.md) for the HF-only
+    Track 2 experimental fine-tuning path.
 
 ## Contributors
 

@@ -23,22 +23,29 @@ the same script smoke-tests on a CPU laptop with a tiny model:
 
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
+import hashlib
 import json
 import sys
+from datetime import UTC, datetime
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from kinyalm.data.sft import load_jsonl, validate_sft_records
+from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", default="google/gemma-2-9b-it")
+    parser.add_argument(
+        "--model-revision",
+        default=None,
+        help="Optional model commit or tag. Use a commit for reproducible runs.",
+    )
     parser.add_argument("--train-file", required=True)
     parser.add_argument("--eval-file", default=None)
     parser.add_argument("--output-dir", required=True)
@@ -56,9 +63,30 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--max-seq-len", type=int, default=1024)
     parser.add_argument("--epochs", type=int, default=2)
+    parser.add_argument(
+        "--max-steps",
+        type=int,
+        default=-1,
+        help="Override epochs with a fixed step count; use 1 for a smoke run.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--no-quant", action="store_true",
                         help="Disable 4-bit quantization even on CUDA")
+    parser.add_argument(
+        "--experimental",
+        action="store_true",
+        help="Allow only explicitly labeled experimental-train/validation rows.",
+    )
+    parser.add_argument(
+        "--dataset-manifest",
+        default=None,
+        help="Optional manifest produced by prepare_hf_sft_baseline.py.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate data and write a preflight manifest without loading a model.",
+    )
     return parser.parse_args()
 
 
@@ -93,13 +121,155 @@ def to_dataset(records: list[dict]):
     return Dataset.from_list([{"messages": r["messages"]} for r in records])
 
 
+def write_preflight_manifest(
+    args: argparse.Namespace,
+    train_records: list[dict],
+    eval_records: list[dict] | None,
+) -> Path:
+    """Record exact local inputs before model loading or training starts."""
+
+    output_dir = Path(args.output_dir).expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    manifest = {
+        "schema_version": 1,
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "experimental": args.experimental,
+        "model": args.model,
+        "model_revision": args.model_revision,
+        "training": {
+            "lora_r": args.lora_r,
+            "lora_alpha": args.lora_alpha,
+            "lora_dropout": args.lora_dropout,
+            "learning_rate": args.learning_rate,
+            "warmup_ratio": args.warmup_ratio,
+            "batch_size": args.batch_size,
+            "gradient_accumulation_steps": args.grad_accum,
+            "max_sequence_length": args.max_seq_len,
+            "epochs": args.epochs,
+            "max_steps": args.max_steps,
+            "seed": args.seed,
+            "quantization_disabled": args.no_quant,
+        },
+        "data": {
+            "train": _input_metadata(args.train_file, train_records),
+            "validation": (
+                _input_metadata(args.eval_file, eval_records)
+                if args.eval_file and eval_records is not None
+                else None
+            ),
+            "source_manifest": (
+                _source_manifest_metadata(args.dataset_manifest)
+                if args.dataset_manifest
+                else None
+            ),
+        },
+    }
+    path = output_dir / "run-preflight.json"
+    path.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _input_metadata(path: str, records: list[dict]) -> dict:
+    metadata = _file_metadata(path)
+    metadata["rows"] = len(records)
+    metadata["review_statuses"] = sorted(
+        {str(record.get("review_status")) for record in records}
+    )
+    metadata["splits"] = sorted({str(record.get("split")) for record in records})
+    return metadata
+
+
+def _file_metadata(path: str) -> dict:
+    file_path = Path(path).expanduser().resolve()
+    digest = hashlib.sha256()
+    with file_path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {
+        "path": str(file_path),
+        "bytes": file_path.stat().st_size,
+        "sha256": digest.hexdigest(),
+    }
+
+
+def _source_manifest_metadata(path: str) -> dict:
+    metadata = _file_metadata(path)
+    manifest = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
+    metadata.update(
+        dataset_tier=manifest.get("dataset_tier"),
+        human_reviewed=manifest.get("human_reviewed"),
+        production_eligible=manifest.get("production_eligible"),
+        resolved_revision=manifest.get("source", {}).get("resolved_revision"),
+    )
+    return metadata
+
+
+def verify_dataset_manifest(
+    args: argparse.Namespace,
+    train_records: list[dict],
+    eval_records: list[dict] | None,
+) -> None:
+    """Fail when local data differs from the supplied version manifest."""
+
+    if not args.dataset_manifest:
+        return
+    manifest_path = Path(args.dataset_manifest).expanduser()
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"invalid dataset manifest {manifest_path}: {exc}") from exc
+
+    if args.experimental:
+        if manifest.get("dataset_tier") != "experimental-critic-filtered":
+            raise SystemExit(
+                "experimental run requires an experimental-critic-filtered manifest"
+            )
+        if manifest.get("human_reviewed") is not False:
+            raise SystemExit("experimental manifest must state human_reviewed=false")
+        if manifest.get("production_eligible") is not False:
+            raise SystemExit(
+                "experimental manifest must state production_eligible=false"
+            )
+
+    checks = [
+        ("train", args.train_file, train_records),
+        ("validation", args.eval_file, eval_records),
+    ]
+    for label, path, records in checks:
+        if not path or records is None:
+            continue
+        expected = manifest.get("outputs", {}).get(label)
+        if not isinstance(expected, dict):
+            raise SystemExit(f"dataset manifest is missing outputs.{label}")
+        actual = _file_metadata(path)
+        if expected.get("sha256") != actual["sha256"]:
+            raise SystemExit(f"{label} file does not match dataset manifest sha256")
+        if expected.get("rows") != len(records):
+            raise SystemExit(f"{label} row count does not match dataset manifest")
+
+
 def main() -> int:
     args = parse_args()
 
-    train_records = load_split(args.train_file, {"train"})
-    eval_records = load_split(args.eval_file, {"validation"}) if args.eval_file else None
+    train_splits = {"experimental-train"} if args.experimental else {"train"}
+    validation_splits = (
+        {"experimental-validation"} if args.experimental else {"validation"}
+    )
+    train_records = load_split(args.train_file, train_splits)
+    eval_records = (
+        load_split(args.eval_file, validation_splits) if args.eval_file else None
+    )
+    verify_dataset_manifest(args, train_records, eval_records)
     print(f"train rows: {len(train_records)}"
           + (f", validation rows: {len(eval_records)}" if eval_records else ""))
+    preflight_path = write_preflight_manifest(args, train_records, eval_records)
+    print(f"preflight manifest: {preflight_path}")
+    if args.dry_run:
+        print("dry run complete; model was not loaded")
+        return 0
 
     import torch
     from peft import LoraConfig
@@ -107,9 +277,20 @@ def main() -> int:
     from trl import SFTConfig, SFTTrainer
 
     use_cuda = torch.cuda.is_available()
+    use_mps = bool(
+        hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+    )
     quantize = use_cuda and not args.no_quant
-    dtype = torch.bfloat16 if use_cuda else torch.float32
-    print(f"device: {'cuda' if use_cuda else 'cpu'}, 4-bit quantization: {quantize}")
+    use_bf16 = use_cuda and torch.cuda.is_bf16_supported()
+    use_fp16 = use_cuda and not use_bf16
+    dtype = torch.bfloat16 if use_bf16 else (
+        torch.float16 if use_fp16 else torch.float32
+    )
+    device_name = "cuda" if use_cuda else ("mps" if use_mps else "cpu")
+    print(
+        f"device: {device_name}, "
+        f"dtype: {dtype}, 4-bit quantization: {quantize}"
+    )
 
     model_kwargs = {
         "dtype": dtype,
@@ -124,11 +305,19 @@ def main() -> int:
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.bfloat16,
+            bnb_4bit_compute_dtype=dtype,
         )
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model)
-    model = AutoModelForCausalLM.from_pretrained(args.model, **model_kwargs)
+    revision_kwargs = (
+        {"revision": args.model_revision} if args.model_revision else {}
+    )
+    tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    model = AutoModelForCausalLM.from_pretrained(
+        args.model, **revision_kwargs, **model_kwargs
+    )
+    model.config.use_cache = False
 
     peft_config = LoraConfig(
         r=args.lora_r,
@@ -145,6 +334,7 @@ def main() -> int:
     config = SFTConfig(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
+        max_steps=args.max_steps,
         per_device_train_batch_size=args.batch_size,
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.learning_rate,
@@ -153,7 +343,9 @@ def main() -> int:
         max_length=args.max_seq_len,
         gradient_checkpointing=use_cuda,
         optim="paged_adamw_8bit" if quantize else "adamw_torch",
-        bf16=use_cuda,
+        bf16=use_bf16,
+        fp16=use_fp16,
+        dataloader_pin_memory=use_cuda,
         logging_steps=1,
         eval_strategy="epoch" if eval_records else "no",
         save_strategy="epoch",
