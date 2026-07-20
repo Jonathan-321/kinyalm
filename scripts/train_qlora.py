@@ -70,6 +70,15 @@ def parse_args() -> argparse.Namespace:
         help="Override epochs with a fixed step count; use 1 for a smoke run.",
     )
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--attn-implementation",
+        choices=("auto", "eager", "sdpa", "flash_attention_2"),
+        default="auto",
+        help=(
+            "Attention backend. 'auto' uses eager attention for Gemma 2 and "
+            "the Transformers default for other models."
+        ),
+    )
     parser.add_argument("--no-quant", action="store_true",
                         help="Disable 4-bit quantization even on CUDA")
     parser.add_argument(
@@ -148,6 +157,9 @@ def write_preflight_manifest(
             "epochs": args.epochs,
             "max_steps": args.max_steps,
             "seed": args.seed,
+            "attention_implementation": resolve_attention_implementation(
+                args.model, args.attn_implementation
+            ),
             "quantization_disabled": args.no_quant,
         },
         "data": {
@@ -251,6 +263,17 @@ def verify_dataset_manifest(
             raise SystemExit(f"{label} row count does not match dataset manifest")
 
 
+def resolve_attention_implementation(model: str, requested: str) -> str | None:
+    """Choose a safe attention backend without slowing unrelated models."""
+
+    if requested != "auto":
+        return requested
+    normalized = model.lower().replace("_", "-")
+    if "gemma-2" in normalized:
+        return "eager"
+    return None
+
+
 def main() -> int:
     args = parse_args()
 
@@ -292,15 +315,18 @@ def main() -> int:
         f"dtype: {dtype}, 4-bit quantization: {quantize}"
     )
 
-    model_kwargs = {
-        "dtype": dtype,
-        # Required for Gemma-2: logit soft-capping is incompatible with
-        # flash/sdpa attention during training.
-        "attn_implementation": "eager",
-    }
+    model_kwargs = {"dtype": dtype}
+    attention_implementation = resolve_attention_implementation(
+        args.model, args.attn_implementation
+    )
+    if attention_implementation:
+        model_kwargs["attn_implementation"] = attention_implementation
     if quantize:
         from transformers import BitsAndBytesConfig
 
+        # The Lambda baseline is a single-GPU job. Placing the quantized model
+        # explicitly avoids a CPU-loaded 4-bit model that Trainer cannot move.
+        model_kwargs["device_map"] = {"": torch.cuda.current_device()}
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",

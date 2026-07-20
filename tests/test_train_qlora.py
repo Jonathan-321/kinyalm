@@ -3,6 +3,8 @@ import json
 import subprocess
 import sys
 
+from scripts.train_qlora import resolve_attention_implementation
+
 
 def experimental_record(row_id, split):
     return {
@@ -56,6 +58,8 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
             "--output-dir",
             str(output_dir),
             "--experimental",
+            "--attn-implementation",
+            "sdpa",
             "--dry-run",
         ],
         capture_output=True,
@@ -70,6 +74,7 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
     assert manifest["experimental"] is True
     assert manifest["data"]["train"]["rows"] == 1
     assert manifest["data"]["validation"]["rows"] == 1
+    assert manifest["training"]["attention_implementation"] == "sdpa"
 
 
 def test_train_qlora_requires_explicit_experimental_flag(tmp_path):
@@ -140,3 +145,9 @@ def test_train_qlora_rejects_data_that_does_not_match_manifest(tmp_path):
     assert file_sha256(train_path) != "0" * 64
     assert result.returncode != 0
     assert "does not match dataset manifest sha256" in result.stderr
+
+
+def test_attention_backend_only_special_cases_gemma_2():
+    assert resolve_attention_implementation("google/gemma-2-9b-it", "auto") == "eager"
+    assert resolve_attention_implementation("Qwen/Qwen2.5-7B-Instruct", "auto") is None
+    assert resolve_attention_implementation("any/model", "sdpa") == "sdpa"
