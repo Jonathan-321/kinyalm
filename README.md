@@ -44,6 +44,8 @@ compute path before training.
 14. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
 15. Use [hf-baseline-run.md](docs/model/hf-baseline-run.md) for the HF-only
     Track 2 experimental fine-tuning path.
+16. Launch the pinned cloud run with
+    [lambda-baseline-run.md](docs/model/lambda-baseline-run.md).
 
 ## Contributors
 

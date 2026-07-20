@@ -61,6 +61,9 @@ python3 scripts/train_qlora.py \
 Remove `--dry-run` on the GPU machine. Pin `--model-revision` to the selected
 model commit before a result is compared or reported.
 
+The reproducible Lambda Cloud launch path is in
+[`lambda-baseline-run.md`](lambda-baseline-run.md).
+
 For a one-step infrastructure smoke run, replace `--dry-run` with
 `--max-steps 1`. The resulting adapter is only proof that the complete training
 path works; it is not an evaluation candidate.
