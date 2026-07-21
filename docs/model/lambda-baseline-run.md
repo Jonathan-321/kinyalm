@@ -3,6 +3,12 @@
 This runbook executes the HF-only Baseline A on one Lambda Cloud GPU and
 publishes the adapter plus its audit trail to a private Hugging Face model repo.
 
+> **Experiment update, 2026-07-21:** the Qwen fallback run completed and proved
+> the pipeline, but failed the language-quality gate. Do not launch another
+> paid Qwen run except to reproduce that result. Read the
+> [experiment report](experiments/2026-07-20-track2-baseline-report.md) before
+> selecting or training another base.
+
 ## Pinned First Run
 
 - GPU: 1x NVIDIA A100 40 GB SXM4.

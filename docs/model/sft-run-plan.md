@@ -2,6 +2,11 @@
 
 This is the first training-readiness plan for a Kinyarwanda tutor SFT run.
 
+> **Status update, 2026-07-21:** this document preserves the original planning
+> assumptions. The Qwen fallback has since been trained and rejected for
+> language quality. Base-model selection now requires the zero-shot bake-off in
+> the [Track 2 experiment report](experiments/2026-07-20-track2-baseline-report.md).
+
 SFT means supervised fine-tuning: we adapt a base model using reviewed
 conversation examples so it learns the tutor behavior we want.
 
@@ -46,8 +51,8 @@ Decision table (Bonheur, 2026-07-12; needs team sign-off):
 | --- | ---: | --- | ---: | --- | --- | --- |
 | google/gemma-2-9b-it | 9B | Gemma Terms of Use (fine-tuning and class demo allowed) | 8k | Tied-best tokenizer on our confirmed examples; strong record on African-language fine-tunes; instruction-tuned, so it ships a chat template that a ~100-example seed run cannot teach from scratch. | Gated repo (needs an HF token with accepted access); Gemma-2 needs `eager` attention during training. | recommended |
 | google/gemma-2-2b-it | 2B | Gemma Terms of Use | 8k | Same tokenizer and family as the primary, so falling back invalidates none of the data prep or tokenizer analysis; fits much smaller GPUs. | Weaker base quality. | fallback if OOM/cost |
-| Qwen/Qwen2.5-7B-Instruct | 7B | Apache-2.0 | 32k | Cleanest license of the candidates; ungated. | Worst tokenizer of the three on Kinyarwanda (3.28 tokens/word). | alternative if Gemma terms are a problem |
-| CohereLabs/aya-expanse-8b | 8B | CC-BY-NC-4.0 | 8k | Multilingual instruction model. | Its 23 languages do NOT include Kinyarwanda (the "Aya covers Kinyarwanda" fact belongs to Aya-101, a 13B mT5 seq2seq that is a poor QLoRA chat base); non-commercial license; gated. | rejected |
+| Qwen/Qwen2.5-7B-Instruct | 7B | Apache-2.0 | 32k | Clean license and ungated access made it useful for proving the infrastructure. | The completed QLoRA run failed basic Kinyarwanda tutoring, translation, correction, and repetition checks. | tested and rejected |
+| CohereLabs/aya-expanse-8b | 8B | CC-BY-NC-4.0 | 8k | Multilingual instruction model. | Its 23 languages do not include Kinyarwanda; non-commercial license; gated. Aya-101 was evaluated on Kinyarwanda by IrokoBench, but its own official 101-language list also does not include Kinyarwanda. | rejected |
 
 ### Tokenizer Evidence
 
@@ -70,8 +75,10 @@ What the numbers mean:
 - Every candidate costs roughly 3 tokens per Kinyarwanda word, so tokenizer
   compactness does not separate the finalists. The decision rests on language
   exposure, license, and fallback consistency instead.
-- Even Aya-101, whose tokenizer actually saw Kinyarwanda, only reaches 2.77.
-  Re-run the script to regenerate the full piece-level report.
+- Aya-101 reaches 2.77 tokens per word, but tokenizer compactness is not proof
+  of language coverage or generation quality. Its official language list does
+  not include Kinyarwanda. Re-run the script to regenerate the full piece-level
+  report.
 
 ## Dataset Inputs
 
