@@ -189,8 +189,10 @@ selection gate.
 
 ## Next Bake-Off
 
-1. Run the five candidates unchanged on the 26 `benchmark-only` prompts in
-   [`learning-task-bank.md`](../../evaluation/learning-task-bank.md).
+1. Run Gemma 4 12B and 31B unchanged on the 26 `benchmark-only` prompts using
+   the pinned [multilingual bake-off runbook](../multilingual-bakeoff-run.md).
+   Keep Kakugo and Qwen as existing controls; add Gemma 2 or Aya only if the
+   first comparison does not produce a clear finalist.
 2. Add Kinyarwanda subsets from Belebele, FLORES-200, and IrokoBench using the
    existing benchmark registry. Never copy those rows into SFT data.
 3. Save the exact model revision, chat template, decoding settings, seed,

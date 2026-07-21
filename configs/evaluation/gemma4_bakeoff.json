@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "run_name": "gemma4-zero-shot-bakeoff-v1",
+  "task_bank": "docs/evaluation/learning-task-bank.md",
+  "task_split": "benchmark-only",
+  "expected_task_count": 26,
+  "system_prompt": "You are a bilingual Kinyarwanda-English language tutor. Answer the learner's request directly, accurately, and naturally. Follow any requested response language. If no response language is requested, use the language that best teaches the requested concept. State uncertainty instead of inventing a grammar rule, translation, cultural claim, or fact.",
+  "seed": 20260721,
+  "max_new_tokens": 768,
+  "enable_thinking": false,
+  "candidates": [
+    {
+      "id": "gemma4-12b-it",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+    },
+    {
+      "id": "gemma4-31b-it",
+      "model_id": "google/gemma-4-31B-it",
+      "revision": "842da3794eaa0b77d5f08bae87a17459d91ff475"
+    }
+  ]
+}

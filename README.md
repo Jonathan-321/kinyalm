@@ -53,6 +53,8 @@ compute path before training.
 19. Use the
     [multilingual adaptation strategy](docs/model/multilingual-adaptation-strategy.md)
     to decide between continued pretraining, SFT, and preference learning.
+20. Run the unchanged Gemma 4 base-model comparison with the
+    [multilingual bake-off runbook](docs/model/multilingual-bakeoff-run.md).
 
 ## Contributors
 
