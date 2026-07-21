@@ -53,6 +53,8 @@ compute path before training.
 19. Use the
     [multilingual adaptation strategy](docs/model/multilingual-adaptation-strategy.md)
     to decide between continued pretraining, SFT, and preference learning.
+20. Test the Kinyarwanda-specific Kakugo control locally with
+    [kakugo-local-run.md](docs/model/kakugo-local-run.md).
 
 ## Contributors
 
