@@ -46,6 +46,13 @@ compute path before training.
     Track 2 experimental fine-tuning path.
 16. Launch the pinned cloud run with
     [lambda-baseline-run.md](docs/model/lambda-baseline-run.md).
+17. Inspect the experimental adapter on an Apple-silicon Mac with
+    [local-mlx-run.md](docs/model/local-mlx-run.md).
+18. Read the first complete training result and next-base decision in the
+    [Track 2 baseline experiment report](docs/model/experiments/2026-07-20-track2-baseline-report.md).
+19. Use the
+    [multilingual adaptation strategy](docs/model/multilingual-adaptation-strategy.md)
+    to decide between continued pretraining, SFT, and preference learning.
 
 ## Contributors
 
