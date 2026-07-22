@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f6f3" />
+    <title>KinyaLM</title>
+    <link rel="icon" href="/assets/kinyalm-mark.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar" aria-label="Conversations">
+        <div class="brand-row">
+          <img
+            class="brand-mark"
+            src="/assets/kinyalm-mark.png"
+            alt=""
+            width="40"
+            height="40"
+          />
+          <div>
+            <div class="brand-name">KinyaLM</div>
+            <div class="brand-subtitle">Language tutor</div>
+          </div>
+          <button
+            class="icon-button sidebar-close"
+            id="sidebar-close"
+            type="button"
+            aria-label="Close conversations"
+            title="Close"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <button class="new-chat-button" id="new-chat" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+          </svg>
+          <span>New conversation</span>
+        </button>
+
+        <div class="sidebar-section-label">Today</div>
+        <nav class="conversation-list" aria-label="Recent conversations">
+          <button class="conversation-item active" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4Z" />
+            </svg>
+            <span id="conversation-title">New conversation</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-spacer"></div>
+        <button class="runtime-summary" id="runtime-summary" type="button">
+          <span class="status-dot loading" id="status-dot"></span>
+          <span>
+            <strong id="runtime-status">Loading model</strong>
+            <small id="runtime-location">On this Mac</small>
+          </span>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="m9 18 6-6-6-6" />
+          </svg>
+        </button>
+      </aside>
+
+      <button class="sidebar-scrim" id="sidebar-scrim" type="button" aria-label="Close conversations"></button>
+
+      <main class="chat-workspace">
+        <header class="topbar">
+          <button
+            class="icon-button mobile-menu"
+            id="mobile-menu"
+            type="button"
+            aria-label="Open conversations"
+            title="Conversations"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 6h16" />
+              <path d="M4 12h16" />
+              <path d="M4 18h16" />
+            </svg>
+          </button>
+          <div class="topbar-title">
+            <strong>KinyaLM</strong>
+            <span id="topbar-mode">Converse</span>
+          </div>
+          <div class="topbar-actions">
+            <button
+              class="icon-button"
+              id="clear-chat"
+              type="button"
+              aria-label="Clear conversation"
+              title="Clear conversation"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M3 6h18" />
+                <path d="M8 6V4h8v2" />
+                <path d="M19 6 18 21H6L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+              </svg>
+            </button>
+            <button
+              class="icon-button"
+              id="runtime-details-button"
+              type="button"
+              aria-label="Runtime details"
+              title="Runtime details"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 2v4" />
+                <path d="M12 18v4" />
+                <path d="m4.93 4.93 2.83 2.83" />
+                <path d="m16.24 16.24 2.83 2.83" />
+                <path d="M2 12h4" />
+                <path d="M18 12h4" />
+                <path d="m4.93 19.07 2.83-2.83" />
+                <path d="m16.24 7.76 2.83-2.83" />
+              </svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="controls-bar" aria-label="Conversation settings">
+          <div class="mode-control" role="tablist" aria-label="Mode">
+            <button class="mode-button active" data-mode="converse" role="tab" aria-selected="true" type="button">Converse</button>
+            <button class="mode-button" data-mode="translate" role="tab" aria-selected="false" type="button">Translate</button>
+            <button class="mode-button" data-mode="learn" role="tab" aria-selected="false" type="button">Learn</button>
+          </div>
+          <div class="select-controls">
+            <label>
+              <span class="sr-only">Response language</span>
+              <select id="language-select" aria-label="Response language">
+                <option value="auto">Auto language</option>
+                <option value="rw">Kinyarwanda</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label>
+              <span class="sr-only">Learning level</span>
+              <select id="level-select" aria-label="Learning level">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate" selected>Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </label>
+          </div>
+        </section>
+
+        <section class="conversation" id="conversation" aria-live="polite">
+          <div class="conversation-inner">
+            <div class="empty-state" id="empty-state">
+              <img src="/assets/kinyalm-mark.png" alt="" width="64" height="64" />
+              <h1>Muraho. Ni iki twakwiga?</h1>
+              <p>What would you like to practice?</p>
+              <div class="suggestion-grid">
+                <button type="button" data-prompt="Reka tuganire mu Kinyarwanda.">
+                  <strong>Conversation</strong>
+                  <span>Reka tuganire mu Kinyarwanda.</span>
+                </button>
+                <button type="button" data-mode-target="translate" data-prompt="Translate: I am learning Kinyarwanda.">
+                  <strong>Translation</strong>
+                  <span>I am learning Kinyarwanda.</span>
+                </button>
+                <button type="button" data-mode-target="translate" data-prompt="Kosora iyi nteruro: nge ndi kwiga ikinyarwanda.">
+                  <strong>Correction</strong>
+                  <span>Kosora iyi nteruro.</span>
+                </button>
+                <button type="button" data-mode-target="learn" data-prompt="Nyigisha indamukanyo eshatu zikoreshwa buri munsi.">
+                  <strong>Quick lesson</strong>
+                  <span>Indamukanyo za buri munsi.</span>
+                </button>
+              </div>
+            </div>
+            <div class="message-list" id="message-list"></div>
+          </div>
+        </section>
+
+        <footer class="composer-area">
+          <div class="connection-notice hidden" id="connection-notice" role="status"></div>
+          <form class="composer" id="composer">
+            <textarea
+              id="message-input"
+              rows="1"
+              maxlength="12000"
+              aria-label="Message KinyaLM"
+              placeholder="Message KinyaLM"
+            ></textarea>
+            <button class="send-button" id="send-button" type="submit" aria-label="Send message" title="Send">
+              <svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M5 12h14" />
+                <path d="m13 6 6 6-6 6" />
+              </svg>
+              <svg class="stop-icon" viewBox="0 0 24 24" aria-hidden="true">
+                <rect width="12" height="12" x="6" y="6" rx="1" />
+              </svg>
+            </button>
+          </form>
+        </footer>
+      </main>
+    </div>
+
+    <aside class="details-panel" id="details-panel" aria-hidden="true">
+      <div class="details-header">
+        <div>
+          <span>Runtime</span>
+          <strong>KinyaLM local</strong>
+        </div>
+        <button class="icon-button" id="details-close" type="button" aria-label="Close runtime details" title="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18" />
+            <path d="m6 6 12 12" />
+          </svg>
+        </button>
+      </div>
+      <dl class="details-list" id="details-list">
+        <div><dt>Status</dt><dd>Loading</dd></div>
+      </dl>
+      <div class="last-run hidden" id="last-run">
+        <span>Last response</span>
+        <dl id="last-run-metrics"></dl>
+      </div>
+    </aside>
+
+    <dialog class="feedback-dialog" id="feedback-dialog">
+      <form method="dialog" id="feedback-form">
+        <div class="dialog-header">
+          <div>
+            <span>Review response</span>
+            <strong>Suggest a better answer</strong>
+          </div>
+          <button class="icon-button" value="cancel" type="button" id="feedback-close" aria-label="Close feedback" title="Close">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 6 6 18" />
+              <path d="m6 6 12 12" />
+            </svg>
+          </button>
+        </div>
+        <label for="correction-input">Correction</label>
+        <textarea id="correction-input" rows="6" maxlength="12000" placeholder="Write the response KinyaLM should have given"></textarea>
+        <div class="dialog-actions">
+          <button class="secondary-button" value="cancel" type="button" id="feedback-cancel">Cancel</button>
+          <button class="primary-button" value="submit" type="submit">Save review</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

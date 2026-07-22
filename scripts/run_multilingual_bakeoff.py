@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import traceback
+from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -341,7 +342,9 @@ class MlxGenerator:
 
         import mlx.core as mx
         from mlx_lm import stream_generate
+        from mlx_lm.models.cache import make_prompt_cache
         from mlx_lm.sample_utils import make_logits_processors, make_sampler
+        from mlx_lm.server import LRUPromptCache
 
         installed = _package_version("mlx-lm")
         if installed != candidate.backend_version:
@@ -360,6 +363,12 @@ class MlxGenerator:
             }
         )
         self.model, self.tokenizer = load_text_only_mlx_model(candidate)
+        self.make_prompt_cache = make_prompt_cache
+        self.prompt_cache = LRUPromptCache(
+            max_size=4,
+            max_bytes=512 * 1024 * 1024,
+        )
+        self.cache_key = (candidate.model_id, candidate.revision)
 
     def generate(
         self,
@@ -385,6 +394,7 @@ class MlxGenerator:
         messages: list[dict[str, str]],
         max_new_tokens: int,
         enable_thinking: bool,
+        on_text: Callable[[str], None] | None = None,
     ) -> dict[str, Any]:
         """Generate one response from a complete chat history."""
 
@@ -394,19 +404,42 @@ class MlxGenerator:
             add_generation_prompt=True,
             enable_thinking=enable_thinking,
         )
+        add_special_tokens = self.tokenizer.bos_token is None or not prompt.startswith(
+            self.tokenizer.bos_token
+        )
+        prompt_tokens = self.tokenizer.encode(
+            prompt,
+            add_special_tokens=add_special_tokens,
+        )
+        prompt_cache, uncached_tokens = self.prompt_cache.fetch_nearest_cache(
+            self.cache_key,
+            prompt_tokens,
+        )
+        cached_input_tokens = len(prompt_tokens) - len(uncached_tokens)
+        if prompt_cache is None:
+            prompt_cache = self.make_prompt_cache(self.model)
+
         self.mx.reset_peak_memory()
         started = time.perf_counter()
+        first_token_seconds = None
         chunks: list[str] = []
+        generated_tokens: list[int] = []
         final = None
         for generation in self.stream_generate(
             self.model,
             self.tokenizer,
-            prompt,
+            uncached_tokens,
             max_tokens=max_new_tokens,
             sampler=self.sampler,
             logits_processors=self.logits_processors,
+            prompt_cache=prompt_cache,
         ):
+            if first_token_seconds is None:
+                first_token_seconds = time.perf_counter() - started
             chunks.append(generation.text)
+            generated_tokens.append(int(generation.token))
+            if on_text is not None and generation.text:
+                on_text(generation.text)
             final = generation
         elapsed = time.perf_counter() - started
         if final is None:
@@ -416,19 +449,28 @@ class MlxGenerator:
         response, thinking = parse_gemma4_response(raw_response)
         if not response:
             raise RuntimeError("Gemma generated no visible response content")
+        self.prompt_cache.insert_cache(
+            self.cache_key,
+            [*prompt_tokens, *generated_tokens],
+            prompt_cache,
+        )
         return {
             "response": response,
             "raw_response": raw_response,
             "thinking": thinking,
-            "input_tokens": int(final.prompt_tokens),
+            "input_tokens": len(prompt_tokens),
+            "cached_input_tokens": cached_input_tokens,
+            "prompt_tokens_per_second": round(float(final.prompt_tps), 4),
             "output_tokens": int(final.generation_tokens),
             "latency_seconds": round(elapsed, 4),
+            "first_token_seconds": round(float(first_token_seconds or elapsed), 4),
             "tokens_per_second": round(float(final.generation_tps), 4),
             "peak_unified_memory_gb": round(float(final.peak_memory), 4),
             "finish_reason": final.finish_reason,
         }
 
     def close(self) -> None:
+        del self.prompt_cache
         del self.model
         del self.tokenizer
         gc.collect()
