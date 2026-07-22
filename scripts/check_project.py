@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
@@ -13,7 +13,13 @@ if str(SRC) not in sys.path:
 
 def main() -> int:
     from kinyalm.data.examples import load_tsv_examples
-    from kinyalm.evaluation import load_benchmark_manifest, validate_benchmark_manifest
+    from kinyalm.evaluation import (
+        benchmark_tasks,
+        load_bakeoff_config,
+        load_benchmark_manifest,
+        load_task_bank,
+        validate_benchmark_manifest,
+    )
 
     examples_path = ROOT / "docs" / "tokenizer" / "eval-examples.tsv"
     examples = load_tsv_examples(examples_path)
@@ -35,7 +41,14 @@ def main() -> int:
     benchmark_manifest_path = (
         ROOT / "configs" / "evaluation" / "kinyarwanda_benchmarks.json"
     )
-    task_count, benchmark_count = count_task_bank_rows(task_bank_path)
+    bakeoff_config_path = (
+        ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
+    )
+    tasks = load_task_bank(task_bank_path)
+    held_out_tasks = benchmark_tasks(tasks)
+    task_count = len(tasks)
+    benchmark_count = len(held_out_tasks)
+    bakeoff_config = load_bakeoff_config(bakeoff_config_path)
     benchmark_specs = load_benchmark_manifest(benchmark_manifest_path)
     benchmark_result = validate_benchmark_manifest(benchmark_specs)
 
@@ -44,6 +57,10 @@ def main() -> int:
     if benchmark_count < 15:
         raise SystemExit(
             f"expected at least 15 benchmark-only tasks, found {benchmark_count}"
+        )
+    if benchmark_count != bakeoff_config.expected_task_count:
+        raise SystemExit(
+            "Gemma 4 bake-off task count does not match the held-out bank"
         )
     if not schema_path.exists():
         raise SystemExit(f"missing SFT schema: {schema_path}")
@@ -73,6 +90,10 @@ def main() -> int:
         f"{task_count} tutor evaluation tasks "
         f"({benchmark_count} benchmark-only)."
     )
+    print(
+        f"Validated {len(bakeoff_config.candidates)} pinned bake-off candidates "
+        f"from {bakeoff_config_path.relative_to(ROOT)}."
+    )
     print(f"Found SFT schema at {schema_path.relative_to(ROOT)}.")
     print(
         "Found shared storage workflow at "
@@ -99,18 +120,6 @@ def main() -> int:
         "artifacts out of this repo."
     )
     return 0
-
-
-def count_task_bank_rows(path: Path) -> tuple[int, int]:
-    task_count = 0
-    benchmark_count = 0
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.startswith("| T"):
-            continue
-        task_count += 1
-        if "| benchmark-only |" in line:
-            benchmark_count += 1
-    return task_count, benchmark_count
 
 
 if __name__ == "__main__":
