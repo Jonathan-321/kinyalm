@@ -54,6 +54,11 @@ Start with the unchanged candidates listed in the
 4. `ptrdvn/kakugo-3B-kin`
 5. `CohereForAI/aya-101` as a legacy control
 
+The first paid round compares the two Gemma 4 candidates. Kakugo and Qwen are
+already recorded controls; add Gemma 2 or Aya only when the first round does
+not produce a clear finalist. The pinned settings and launch procedure are in
+the [multilingual bake-off runbook](multilingual-bakeoff-run.md).
+
 Run all candidates on identical hidden prompts. Do not fine-tune every model
 and compare them afterward; that spends compute before answering the cheaper
 question of whether the base understands Kinyarwanda at all.

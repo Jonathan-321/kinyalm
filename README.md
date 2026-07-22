@@ -53,8 +53,26 @@ compute path before training.
 19. Use the
     [multilingual adaptation strategy](docs/model/multilingual-adaptation-strategy.md)
     to decide between continued pretraining, SFT, and preference learning.
-20. Test the Kinyarwanda-specific Kakugo control locally with
-    [kakugo-local-run.md](docs/model/kakugo-local-run.md).
+20. Run the unchanged Gemma 4 base-model comparison with the
+    [multilingual bake-off runbook](docs/model/multilingual-bakeoff-run.md).
+21. Read the completed local 12B result in the
+    [Gemma 4 local screening report](docs/model/experiments/2026-07-21-gemma4-12b-local-screen.md).
+22. Test the selected local checkpoint through the
+    [KinyaLM browser chat demo](docs/model/local-kinyalm-chat-demo.md).
+
+## Local KinyaLM Chat
+
+On an Apple-silicon Mac, launch the streamed Gemma 4 12B chat with:
+
+```bash
+bash scripts/local/chat_gemma4_web.sh --open
+```
+
+The browser opens at `http://127.0.0.1:8090`. The model stays local, while
+ratings and reviewer corrections are saved privately for later review. See the
+[demo runbook](docs/model/local-kinyalm-chat-demo.md) for performance numbers,
+screenshots, mock mode, and the boundary between a usable prototype and a
+quality-approved model.
 
 ## Contributors
 
@@ -67,6 +85,7 @@ compute path before training.
 ```text
 configs/                  # training/eval config files
 coursework/cs336/         # official CS336 assignment repos as submodules
+apps/kinyalm-chat/         # local browser chat interface
 data/
   raw/                    # original downloaded or received data, not committed
   interim/                # intermediate cleaned data, not committed by default
