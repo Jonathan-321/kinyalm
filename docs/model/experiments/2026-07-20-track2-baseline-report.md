@@ -161,6 +161,9 @@ for Qwen, and its Kinyarwanda conversations still require blind native-speaker
 review. The paper's manual conversational evaluation covered other languages,
 not Kinyarwanda.
 
+Run the pinned model yourself with the
+[`kakugo-local-run.md`](../kakugo-local-run.md) guide.
+
 ## Better Baseline Shortlist
 
 The next run is a bake-off, meaning several unchanged base models answer the
