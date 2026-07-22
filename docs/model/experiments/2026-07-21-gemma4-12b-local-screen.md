@@ -6,6 +6,11 @@
 
 **Model-quality decision:** provisional fail; native-speaker blind review pending
 
+**Follow-up:** the same checkpoint now has a streamed local browser interface;
+see the [KinyaLM chat demo runbook](../local-kinyalm-chat-demo.md). The interface
+improves response length, waiting time, and review ergonomics, but it does not
+change this report's provisional quality decision.
+
 ## Outcome
 
 The unchanged Gemma 4 12B instruction model completed all 26 held-out KinyaLM
