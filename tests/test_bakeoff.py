@@ -27,6 +27,14 @@ def test_project_bakeoff_config_is_pinned_and_held_out():
         "gemma4-31b-it",
     ]
     assert all(len(candidate.revision) == 40 for candidate in config.candidates)
+    local = config.candidates[0].local_mlx
+    assert local is not None
+    assert local.model_id == "mlx-community/gemma-4-12B-it-qat-4bit"
+    assert local.mlx_lm_version == "0.31.3"
+    assert local.model_type == "gemma4"
+    assert local.ignored_weight_prefixes == ("vision_embedder.",)
+    assert local.suppress_token_ids == (258882, 258883)
+    assert config.candidates[1].local_mlx is None
 
 
 def test_config_rejects_training_split(tmp_path: Path):
@@ -95,3 +103,36 @@ def test_blind_pack_excludes_model_identity(tmp_path: Path):
     assert "secret-small-model" not in review_text
     assert "secret-large-model" not in review_text
     assert key["labels"] == labels
+
+
+def test_single_candidate_review_pack_is_still_identity_blind(tmp_path: Path):
+    task = TutorTask(
+        id="T001",
+        category="Greeting",
+        split="benchmark-only",
+        prompt="Explain Muraho.",
+        review_focus="accuracy",
+    )
+    csv_path = tmp_path / "review.csv"
+    key_path = tmp_path / "key.json"
+
+    count, labels = write_blind_review_pack(
+        output_csv=csv_path,
+        key_path=key_path,
+        tasks=[task],
+        candidate_results={
+            "local": {
+                "T001": {
+                    "status": "ok",
+                    "response": "Muraho ni indamukanyo.",
+                    "model_id": "organization/model",
+                    "model_revision": "c" * 40,
+                }
+            }
+        },
+        seed=7,
+    )
+
+    assert count == 1
+    assert labels == {"local": "Model A"}
+    assert "organization/model" not in csv_path.read_text(encoding="utf-8")

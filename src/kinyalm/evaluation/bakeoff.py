@@ -36,12 +36,27 @@ REVIEW_COLUMNS = (
 
 
 @dataclass(frozen=True)
+class MlxRuntimeSpec:
+    """Pinned MLX conversion used for local screening of a source model."""
+
+    id: str
+    model_id: str
+    revision: str
+    mlx_lm_version: str
+    model_type: str
+    ignored_weight_prefixes: tuple[str, ...]
+    suppress_token_ids: tuple[int, ...]
+    quantization: str
+
+
+@dataclass(frozen=True)
 class CandidateSpec:
     """One unchanged model candidate in a bake-off."""
 
     id: str
     model_id: str
     revision: str
+    local_mlx: MlxRuntimeSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -134,8 +149,8 @@ def write_blind_review_pack(
 
     task_list = list(tasks)
     candidate_ids = sorted(candidate_results)
-    if len(candidate_ids) < 2:
-        raise ValueError("blind review requires results from at least two candidates")
+    if not candidate_ids:
+        raise ValueError("blind review requires at least one candidate result")
 
     labels = [f"Model {chr(ord('A') + index)}" for index in range(len(candidate_ids))]
     rng = random.Random(seed)
@@ -206,10 +221,33 @@ def write_blind_review_pack(
 def _candidate(raw: Any, index: int) -> CandidateSpec:
     if not isinstance(raw, dict):
         raise ValueError(f"candidate {index} must be a JSON object")
+    local_mlx_raw = raw.get("local_mlx")
+    local_mlx = None
+    if local_mlx_raw is not None:
+        local_mlx = _mlx_runtime(local_mlx_raw, index)
     return CandidateSpec(
         id=_string(raw, "id", label=f"candidate {index}"),
         model_id=_string(raw, "model_id", label=f"candidate {index}"),
         revision=_string(raw, "revision", label=f"candidate {index}"),
+        local_mlx=local_mlx,
+    )
+
+
+def _mlx_runtime(raw: Any, index: int) -> MlxRuntimeSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"candidate {index} local_mlx must be a JSON object")
+    label = f"candidate {index} local_mlx"
+    return MlxRuntimeSpec(
+        id=_string(raw, "id", label=label),
+        model_id=_string(raw, "model_id", label=label),
+        revision=_string(raw, "revision", label=label),
+        mlx_lm_version=_string(raw, "mlx_lm_version", label=label),
+        model_type=_string(raw, "model_type", label=label),
+        ignored_weight_prefixes=_string_tuple(
+            raw, "ignored_weight_prefixes", label=label
+        ),
+        suppress_token_ids=_integer_tuple(raw, "suppress_token_ids", label=label),
+        quantization=_string(raw, "quantization", label=label),
     )
 
 
@@ -231,6 +269,20 @@ def _validate_config(config: BakeoffConfig) -> None:
     for candidate in config.candidates:
         if not REVISION_PATTERN.fullmatch(candidate.revision):
             raise ValueError(f"{candidate.id}: revision must be a 40-character SHA")
+        if candidate.local_mlx is not None and not REVISION_PATTERN.fullmatch(
+            candidate.local_mlx.revision
+        ):
+            raise ValueError(
+                f"{candidate.local_mlx.id}: revision must be a 40-character SHA"
+            )
+
+    runtime_ids = [
+        candidate.local_mlx.id
+        for candidate in config.candidates
+        if candidate.local_mlx is not None
+    ]
+    if len(runtime_ids) != len(set(runtime_ids)):
+        raise ValueError("local MLX runtime IDs must be unique")
 
 
 def _review_response(result: dict[str, Any]) -> str:
@@ -245,6 +297,37 @@ def _string(raw: dict[str, Any], key: str, *, label: str = "config") -> str:
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} {key} must be a non-empty string")
     return value.strip()
+
+
+def _string_tuple(
+    raw: dict[str, Any], key: str, *, label: str = "config"
+) -> tuple[str, ...]:
+    value = raw.get(key)
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"{label} {key} must be a non-empty list")
+    if any(not isinstance(item, str) or not item.strip() for item in value):
+        raise ValueError(f"{label} {key} must contain non-empty strings")
+    result = tuple(item.strip() for item in value)
+    if len(result) != len(set(result)):
+        raise ValueError(f"{label} {key} must not contain duplicates")
+    return result
+
+
+def _integer_tuple(
+    raw: dict[str, Any], key: str, *, label: str = "config"
+) -> tuple[int, ...]:
+    value = raw.get(key)
+    if not isinstance(value, list) or not value:
+        raise ValueError(f"{label} {key} must be a non-empty list")
+    if any(
+        not isinstance(item, int) or isinstance(item, bool) or item < 0
+        for item in value
+    ):
+        raise ValueError(f"{label} {key} must contain non-negative integers")
+    result = tuple(value)
+    if len(result) != len(set(result)):
+        raise ValueError(f"{label} {key} must not contain duplicates")
+    return result
 
 
 def _integer(raw: dict[str, Any], key: str) -> int:

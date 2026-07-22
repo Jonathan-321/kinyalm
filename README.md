@@ -55,6 +55,8 @@ compute path before training.
     to decide between continued pretraining, SFT, and preference learning.
 20. Run the unchanged Gemma 4 base-model comparison with the
     [multilingual bake-off runbook](docs/model/multilingual-bakeoff-run.md).
+21. Read the completed local 12B result in the
+    [Gemma 4 local screening report](docs/model/experiments/2026-07-21-gemma4-12b-local-screen.md).
 
 ## Contributors
 

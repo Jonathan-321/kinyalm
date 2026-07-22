@@ -19,6 +19,59 @@ Both models receive the same system prompt, deterministic decoding, disabled
 thinking mode, seed, token limit, and task order. Every response is written to
 JSONL immediately so the run can resume after an interruption.
 
+## Local 12B Screening Run
+
+The 12B candidate can be screened on a 32 GB Apple-silicon Mac before renting
+cloud compute. The local path pins
+`mlx-community/gemma-4-12B-it-qat-4bit` at revision
+`e70c6b3ba0979b3357dcd2f223ad8bde7787a6b6` and MLX-LM `0.31.3`. Its download
+is about 10.3 GB. The weights are a mixed 4/8-bit MLX conversion derived from
+the QAT release, so this run is a practical quality gate, not a numerically
+identical substitute for the official BF16 checkpoint. The config also pins
+the `gemma4` MLX model-type override required for the conversion's upstream
+`gemma4_unified` label. It strictly loads every text-model tensor and ignores
+only the pinned `vision_embedder.*` tensors that the text-only runner cannot
+consume. The local decoder also suppresses token IDs `258882` and `258883`, as
+required by the checkpoint's pinned `generation_config.json`, so image/audio
+end markers cannot replace ordinary text tokens.
+
+Run one held-out prompt first. This creates a separate smoke-test directory:
+
+```bash
+RUN_ID=gemma4-12b-mlx-smoke \
+  bash scripts/local/run_gemma4_12b_bakeoff.sh --limit 1
+```
+
+Then run all 26 held-out prompts:
+
+```bash
+bash scripts/local/run_gemma4_12b_bakeoff.sh
+```
+
+After the benchmark process exits, test the same pinned checkpoint yourself in
+a multi-turn terminal chat:
+
+```bash
+bash scripts/local/chat_gemma4_12b.sh
+```
+
+Use `/reset` to clear conversation context and `/quit` to unload the model.
+The client identifies this as an unchanged Gemma screening checkpoint, not a
+fine-tuned KinyaLM release.
+
+The first command creates an isolated environment under
+`~/.cache/kinyalm/gemma4-12b-bakeoff` and downloads the model into the normal
+Hugging Face cache. Later runs reuse both. Full outputs are written under
+`outputs/model-bakeoffs/<RUN-ID>/`; the 26-row `review/blind-review.csv` hides
+the checkpoint identity while reviewers score the answers. The launcher also
+writes `summary/automatic-metrics.json` with objective runtime measurements,
+truncation flags, and leaked modality-token flags. It does not assign language
+quality scores.
+
+Do not run the 31B QAT conversion on this 32 GB Mac. Its weights alone occupy
+about 26.9 GB, leaving too little headroom for the runtime and KV cache. Keep
+the 31B comparison on the cloud BF16 path below.
+
 The source bank is
 [`docs/evaluation/learning-task-bank.md`](../evaluation/learning-task-bank.md).
 The runner selects only the 26 rows marked `benchmark-only`; it refuses any
@@ -33,7 +86,7 @@ does not yet adequately cover Kinyarwanda-origin prompts, mixed-language
 requests, or long multi-turn consistency. Add those as a separate held-out bank
 before making a final release claim.
 
-## Local Validation
+## No-Download Validation
 
 No model is downloaded by this command:
 
@@ -44,7 +97,9 @@ uv run python scripts/run_multilingual_bakeoff.py \
   --dry-run
 ```
 
-The output must list 26 tasks and both pinned candidates.
+The output must list 26 tasks and both pinned BF16 candidates. To validate the
+local mapping without downloading weights, add `--backend mlx`; it should list
+only the pinned 12B MLX runtime.
 
 ## Cloud Requirements
 

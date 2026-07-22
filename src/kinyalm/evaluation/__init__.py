@@ -3,6 +3,7 @@
 from kinyalm.evaluation.bakeoff import (
     BakeoffConfig,
     CandidateSpec,
+    MlxRuntimeSpec,
     append_result,
     latest_results,
     load_bakeoff_config,
@@ -25,6 +26,7 @@ __all__ = [
     "BenchmarkSpec",
     "BakeoffConfig",
     "CandidateSpec",
+    "MlxRuntimeSpec",
     "TutorTask",
     "append_result",
     "benchmark_tasks",

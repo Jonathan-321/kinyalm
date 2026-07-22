@@ -14,7 +14,7 @@ import subprocess
 import sys
 import time
 import traceback
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -27,6 +27,7 @@ if str(SRC) not in sys.path:
 from kinyalm.evaluation import (  # noqa: E402
     BakeoffConfig,
     CandidateSpec,
+    MlxRuntimeSpec,
     TutorTask,
     append_result,
     benchmark_tasks,
@@ -39,12 +40,36 @@ from kinyalm.evaluation import (  # noqa: E402
 DEFAULT_CONFIG = ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
 
 
+@dataclass(frozen=True)
+class RuntimeCandidate:
+    """The exact checkpoint and backend used for one evaluation run."""
+
+    id: str
+    model_id: str
+    revision: str
+    source_id: str
+    source_model_id: str
+    source_revision: str
+    backend: str
+    backend_version: str | None
+    model_type_override: str | None
+    ignored_weight_prefixes: tuple[str, ...]
+    suppress_token_ids: tuple[int, ...]
+    quantization: str | None
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Evaluate pinned base models on held-out tutor prompts."
     )
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument(
+        "--backend",
+        choices=("transformers", "mlx"),
+        default="transformers",
+        help="Inference backend (default: transformers)",
+    )
     parser.add_argument(
         "--candidate",
         action="append",
@@ -58,7 +83,17 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Validate the experiment without importing or loading Transformers",
+        help="Validate the experiment without importing or loading a model",
+    )
+    parser.add_argument(
+        "--task-id",
+        action="append",
+        help="Held-out task ID to run; repeat to select multiple",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="Run only the first N selected tasks (for smoke testing)",
     )
     return parser.parse_args()
 
@@ -101,10 +136,101 @@ def load_held_out_tasks(config: BakeoffConfig) -> tuple[Path, list[TutorTask]]:
     return task_bank_path, tasks
 
 
+def select_tasks(
+    tasks: list[TutorTask], requested_ids: list[str] | None, limit: int | None
+) -> list[TutorTask]:
+    """Select a deterministic held-out subset for smoke tests or resumes."""
+
+    selected = list(tasks)
+    if requested_ids:
+        duplicates = sorted(
+            task_id
+            for task_id in set(requested_ids)
+            if requested_ids.count(task_id) > 1
+        )
+        if duplicates:
+            raise ValueError(f"task requested more than once: {', '.join(duplicates)}")
+        requested = set(requested_ids)
+        known = {task.id for task in tasks}
+        unknown = sorted(requested.difference(known))
+        if unknown:
+            raise ValueError(f"unknown held-out task ID: {', '.join(unknown)}")
+        selected = [task for task in tasks if task.id in requested]
+    if limit is not None:
+        if limit < 1:
+            raise ValueError("limit must be positive")
+        selected = selected[:limit]
+    return selected
+
+
+def resolve_runtime_candidates(
+    config: BakeoffConfig,
+    requested_ids: list[str] | None,
+    backend: str,
+) -> list[RuntimeCandidate]:
+    """Resolve source candidates to exact backend-specific checkpoints."""
+
+    if backend == "mlx" and not requested_ids:
+        selected = [
+            candidate for candidate in config.candidates if candidate.local_mlx
+        ]
+    else:
+        selected = select_candidates(config, requested_ids)
+
+    runtimes: list[RuntimeCandidate] = []
+    for candidate in selected:
+        if backend == "transformers":
+            runtimes.append(
+                RuntimeCandidate(
+                    id=candidate.id,
+                    model_id=candidate.model_id,
+                    revision=candidate.revision,
+                    source_id=candidate.id,
+                    source_model_id=candidate.model_id,
+                    source_revision=candidate.revision,
+                    backend=backend,
+                    backend_version=_package_version("transformers"),
+                    model_type_override=None,
+                    ignored_weight_prefixes=(),
+                    suppress_token_ids=(),
+                    quantization=None,
+                )
+            )
+            continue
+
+        local = candidate.local_mlx
+        if local is None:
+            raise ValueError(f"{candidate.id} has no pinned local MLX runtime")
+        runtimes.append(_mlx_runtime_candidate(candidate, local))
+
+    if not runtimes:
+        raise ValueError(f"no candidates support the {backend} backend")
+    return runtimes
+
+
+def _mlx_runtime_candidate(
+    source: CandidateSpec, local: MlxRuntimeSpec
+) -> RuntimeCandidate:
+    return RuntimeCandidate(
+        id=local.id,
+        model_id=local.model_id,
+        revision=local.revision,
+        source_id=source.id,
+        source_model_id=source.model_id,
+        source_revision=source.revision,
+        backend="mlx",
+        backend_version=local.mlx_lm_version,
+        model_type_override=local.model_type,
+        ignored_weight_prefixes=local.ignored_weight_prefixes,
+        suppress_token_ids=local.suppress_token_ids,
+        quantization=local.quantization,
+    )
+
+
 class TransformersGenerator:
     """One loaded Gemma candidate and its text-generation processor."""
 
-    def __init__(self, candidate: CandidateSpec, seed: int) -> None:
+    def __init__(self, candidate: RuntimeCandidate, seed: int) -> None:
         import torch
         from transformers import (
             AutoModelForMultimodalLM,
@@ -206,9 +332,184 @@ class TransformersGenerator:
         self.torch.cuda.empty_cache()
 
 
+class MlxGenerator:
+    """One local Apple-silicon MLX checkpoint and its tokenizer."""
+
+    def __init__(self, candidate: RuntimeCandidate, seed: int) -> None:
+        if platform.system() != "Darwin" or platform.machine() != "arm64":
+            raise RuntimeError("the MLX backend requires an Apple-silicon Mac")
+
+        import mlx.core as mx
+        from mlx_lm import stream_generate
+        from mlx_lm.sample_utils import make_logits_processors, make_sampler
+
+        installed = _package_version("mlx-lm")
+        if installed != candidate.backend_version:
+            raise RuntimeError(
+                f"mlx-lm {candidate.backend_version} is required; found {installed}"
+            )
+
+        mx.random.seed(seed)
+        self.mx = mx
+        self.stream_generate = stream_generate
+        self.sampler = make_sampler(temp=0.0, top_p=0.0)
+        self.logits_processors = make_logits_processors(
+            logit_bias={
+                token_id: -float("inf")
+                for token_id in candidate.suppress_token_ids
+            }
+        )
+        self.model, self.tokenizer = load_text_only_mlx_model(candidate)
+
+    def generate(
+        self,
+        *,
+        system_prompt: str,
+        user_prompt: str,
+        max_new_tokens: int,
+        enable_thinking: bool,
+    ) -> dict[str, Any]:
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+        return self.generate_messages(
+            messages=messages,
+            max_new_tokens=max_new_tokens,
+            enable_thinking=enable_thinking,
+        )
+
+    def generate_messages(
+        self,
+        *,
+        messages: list[dict[str, str]],
+        max_new_tokens: int,
+        enable_thinking: bool,
+    ) -> dict[str, Any]:
+        """Generate one response from a complete chat history."""
+
+        prompt = self.tokenizer.apply_chat_template(
+            messages,
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=enable_thinking,
+        )
+        self.mx.reset_peak_memory()
+        started = time.perf_counter()
+        chunks: list[str] = []
+        final = None
+        for generation in self.stream_generate(
+            self.model,
+            self.tokenizer,
+            prompt,
+            max_tokens=max_new_tokens,
+            sampler=self.sampler,
+            logits_processors=self.logits_processors,
+        ):
+            chunks.append(generation.text)
+            final = generation
+        elapsed = time.perf_counter() - started
+        if final is None:
+            raise RuntimeError("MLX generated no output tokens")
+
+        raw_response = "".join(chunks)
+        response, thinking = parse_gemma4_response(raw_response)
+        if not response:
+            raise RuntimeError("Gemma generated no visible response content")
+        return {
+            "response": response,
+            "raw_response": raw_response,
+            "thinking": thinking,
+            "input_tokens": int(final.prompt_tokens),
+            "output_tokens": int(final.generation_tokens),
+            "latency_seconds": round(elapsed, 4),
+            "tokens_per_second": round(float(final.generation_tps), 4),
+            "peak_unified_memory_gb": round(float(final.peak_memory), 4),
+            "finish_reason": final.finish_reason,
+        }
+
+    def close(self) -> None:
+        del self.model
+        del self.tokenizer
+        gc.collect()
+        self.mx.clear_cache()
+
+
+def parse_gemma4_response(raw_response: str) -> tuple[str, str]:
+    """Separate Gemma 4 thought-channel text from reviewer-visible content."""
+
+    import re
+
+    thought_pattern = re.compile(
+        r"<\|channel>thought\n(?P<thinking>.*?)<channel\|>", re.DOTALL
+    )
+    thinking = "\n".join(
+        match.group("thinking").strip()
+        for match in thought_pattern.finditer(raw_response)
+        if match.group("thinking").strip()
+    )
+    response = thought_pattern.sub("", raw_response).strip()
+    response = response.removesuffix("<turn|>").removesuffix("<eos>").strip()
+    return response, thinking
+
+
+def filter_ignored_weights(
+    weights: dict[str, Any], prefixes: tuple[str, ...]
+) -> dict[str, Any]:
+    """Remove only explicitly pinned non-text tensors from a checkpoint."""
+
+    matched = {
+        prefix for prefix in prefixes if any(key.startswith(prefix) for key in weights)
+    }
+    missing = sorted(set(prefixes).difference(matched))
+    if missing:
+        raise ValueError(
+            "configured ignored weight prefixes were not present: "
+            + ", ".join(missing)
+        )
+    return {
+        key: value
+        for key, value in weights.items()
+        if not any(key.startswith(prefix) for prefix in prefixes)
+    }
+
+
+def load_text_only_mlx_model(candidate: RuntimeCandidate) -> tuple[Any, Any]:
+    """Strictly load Gemma text weights while excluding pinned vision tensors."""
+
+    from huggingface_hub import snapshot_download
+    from mlx_lm.models import gemma4
+    from mlx_lm.utils import load_model, load_tokenizer
+
+    model_path = Path(
+        snapshot_download(
+            repo_id=candidate.model_id,
+            revision=candidate.revision,
+        )
+    )
+    ignored_prefixes = candidate.ignored_weight_prefixes
+
+    class TextOnlyGemma4(gemma4.Model):
+        def sanitize(self, weights: dict[str, Any]) -> dict[str, Any]:
+            filtered = filter_ignored_weights(weights, ignored_prefixes)
+            return super().sanitize(filtered)
+
+    model, model_config = load_model(
+        model_path,
+        strict=True,
+        model_config={"model_type": candidate.model_type_override},
+        get_model_classes=lambda config: (TextOnlyGemma4, gemma4.ModelArgs),
+    )
+    tokenizer = load_tokenizer(
+        model_path,
+        eos_token_ids=model_config.get("eos_token_id"),
+    )
+    return model, tokenizer
+
+
 def run_candidate(
     *,
-    candidate: CandidateSpec,
+    candidate: RuntimeCandidate,
     config: BakeoffConfig,
     tasks: list[TutorTask],
     output_dir: Path,
@@ -227,7 +528,12 @@ def run_candidate(
     print(f"{candidate.id}: loading {candidate.model_id}@{candidate.revision[:12]}...")
     load_started = time.perf_counter()
     try:
-        generator = TransformersGenerator(candidate, config.seed)
+        generator_class = (
+            TransformersGenerator
+            if candidate.backend == "transformers"
+            else MlxGenerator
+        )
+        generator = generator_class(candidate, config.seed)
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
         print(f"{candidate.id}: model load failed: {error}", file=sys.stderr)
@@ -278,17 +584,21 @@ def run_candidate(
 
 
 def build_review_outputs(
-    *, config: BakeoffConfig, tasks: list[TutorTask], output_dir: Path
+    *,
+    config: BakeoffConfig,
+    candidates: list[RuntimeCandidate],
+    tasks: list[TutorTask],
+    output_dir: Path,
 ) -> bool:
     """Create the blind review sheet when every candidate has every task."""
 
     candidate_results = {
         candidate.id: latest_results(output_dir / "raw" / f"{candidate.id}.jsonl")
-        for candidate in config.candidates
+        for candidate in candidates
     }
     missing = [
         f"{candidate.id}:{task.id}"
-        for candidate in config.candidates
+        for candidate in candidates
         for task in tasks
         if task.id not in candidate_results[candidate.id]
     ]
@@ -314,11 +624,18 @@ def main() -> int:
     args = parse_args()
     config_path = args.config.resolve()
     config = load_bakeoff_config(config_path)
-    task_bank_path, tasks = load_held_out_tasks(config)
-    candidates = select_candidates(config, args.candidate)
+    task_bank_path, all_tasks = load_held_out_tasks(config)
+    tasks = select_tasks(all_tasks, args.task_id, args.limit)
+    candidates = resolve_runtime_candidates(config, args.candidate, args.backend)
 
     summary = {
         "run_name": config.run_name,
+        "run_kind": (
+            "bf16-reference"
+            if args.backend == "transformers"
+            else "quantized-local-screen"
+        ),
+        "backend": args.backend,
         "task_count": len(tasks),
         "task_ids": [task.id for task in tasks],
         "candidates": [asdict(candidate) for candidate in candidates],
@@ -351,19 +668,21 @@ def main() -> int:
             output_dir=output_dir,
         ) and success
 
-    if {candidate.id for candidate in candidates} == {
-        candidate.id for candidate in config.candidates
-    }:
+    complete_tasks = {task.id for task in tasks} == {task.id for task in all_tasks}
+    if complete_tasks:
         success = build_review_outputs(
-            config=config, tasks=tasks, output_dir=output_dir
+            config=config,
+            candidates=candidates,
+            tasks=tasks,
+            output_dir=output_dir,
         ) and success
     else:
-        print("Skipped blind review pack because only a candidate subset was run.")
+        print("Skipped review pack because only a task subset was run.")
     return 0 if success else 1
 
 
 def _base_record(
-    candidate: CandidateSpec, config: BakeoffConfig, task: TutorTask
+    candidate: RuntimeCandidate, config: BakeoffConfig, task: TutorTask
 ) -> dict[str, Any]:
     return {
         "schema_version": 1,
@@ -371,6 +690,15 @@ def _base_record(
         "candidate_id": candidate.id,
         "model_id": candidate.model_id,
         "model_revision": candidate.revision,
+        "source_candidate_id": candidate.source_id,
+        "source_model_id": candidate.source_model_id,
+        "source_model_revision": candidate.source_revision,
+        "inference_backend": candidate.backend,
+        "inference_backend_version": candidate.backend_version,
+        "model_type_override": candidate.model_type_override,
+        "ignored_weight_prefixes": candidate.ignored_weight_prefixes,
+        "suppress_token_ids": candidate.suppress_token_ids,
+        "quantization": candidate.quantization,
         "task_id": task.id,
         "category": task.category,
         "split": task.split,
@@ -385,7 +713,7 @@ def _base_record(
 
 
 def _error_record(
-    candidate: CandidateSpec,
+    candidate: RuntimeCandidate,
     config: BakeoffConfig,
     task: TutorTask,
     error: str,
@@ -419,7 +747,14 @@ def _write_manifest(
         "platform": platform.platform(),
         "packages": {
             package: _package_version(package)
-            for package in ("torch", "transformers", "accelerate", "huggingface-hub")
+            for package in (
+                "torch",
+                "transformers",
+                "accelerate",
+                "huggingface-hub",
+                "mlx",
+                "mlx-lm",
+            )
         },
         **summary,
     }
@@ -430,6 +765,12 @@ def _write_manifest(
             raise ValueError("output directory belongs to a different bake-off config")
         if existing.get("task_bank_sha256") != manifest["task_bank_sha256"]:
             raise ValueError("task bank changed since this bake-off started")
+        for key in ("backend", "task_ids", "candidates"):
+            current = json.loads(json.dumps(manifest.get(key)))
+            if existing.get(key) != current:
+                raise ValueError(
+                    f"output directory belongs to different {key} settings"
+                )
         return
     path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"

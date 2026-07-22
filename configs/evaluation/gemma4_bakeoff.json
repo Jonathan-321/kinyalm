@@ -12,7 +12,22 @@
     {
       "id": "gemma4-12b-it",
       "model_id": "google/gemma-4-12B-it",
-      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "local_mlx": {
+        "id": "gemma4-12b-it-qat-4bit-mlx",
+        "model_id": "mlx-community/gemma-4-12B-it-qat-4bit",
+        "revision": "e70c6b3ba0979b3357dcd2f223ad8bde7787a6b6",
+        "mlx_lm_version": "0.31.3",
+        "model_type": "gemma4",
+        "ignored_weight_prefixes": [
+          "vision_embedder."
+        ],
+        "suppress_token_ids": [
+          258882,
+          258883
+        ],
+        "quantization": "QAT-derived mixed 4/8-bit affine MLX conversion"
+      }
     },
     {
       "id": "gemma4-31b-it",

@@ -39,11 +39,17 @@ def main() -> int:
     args = parse_args()
     run_dir = args.run_dir.resolve()
     manifest = validate_run_dir(run_dir)
-    token = os.environ.get("HF_PUBLISH_TOKEN") or os.environ.get("HF_TOKEN")
-    if not token:
-        raise SystemExit("Set HF_PUBLISH_TOKEN or HF_TOKEN before publishing.")
+    from huggingface_hub import HfApi, get_token
 
-    from huggingface_hub import HfApi
+    token = (
+        os.environ.get("HF_PUBLISH_TOKEN")
+        or os.environ.get("HF_TOKEN")
+        or get_token()
+    )
+    if not token:
+        raise SystemExit(
+            "Log in with hf auth login or set HF_PUBLISH_TOKEN/HF_TOKEN."
+        )
 
     api = HfApi(token=token)
     api.upload_folder(
