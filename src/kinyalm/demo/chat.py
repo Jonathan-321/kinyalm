@@ -22,26 +22,29 @@ class ModeSpec:
 MODE_SPECS = {
     "converse": ModeSpec(
         label="Converse",
-        max_new_tokens=96,
+        max_new_tokens=160,
         instruction=(
-            "Have a natural conversation. Answer in no more than three short "
-            "sentences unless the learner explicitly asks for more detail."
+            "Have a natural conversation. For a substantive request, usually "
+            "answer in four to seven short sentences; use fewer only when a "
+            "brief answer is genuinely enough. Keep the response focused."
         ),
     ),
     "translate": ModeSpec(
         label="Translate / Correct",
-        max_new_tokens=128,
+        max_new_tokens=192,
         instruction=(
-            "Give the requested translation or corrected sentence first. Add at "
-            "most one short usage note. Do not add a lesson unless asked."
+            "Give the requested translation or corrected sentence first. When "
+            "helpful, add up to three concise usage, grammar, or alternative-"
+            "phrasing notes. Do not turn a simple request into a long lesson."
         ),
     ),
     "learn": ModeSpec(
         label="Learn",
-        max_new_tokens=192,
+        max_new_tokens=256,
         instruction=(
-            "Teach the requested concept with a compact example and a clear "
-            "explanation. Ask at most one useful practice question."
+            "Teach the requested concept in roughly six to ten short sentences "
+            "when the topic supports it. Include two useful examples, explain "
+            "the key pattern clearly, and ask at most one practice question."
         ),
     ),
 }
