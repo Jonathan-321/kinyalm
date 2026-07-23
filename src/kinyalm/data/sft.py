@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
 import json
 import re
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
-
 
 TASK_TYPES = {
     "greeting",
@@ -20,9 +19,20 @@ TASK_TYPES = {
     "dialogue",
     "uncertainty",
     "culture-register",
+    "reading-comprehension",
+    "sentence-generation",
+    "pronunciation",
+    "code-switching",
 }
 
-SPLITS = {"draft", "train", "validation", "benchmark-only"}
+SPLITS = {
+    "draft",
+    "train",
+    "validation",
+    "experimental-train",
+    "experimental-validation",
+    "benchmark-only",
+}
 SOURCE_STATUSES = {
     "approved",
     "team-authored",
@@ -30,8 +40,17 @@ SOURCE_STATUSES = {
     "reference-only",
     "blocked",
     "investigate",
+    "model-generated",
 }
-REVIEW_STATUSES = {"needs-review", "approved", "needs-fix", "rejected", "not-sure"}
+REVIEW_STATUSES = {
+    "needs-review",
+    "approved",
+    "needs-fix",
+    "rejected",
+    "not-sure",
+    "critic-accepted",
+    "critic-repaired",
+}
 LANGUAGE_MIXES = {"kinyarwanda", "english", "kinyarwanda+english"}
 TRAINABLE_SOURCE_STATUSES = {"approved", "team-authored", "manual"}
 ID_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -149,13 +168,15 @@ def _check_messages(value: Any, errors: list[str]) -> None:
     if not isinstance(value, list):
         errors.append("messages must be a list")
         return
-    if len(value) != 2:
-        errors.append("messages must contain exactly two messages for the first run")
+    if len(value) < 2:
+        errors.append("messages must contain at least one user/assistant turn")
+        return
+    if len(value) % 2:
+        errors.append("messages must contain complete user/assistant turns")
         return
 
-    expected_roles = ["user", "assistant"]
-    for index, expected_role in enumerate(expected_roles):
-        message = value[index]
+    for index, message in enumerate(value):
+        expected_role = "user" if index % 2 == 0 else "assistant"
         if not isinstance(message, dict):
             errors.append(f"messages[{index}] must be an object")
             continue
@@ -168,6 +189,21 @@ def _check_messages(value: Any, errors: list[str]) -> None:
 
 def _check_training_gate(record: dict[str, Any], errors: list[str]) -> None:
     split = record.get("split")
+    if split in {"experimental-train", "experimental-validation"}:
+        if record.get("review_status") not in {
+            "critic-accepted",
+            "critic-repaired",
+        }:
+            errors.append(
+                "experimental rows must have review_status=critic-accepted "
+                "or critic-repaired"
+            )
+        if record.get("source_status") != "model-generated":
+            errors.append(
+                "experimental rows must have source_status=model-generated"
+            )
+        return
+
     if split not in {"train", "validation"}:
         return
 

@@ -5,6 +5,7 @@ experiments/logs/
 experiments/results/
 experiments/runs/
 wandb/
+outputs/
 
 # Python/editor noise for wrapper repo work
 __pycache__/
