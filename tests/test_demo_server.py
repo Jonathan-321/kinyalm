@@ -93,7 +93,7 @@ def test_stream_chat_emits_start_deltas_and_final_metrics(tmp_path):
     messages, max_tokens, thinking = runtime.calls[0]
     assert messages[0]["role"] == "system"
     assert messages[-1]["content"] == "Muraho"
-    assert max_tokens == 96
+    assert max_tokens == 160
     assert thinking is False
     assert runtime.call_thread_ids[0] != request_thread_id
     assert runtime.closed_thread_id == runtime.call_thread_ids[0]

@@ -14,9 +14,9 @@ as it is generated. It provides three deliberately different behaviors:
 
 | Mode | Intended behavior | Output limit |
 | --- | --- | ---: |
-| Converse | Short, natural conversation | 96 tokens |
-| Translate | Translation or correction first, then one brief note | 128 tokens |
-| Learn | Compact explanation, example, and optional practice question | 192 tokens |
+| Converse | Focused conversation, usually 4-7 short sentences | 160 tokens |
+| Translate | Translation or correction with up to three brief notes | 192 tokens |
+| Learn | Fuller explanation, two examples, and a practice question | 256 tokens |
 
 Language and learner-level controls change the model instruction without
 reloading the checkpoint. Conversation context is limited to the latest six
@@ -85,7 +85,7 @@ The local speed path combines:
 - a QAT-derived mixed 4/8-bit checkpoint;
 - one model load for the full server session;
 - token streaming, so useful text appears before completion;
-- mode-specific response limits rather than a 512-token default;
+- mode-specific 160-256 token response limits rather than a 512-token default;
 - six-turn bounded conversation history; and
 - an LRU prompt cache capped at four entries and 512 MB.
 
@@ -102,15 +102,27 @@ formal quality benchmark:
 | --- | --- |
 | Simple Kinyarwanda greeting | 18 output tokens, 3.02 s to first token, 5.87 s total |
 | Browser greeting after restart | 32 output tokens, 6.09 s to first token, 17.67 s total |
-| Generation throughput observed | about 2.8-6.5 tokens/second |
-| Peak unified memory observed | about 11.2 GB |
+| Five-sentence smoke test after the length increase | 139 output tokens, 3.47 s to first token, 24.01 s total |
+| Generation throughput observed | about 2.8-6.8 tokens/second |
+| Peak unified memory observed | about 11.3 GB |
 | Reused context on second cached turn | 144 of 187 input tokens |
 
 The large latency range is normal for this local prototype: model warm-up,
 prompt length, Mac temperature, and response length all matter. The important
 change from the screening runner is interaction shape. The earlier 26-prompt
 screen generated a median 408 tokens and took 104.57 seconds per answer; the
-chat modes now stop at 96-192 tokens and stream the answer while it is produced.
+chat modes now stop at 160-256 tokens and stream the answer while it is produced.
+This gives conversational answers room for roughly four to seven short
+sentences while keeping the maximum well below the original screening budget.
+
+The first two latency measurements above were collected before the July 22
+response-length increase. Time to first token should remain similar, but a
+response that uses the larger budget will take longer to finish.
+
+The post-adjustment smoke test requested five Kinyarwanda sentences and returned
+all five without reaching the 160-token limit. It streamed at 6.78 tokens/second
+and peaked at 11.26 GB. The final sentence repeated a clause, so this run
+confirms the longer streaming path but remains a quality-review failure.
 
 ## Feedback And Review
 
@@ -129,7 +141,7 @@ approve its training license and status.
 
 This interface makes the model easier to test; it does not prove that Gemma 4
 12B is ready for fine-tuning. The held-out screening report still records
-meaning reversals and invented grammar explanations. The shorter system prompt
+meaning reversals and invented grammar explanations. The mode-specific prompt
 reduces verbosity and asks the model to acknowledge uncertainty, but prompt
 steering cannot repair knowledge the base model does not have.
 

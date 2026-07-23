@@ -20,6 +20,7 @@ def test_chat_request_applies_mode_budget_and_kinyalm_identity():
     assert request.messages == ({"role": "user", "content": "Muraho"},)
     assert "You are KinyaLM" in request.system_prompt
     assert "Do not introduce yourself as Gemma" in request.system_prompt
+    assert "four to seven short sentences" in request.system_prompt
 
 
 def test_chat_request_keeps_only_six_previous_turns():
@@ -63,5 +64,7 @@ def test_each_mode_has_distinct_behavior_and_budget():
     prompts = {mode: build_system_prompt(mode, "rw", "beginner") for mode in MODE_SPECS}
 
     assert len(set(prompts.values())) == len(MODE_SPECS)
+    assert MODE_SPECS["converse"].max_new_tokens == 160
+    assert MODE_SPECS["translate"].max_new_tokens == 192
     assert MODE_SPECS["converse"].max_new_tokens < MODE_SPECS["learn"].max_new_tokens
     assert "primarily in Kinyarwanda" in prompts["translate"]
