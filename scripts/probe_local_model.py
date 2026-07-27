@@ -21,10 +21,10 @@ Requires: pip install mlx-lm  (Apple Silicon only).
 
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import json
 import sys
+from pathlib import Path
 
 
 def load_prompts(path: Path) -> list[str]:
@@ -48,15 +48,18 @@ def load_prompts(path: Path) -> list[str]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", required=True)
-    parser.add_argument("--adapter", default=None,
-                        help="Path to a trained LoRA adapter (omit for base model).")
+    parser.add_argument(
+        "--adapter",
+        default=None,
+        help="Path to a trained LoRA adapter (omit for base model).",
+    )
     parser.add_argument("--prompts-file", required=True)
     parser.add_argument("--output", required=True)
     parser.add_argument("--max-tokens", type=int, default=256)
     args = parser.parse_args()
 
     try:
-        from mlx_lm import load, generate
+        from mlx_lm import generate, load
     except ImportError:
         print("mlx-lm is not installed. Run: pip install mlx-lm", file=sys.stderr)
         return 1
@@ -82,12 +85,19 @@ def main() -> int:
                 messages, add_generation_prompt=True
             )
             answer = generate(
-                model, tokenizer, prompt=templated,
-                max_tokens=args.max_tokens, verbose=False,
+                model,
+                tokenizer,
+                prompt=templated,
+                max_tokens=args.max_tokens,
+                verbose=False,
             )
-            handle.write(json.dumps(
-                {"model": tag, "prompt": prompt, "answer": answer.strip()},
-                ensure_ascii=False) + "\n")
+            handle.write(
+                json.dumps(
+                    {"model": tag, "prompt": prompt, "answer": answer.strip()},
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
             print(f"[{i}/{len(prompts)}] {prompt[:60]}...")
 
     print(f"\nSaved {len(prompts)} answers to: {out_path}")
