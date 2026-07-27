@@ -186,8 +186,11 @@ Current SFT status:
 - 50 tutor evaluation prompts exist, with 26 held out for benchmarking.
 - A JSONL schema and validator exist for future SFT examples.
 - Batch 001 has 286 draft SFT examples in the public-gated HF datalake.
-- No approved SFT conversation dataset is committed yet.
-- The first seed gate is 100 reviewed examples.
+- Tessy's reviewed contribution adds 288 approved, intact conversations:
+  258 train and 30 validation.
+- Another 38 critic-disputed conversations remain outside training pending
+  explicit adjudication.
+- The first 100-example human-review seed gate is now passed.
 - The first serious tutor SFT target is about 1,000 reviewed examples.
 
 External benchmark candidates are tracked in

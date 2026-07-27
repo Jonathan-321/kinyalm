@@ -23,6 +23,17 @@ The first seed gate is 100 reviewed examples. A serious tutor SFT run should
 target about 1,000 reviewed examples, following
 `docs/data/data-overhaul-plan.md`.
 
+The first committed human-reviewed contribution is:
+
+```text
+tessy-distill-review.train.jsonl       258 conversations
+tessy-distill-review.validation.jsonl   30 conversations
+```
+
+These files preserve complete multi-turn conversations. See
+`docs/data/tessy-distillation-contribution.md` for provenance, regeneration,
+the 38 withheld critic-disputed rows, and MLX staging instructions.
+
 Generated draft batches live outside Git and are tracked in
 `docs/data/sft-draft-batches.md`.
 

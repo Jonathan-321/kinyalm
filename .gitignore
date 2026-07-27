@@ -16,6 +16,7 @@ __pycache__/
 .env
 
 # Large local data should not be committed by default.
+data/mlx-data/
 data/raw/*
 data/interim/*
 data/processed/*
