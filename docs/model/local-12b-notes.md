@@ -58,11 +58,18 @@ training will fight over the same 24 GB.
   no model class for it. The repo's demo runs it only via a custom text-only
   shim (`TextOnlyGemma4` in `scripts/run_multilingual_bakeoff.py`) for
   inference — there is no training path for this model type locally.
+- Tried `pip install -U mlx-lm`: already on 0.31.3 (latest), so no newer
+  version adds `gemma4_unified` support. Confirmed dead end for local 12B
+  training.
 - Takeaway: local 12B fine-tuning is blocked on two fronts (slow/awkward
   download AND no mlx_lm training support for `gemma4_unified`), independent of
   memory. The 12B fine-tune belongs on the cloud GPU (transformers path, 40 GB
   A100). The laptop's role: run/demo the 12B for inference, and fine-tune the
-  fully-supported 2B locally.
+  fully-supported 2B locally (done separately, with a before/after probe).
+- 2B fine-tune was run and evaluated: see
+  [`local-2b-finetune-result.md`](local-2b-finetune-result.md). Pipeline works,
+  but the 2B overfits/degrades — reinforcing that the 12B on cloud is the real
+  quality path.
 
 ## Cloud path (the real 12B run)
 
