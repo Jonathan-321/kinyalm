@@ -12,6 +12,19 @@ case "$MODEL_PROFILE" in
     PROFILE_ATTN_IMPLEMENTATION="eager"
     PROFILE_RUN_SLUG="gemma2-9b-baseline-a"
     ;;
+  gemma4)
+    # Current team target: fine-tune Gemma 4 12B on the cloud GPU.
+    # Gated: the HF user must accept Google's Gemma license and the download
+    # token must have gated-model read access (same as the gemma-2-9b profile).
+    # Revision is unpinned (main); pin to a commit hash once the team agrees on
+    # one. For the bake-off, each person sets OUTPUT_REPO to their own repo,
+    # e.g. OUTPUT_REPO=kinyalm/kinyalm-gemma-4-12b-tessy.
+    PROFILE_MODEL_ID="google/gemma-4-12B-it"
+    PROFILE_MODEL_REVISION="main"
+    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-sft"
+    PROFILE_ATTN_IMPLEMENTATION="eager"
+    PROFILE_RUN_SLUG="gemma4-12b-sft"
+    ;;
   qwen)
     PROFILE_MODEL_ID="Qwen/Qwen2.5-7B-Instruct"
     PROFILE_MODEL_REVISION="a09a35458c702b33eeacc393d103063234e8bc28"
@@ -20,7 +33,7 @@ case "$MODEL_PROFILE" in
     PROFILE_RUN_SLUG="qwen25-7b-baseline-a"
     ;;
   *)
-    echo "MODEL_PROFILE must be gemma or qwen" >&2
+    echo "MODEL_PROFILE must be gemma4, gemma, or qwen" >&2
     exit 2
     ;;
 esac
