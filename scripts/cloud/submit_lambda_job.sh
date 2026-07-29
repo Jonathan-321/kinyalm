@@ -25,8 +25,8 @@ if [[ ! "$REMOTE_MAX_STEPS" =~ ^-?[0-9]+$ ]]; then
   echo "MAX_STEPS must be an integer" >&2
   exit 2
 fi
-if [[ "$REMOTE_MODEL_PROFILE" != "gemma" && "$REMOTE_MODEL_PROFILE" != "qwen" ]]; then
-  echo "MODEL_PROFILE must be gemma or qwen" >&2
+if [[ "$REMOTE_MODEL_PROFILE" != "gemma4" && "$REMOTE_MODEL_PROFILE" != "gemma" && "$REMOTE_MODEL_PROFILE" != "qwen" ]]; then
+  echo "MODEL_PROFILE must be gemma4, gemma, or qwen" >&2
   exit 2
 fi
 
