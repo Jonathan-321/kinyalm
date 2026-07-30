@@ -49,9 +49,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--train-file", required=True)
     parser.add_argument("--eval-file", default=None)
     parser.add_argument("--output-dir", required=True)
-    parser.add_argument("--sample-prompts-file", default=None,
-                        help="Optional text file, one prompt per line; greedy "
-                             "samples are written to the output dir after training")
+    parser.add_argument(
+        "--sample-prompts-file",
+        default=None,
+        help="Optional text file, one prompt per line; greedy samples are "
+        "written to the output dir after training",
+    )
     # Defaults below mirror docs/model/sft-run-plan.md. Override only for
     # smoke tests or an approved plan change.
     parser.add_argument("--lora-r", type=int, default=16)
@@ -96,6 +99,15 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Validate data and write a preflight manifest without loading a model.",
     )
+    parser.add_argument(
+        "--verify-model-metadata",
+        action="store_true",
+        help=(
+            "During preflight, download the tokenizer and config and verify "
+            "that Transformers has a compatible model class. Model weights "
+            "are not downloaded."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -134,6 +146,7 @@ def write_preflight_manifest(
     args: argparse.Namespace,
     train_records: list[dict],
     eval_records: list[dict] | None,
+    model_metadata: dict | None = None,
 ) -> Path:
     """Record exact local inputs before model loading or training starts."""
 
@@ -145,6 +158,7 @@ def write_preflight_manifest(
         "experimental": args.experimental,
         "model": args.model,
         "model_revision": args.model_revision,
+        "model_metadata": model_metadata,
         "training": {
             "lora_r": args.lora_r,
             "lora_alpha": args.lora_alpha,
@@ -274,6 +288,52 @@ def resolve_attention_implementation(model: str, requested: str) -> str | None:
     return None
 
 
+def verify_model_metadata(model: str, revision: str | None = None) -> dict:
+    """Verify tokenizer/config compatibility without downloading model weights."""
+
+    from transformers import (
+        AutoConfig,
+        AutoModelForCausalLM,
+        AutoModelForMultimodalLM,
+        AutoTokenizer,
+    )
+    from transformers import (
+        __version__ as transformers_version,
+    )
+
+    revision_kwargs = {"revision": revision} if revision else {}
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model, **revision_kwargs)
+        config = AutoConfig.from_pretrained(model, **revision_kwargs)
+        auto_model = (
+            AutoModelForMultimodalLM
+            if config.model_type == "gemma4_unified"
+            else AutoModelForCausalLM
+        )
+        model_class = auto_model._model_mapping[type(config)]
+    except Exception as exc:
+        raise SystemExit(
+            f"model metadata check failed for {model}: {type(exc).__name__}: {exc}"
+        ) from exc
+
+    metadata = {
+        "transformers_version": transformers_version,
+        "resolved_revision": getattr(config, "_commit_hash", None),
+        "model_type": config.model_type,
+        "model_class": model_class.__name__,
+        "tokenizer_class": type(tokenizer).__name__,
+        "vocab_size": getattr(tokenizer, "vocab_size", None),
+    }
+    print(
+        "model metadata verified: "
+        f"transformers={metadata['transformers_version']}, "
+        f"model_type={metadata['model_type']}, "
+        f"model_class={metadata['model_class']}, "
+        f"tokenizer={metadata['tokenizer_class']}"
+    )
+    return metadata
+
+
 def main() -> int:
     args = parse_args()
 
@@ -288,7 +348,17 @@ def main() -> int:
     verify_dataset_manifest(args, train_records, eval_records)
     print(f"train rows: {len(train_records)}"
           + (f", validation rows: {len(eval_records)}" if eval_records else ""))
-    preflight_path = write_preflight_manifest(args, train_records, eval_records)
+    model_metadata = (
+        verify_model_metadata(args.model, args.model_revision)
+        if args.verify_model_metadata
+        else None
+    )
+    preflight_path = write_preflight_manifest(
+        args,
+        train_records,
+        eval_records,
+        model_metadata,
+    )
     print(f"preflight manifest: {preflight_path}")
     if args.dry_run:
         print("dry run complete; model was not loaded")
@@ -296,7 +366,12 @@ def main() -> int:
 
     import torch
     from peft import LoraConfig
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    from transformers import (
+        AutoConfig,
+        AutoModelForCausalLM,
+        AutoModelForMultimodalLM,
+        AutoTokenizer,
+    )
     from trl import SFTConfig, SFTTrainer
 
     use_cuda = torch.cuda.is_available()
@@ -337,19 +412,20 @@ def main() -> int:
     revision_kwargs = (
         {"revision": args.model_revision} if args.model_revision else {}
     )
-    # Gemma 4's fast tokenizer config trips a bug in transformers<5
-    # (extra_special_tokens parsed as a list). Fall back to the slow
-    # SentencePiece tokenizer, which needs protobuf + sentencepiece installed.
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
-    except (AttributeError, ValueError):
-        tokenizer = AutoTokenizer.from_pretrained(
-            args.model, use_fast=False, **revision_kwargs
-        )
+    tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
+    model_config = AutoConfig.from_pretrained(args.model, **revision_kwargs)
+    model_loader = (
+        AutoModelForMultimodalLM
+        if model_config.model_type == "gemma4_unified"
+        else AutoModelForCausalLM
+    )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model, **revision_kwargs, **model_kwargs
+    model = model_loader.from_pretrained(
+        args.model,
+        config=model_config,
+        **revision_kwargs,
+        **model_kwargs,
     )
     model.config.use_cache = False
 
@@ -373,7 +449,9 @@ def main() -> int:
         gradient_accumulation_steps=args.grad_accum,
         learning_rate=args.learning_rate,
         lr_scheduler_type="cosine",
-        warmup_ratio=args.warmup_ratio,
+        # Transformers 5 accepts ratios below 1 through warmup_steps and
+        # deprecates the separate warmup_ratio argument.
+        warmup_steps=args.warmup_ratio,
         max_length=args.max_seq_len,
         gradient_checkpointing=use_cuda,
         optim="paged_adamw_8bit" if quantize else "adamw_torch",
@@ -401,9 +479,13 @@ def main() -> int:
     print(f"adapter saved to: {args.output_dir}")
 
     if args.sample_prompts_file:
-        prompts = [line.strip() for line in
-                   Path(args.sample_prompts_file).read_text(encoding="utf-8").splitlines()
-                   if line.strip()]
+        prompts = [
+            line.strip()
+            for line in Path(args.sample_prompts_file)
+            .read_text(encoding="utf-8")
+            .splitlines()
+            if line.strip()
+        ]
         samples_path = Path(args.output_dir) / "samples.jsonl"
         trained = trainer.model
         trained.eval()
@@ -417,16 +499,23 @@ def main() -> int:
                 ).to(trained.device)
                 with torch.no_grad():
                     output = trained.generate(
-                        **inputs, max_new_tokens=200, do_sample=False,
-                        pad_token_id=tokenizer.eos_token_id,
+                        **inputs,
+                        max_new_tokens=200,
+                        do_sample=False,
+                        pad_token_id=tokenizer.pad_token_id,
                     )
                 prompt_length = inputs["input_ids"].shape[-1]
                 completion = tokenizer.decode(
-                    output[0][prompt_length:], skip_special_tokens=True
+                    output[0][prompt_length:],
+                    skip_special_tokens=True,
                 )
-                handle.write(json.dumps(
-                    {"prompt": prompt, "completion": completion},
-                    ensure_ascii=False) + "\n")
+                handle.write(
+                    json.dumps(
+                        {"prompt": prompt, "completion": completion},
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
         print(f"samples written to: {samples_path}")
 
     return 0

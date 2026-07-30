@@ -26,15 +26,13 @@ train = [
   "accelerate>=1.0.0,<2",
   "bitsandbytes>=0.45.0,<1; platform_system == 'Linux'",
   "peft>=0.14.0,<1",
-  "protobuf>=4.0.0",
-  "sentencepiece>=0.2.0",
-  # Gemma 4's tokenizer requires transformers 5.x (the <5 line crashes on its
-  # tokenizer config and there is no SentencePiece fallback file). trl/peft
-  # upper bounds widened to let the resolver find a transformers-5-compatible
-  # set. NEEDS TESTING on a GPU before merging — this touches the whole
-  # training stack, not just the gemma4 run.
-  "transformers>=5.0.0,<6",
-  "trl>=0.20.0,<2",
+  # Gemma 4 Unified support landed in the Transformers 5 generation. The exact
+  # lower bound below is the version used by the checked-in lock and local
+  # metadata preflight.
+  "transformers>=5.14.1,<6",
+  # TRL 1.3 added Gemma 4 support. Keep the major version bounded because this
+  # package owns the training loop and its API changes affect every profile.
+  "trl>=1.3.0,<2",
 ]
 
 [build-system]

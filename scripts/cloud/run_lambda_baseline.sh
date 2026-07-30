@@ -3,7 +3,7 @@ set -Eeuo pipefail
 
 DATA_REPO="${DATA_REPO:-kinyalm/kinyalm-data-lake}"
 DATA_REVISION="${DATA_REVISION:-754a58b021cfe1e505f432df0de45ce2f63a3b21}"
-MODEL_PROFILE="${MODEL_PROFILE:-qwen}"
+MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
 case "$MODEL_PROFILE" in
   gemma)
     PROFILE_MODEL_ID="google/gemma-2-9b-it"
@@ -13,17 +13,13 @@ case "$MODEL_PROFILE" in
     PROFILE_RUN_SLUG="gemma2-9b-baseline-a"
     ;;
   gemma4)
-    # Current team target: fine-tune Gemma 4 12B on the cloud GPU.
-    # Gated: the HF user must accept Google's Gemma license and the download
-    # token must have gated-model read access (same as the gemma-2-9b profile).
-    # Revision is unpinned (main); pin to a commit hash once the team agrees on
-    # one. For the bake-off, each person sets OUTPUT_REPO to their own repo,
-    # e.g. OUTPUT_REPO=kinyalm/kinyalm-gemma-4-12b-tessy.
+    # Gemma 4 is public under Apache-2.0. The data lake and output repository
+    # still require the appropriate Hugging Face organization permissions.
     PROFILE_MODEL_ID="google/gemma-4-12B-it"
-    PROFILE_MODEL_REVISION="main"
-    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-sft"
+    PROFILE_MODEL_REVISION="707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-experimental"
     PROFILE_ATTN_IMPLEMENTATION="eager"
-    PROFILE_RUN_SLUG="gemma4-12b-sft"
+    PROFILE_RUN_SLUG="gemma4-12b-experimental"
     ;;
   qwen)
     PROFILE_MODEL_ID="Qwen/Qwen2.5-7B-Instruct"
@@ -43,6 +39,8 @@ OUTPUT_REPO="${OUTPUT_REPO:-$PROFILE_OUTPUT_REPO}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-$PROFILE_ATTN_IMPLEMENTATION}"
 MAX_STEPS="${MAX_STEPS:--1}"
 PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
+PROFILE_ONLY="${PROFILE_ONLY:-0}"
+ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 RUN_ID="${RUN_ID:-$PROFILE_RUN_SLUG-$(date -u +%Y%m%dT%H%M%SZ)}"
 RUN_ROOT="${RUN_ROOT:-$HOME/kinyalm-runs/$RUN_ID}"
 DATA_DIR="$RUN_ROOT/data"
@@ -53,6 +51,28 @@ TRAIN_LOG="$RUN_ROOT/train.log"
 
 if [[ "$PREFLIGHT_ONLY" != "0" && "$PREFLIGHT_ONLY" != "1" ]]; then
   echo "PREFLIGHT_ONLY must be 0 or 1" >&2
+  exit 2
+fi
+if [[ "$PROFILE_ONLY" != "0" && "$PROFILE_ONLY" != "1" ]]; then
+  echo "PROFILE_ONLY must be 0 or 1" >&2
+  exit 2
+fi
+if [[ "$ALLOW_EXPERIMENTAL_FULL_RUN" != "0" && "$ALLOW_EXPERIMENTAL_FULL_RUN" != "1" ]]; then
+  echo "ALLOW_EXPERIMENTAL_FULL_RUN must be 0 or 1" >&2
+  exit 2
+fi
+if [[ "$PROFILE_ONLY" == "1" ]]; then
+  printf 'model_profile=%s\n' "$MODEL_PROFILE"
+  printf 'model_id=%s\n' "$MODEL_ID"
+  printf 'model_revision=%s\n' "$MODEL_REVISION"
+  printf 'output_repo=%s\n' "$OUTPUT_REPO"
+  printf 'attention_implementation=%s\n' "$ATTN_IMPLEMENTATION"
+  exit 0
+fi
+if [[ "$PREFLIGHT_ONLY" == "0" && "$MODEL_PROFILE" == "gemma4" \
+  && "$MAX_STEPS" != "1" && "$ALLOW_EXPERIMENTAL_FULL_RUN" != "1" ]]; then
+  echo "Gemma 4 is limited to MAX_STEPS=1 until the smoke gate passes." >&2
+  echo "After review, set ALLOW_EXPERIMENTAL_FULL_RUN=1 explicitly." >&2
   exit 2
 fi
 if [[ "$PREFLIGHT_ONLY" == "0" ]]; then
@@ -111,6 +131,9 @@ fi
 } > "$SYSTEM_INFO"
 
 uv sync --extra train --frozen
+uv run python -c \
+  'import peft, torch, transformers, trl; print(f"torch={torch.__version__}"); print(f"transformers={transformers.__version__}"); print(f"trl={trl.__version__}"); print(f"peft={peft.__version__}")' \
+  >> "$SYSTEM_INFO"
 
 uv run python scripts/prepare_hf_sft_baseline.py \
   --repo-id "$DATA_REPO" \
@@ -132,7 +155,10 @@ training_args=(
   --max-steps "$MAX_STEPS"
 )
 
-uv run python scripts/train_qlora.py "${training_args[@]}" --dry-run
+uv run python scripts/train_qlora.py \
+  "${training_args[@]}" \
+  --dry-run \
+  --verify-model-metadata
 if [[ "$PREFLIGHT_ONLY" == "1" ]]; then
   echo "Lambda profile preflight complete; no model was loaded or published."
   exit 0
