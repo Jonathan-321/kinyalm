@@ -25,11 +25,16 @@ dev = [
 train = [
   "accelerate>=1.0.0,<2",
   "bitsandbytes>=0.45.0,<1; platform_system == 'Linux'",
-  "peft>=0.13.0,<1",
+  "peft>=0.14.0,<1",
   "protobuf>=4.0.0",
   "sentencepiece>=0.2.0",
-  "transformers>=4.46.0,<5",
-  "trl>=0.15.0,<1",
+  # Gemma 4's tokenizer requires transformers 5.x (the <5 line crashes on its
+  # tokenizer config and there is no SentencePiece fallback file). trl/peft
+  # upper bounds widened to let the resolver find a transformers-5-compatible
+  # set. NEEDS TESTING on a GPU before merging — this touches the whole
+  # training stack, not just the gemma4 run.
+  "transformers>=5.0.0,<6",
+  "trl>=0.20.0,<2",
 ]
 
 [build-system]
