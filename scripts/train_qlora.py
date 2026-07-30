@@ -337,7 +337,15 @@ def main() -> int:
     revision_kwargs = (
         {"revision": args.model_revision} if args.model_revision else {}
     )
-    tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
+    # Gemma 4's fast tokenizer config trips a bug in transformers<5
+    # (extra_special_tokens parsed as a list). Fall back to the slow
+    # SentencePiece tokenizer, which needs protobuf + sentencepiece installed.
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
+    except (AttributeError, ValueError):
+        tokenizer = AutoTokenizer.from_pretrained(
+            args.model, use_fast=False, **revision_kwargs
+        )
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(
