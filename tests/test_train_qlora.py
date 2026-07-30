@@ -2,8 +2,12 @@ import hashlib
 import json
 import subprocess
 import sys
+from types import ModuleType
 
-from scripts.train_qlora import resolve_attention_implementation
+from scripts.train_qlora import (
+    resolve_attention_implementation,
+    verify_model_metadata,
+)
 
 
 def experimental_record(row_id, split):
@@ -151,3 +155,58 @@ def test_attention_backend_only_special_cases_gemma_2():
     assert resolve_attention_implementation("google/gemma-2-9b-it", "auto") == "eager"
     assert resolve_attention_implementation("Qwen/Qwen2.5-7B-Instruct", "auto") is None
     assert resolve_attention_implementation("any/model", "sdpa") == "sdpa"
+
+
+def test_verify_model_metadata_selects_multimodal_loader(monkeypatch):
+    calls = []
+
+    class FakeTokenizer:
+        vocab_size = 262_144
+
+    class FakeConfig:
+        model_type = "gemma4_unified"
+        _commit_hash = "abc123"
+
+    class FakeModel:
+        pass
+
+    class FakeAutoTokenizer:
+        @staticmethod
+        def from_pretrained(model, **kwargs):
+            calls.append(("tokenizer", model, kwargs))
+            return FakeTokenizer()
+
+    class FakeAutoConfig:
+        @staticmethod
+        def from_pretrained(model, **kwargs):
+            calls.append(("config", model, kwargs))
+            return FakeConfig()
+
+    class FakeCausalAutoModel:
+        _model_mapping = {}
+
+    class FakeMultimodalAutoModel:
+        _model_mapping = {FakeConfig: FakeModel}
+
+    fake_transformers = ModuleType("transformers")
+    fake_transformers.__version__ = "5.test"
+    fake_transformers.AutoConfig = FakeAutoConfig
+    fake_transformers.AutoModelForCausalLM = FakeCausalAutoModel
+    fake_transformers.AutoModelForMultimodalLM = FakeMultimodalAutoModel
+    fake_transformers.AutoTokenizer = FakeAutoTokenizer
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+
+    metadata = verify_model_metadata("google/gemma-4-12B-it", "abc123")
+
+    assert metadata == {
+        "transformers_version": "5.test",
+        "resolved_revision": "abc123",
+        "model_type": "gemma4_unified",
+        "model_class": "FakeModel",
+        "tokenizer_class": "FakeTokenizer",
+        "vocab_size": 262_144,
+    }
+    assert calls == [
+        ("tokenizer", "google/gemma-4-12B-it", {"revision": "abc123"}),
+        ("config", "google/gemma-4-12B-it", {"revision": "abc123"}),
+    ]
