@@ -22,8 +22,18 @@ mlx_lm.lora --model mlx-community/gemma-2-2b-it-4bit --train \
 - **Peak memory: ~3 GB** (24 GB was never the limit for the 2B)
 - Trained in a few minutes; adapter saved to `outputs/gemma2b-tessy-lora`
 
-Before/after answers to the same 13 prompts are in
-`outputs/probe-2b-before.jsonl` and `outputs/probe-2b-after.jsonl`.
+## Evidence status
+
+These are the contributor's recorded results. The adapter, training log, exact
+environment lock, and the local `outputs/probe-2b-before.jsonl` /
+`outputs/probe-2b-after.jsonl` files were not committed, so another teammate
+cannot yet reproduce the reported metrics exactly.
+
+The 512/49 pair-level dataset used for this experiment is preserved in the
+Hugging Face incoming area. It is not the current canonical training set:
+GitHub contains the stricter 258/30 conversation-level split where 38
+critic-disputed conversations remain withheld. Treat this run as useful
+exploratory evidence, not as a final comparable bake-off result.
 
 ## What the before/after actually shows
 
@@ -49,8 +59,8 @@ Example — "Translate: 'My sister is reading a book.'"
 
 ## Takeaway for the team
 
-- The **training pipeline is validated end-to-end locally**: reviewed data →
-  SFT conversion → LoRA fine-tune → before/after eval, all working on a laptop.
+- The contributor reports that the full local loop ran: reviewed data, SFT
+  conversion, LoRA fine-tune, and a before/after probe.
 - The **2B is too weak a base** for quality Kinyarwanda, even after fine-tuning.
   This confirms the decision to fine-tune the **12B on the cloud GPU** (Bonheur's
   Lambda A100), where our data is already staged in the data-lake.

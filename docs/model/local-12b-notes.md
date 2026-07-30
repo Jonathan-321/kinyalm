@@ -10,7 +10,9 @@ data, and record whether a 24 GB Apple-silicon machine can do it — so the team
 knows what belongs on a laptop vs. the cloud GPU.
 
 Model: `mlx-community/gemma-4-12B-it-qat-4bit` (4-bit MLX, ~12 GB to *run*).
-Data: `data/mlx-data/` (512 train / 49 validation, from my reviewed slice).
+Data: a local 512 train / 49 validation pair-level export from my reviewed
+slice. This is preserved in the Hugging Face incoming area but differs from
+the stricter 258/30 canonical conversation-level split in Git.
 
 ## Running it (inference / demo) — works
 
@@ -58,9 +60,9 @@ training will fight over the same 24 GB.
   no model class for it. The repo's demo runs it only via a custom text-only
   shim (`TextOnlyGemma4` in `scripts/run_multilingual_bakeoff.py`) for
   inference — there is no training path for this model type locally.
-- Tried `pip install -U mlx-lm`: already on 0.31.3 (latest), so no newer
-  version adds `gemma4_unified` support. Confirmed dead end for local 12B
-  training.
+- Tried `pip install -U mlx-lm`: the installed version remained 0.31.3, which
+  did not support `gemma4_unified`. This confirms the blocker for the recorded
+  local attempt; a future MLX-LM release may change that.
 - Takeaway: local 12B fine-tuning is blocked on two fronts (slow/awkward
   download AND no mlx_lm training support for `gemma4_unified`), independent of
   memory. The 12B fine-tune belongs on the cloud GPU (transformers path, 40 GB
@@ -73,18 +75,18 @@ training will fight over the same 24 GB.
 
 ## Cloud path (the real 12B run)
 
-Training a 12B comfortably needs a datacenter GPU. Our team's platform is
-**Lambda Cloud** (1× A100 40 GB), with RunPod as a backup (~$1–2/hour).
+The project's currently supported 12B training path uses a datacenter GPU. Our
+team's selected platform is **Lambda Cloud** with one A100.
 
 - Runbook: [`docs/model/lambda-baseline-run.md`](lambda-baseline-run.md)
 - Scripts: `scripts/cloud/bootstrap_lambda_instance.sh`,
   `scripts/cloud/submit_lambda_job.sh`
-- The data is already in the data-lake (`kinyalm/kinyalm-data-lake`), so a cloud
-  run can pull it directly — no re-upload needed.
+- The data is already in the data-lake (`kinyalm/kinyalm-data-lake`). The final
+  run must select the audited training tier, not the legacy pair-level export.
 
-Bonheur owns the "rent GPU / train in cloud" action item, so the 12B fine-tune
-should run there rather than each of us renting separately. My reviewed +
-SFT-ready data feeds that run.
+Only one teammate should own and monitor each paid run so the team does not
+launch duplicate instances. A Gemma 4 profile is being reviewed separately;
+the current `main` cloud script should not be treated as 12B-ready yet.
 
 ## Takeaway
 
