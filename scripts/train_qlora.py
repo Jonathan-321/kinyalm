@@ -142,6 +142,53 @@ def to_dataset(records: list[dict]):
     return Dataset.from_list([{"messages": r["messages"]} for r in records])
 
 
+def write_generation_samples(
+    model,
+    tokenizer,
+    prompts: list[str],
+    output_path: Path,
+) -> None:
+    """Write deterministic samples while restoring the training cache setting."""
+
+    import torch
+
+    previous_use_cache = model.config.use_cache
+    model.config.use_cache = True
+    model.eval()
+    try:
+        with output_path.open("w", encoding="utf-8", buffering=1) as handle:
+            for prompt in prompts:
+                inputs = tokenizer.apply_chat_template(
+                    [{"role": "user", "content": prompt}],
+                    add_generation_prompt=True,
+                    return_tensors="pt",
+                    return_dict=True,
+                ).to(model.device)
+                with torch.no_grad():
+                    output = model.generate(
+                        **inputs,
+                        max_new_tokens=200,
+                        do_sample=False,
+                        use_cache=True,
+                        pad_token_id=tokenizer.pad_token_id,
+                    )
+                prompt_length = inputs["input_ids"].shape[-1]
+                completion = tokenizer.decode(
+                    output[0][prompt_length:],
+                    skip_special_tokens=True,
+                )
+                handle.write(
+                    json.dumps(
+                        {"prompt": prompt, "completion": completion},
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
+    finally:
+        model.config.use_cache = previous_use_cache
+    print(f"samples written to: {output_path}")
+
+
 def write_preflight_manifest(
     args: argparse.Namespace,
     train_records: list[dict],
@@ -487,36 +534,12 @@ def main() -> int:
             if line.strip()
         ]
         samples_path = Path(args.output_dir) / "samples.jsonl"
-        trained = trainer.model
-        trained.eval()
-        with samples_path.open("w", encoding="utf-8") as handle:
-            for prompt in prompts:
-                inputs = tokenizer.apply_chat_template(
-                    [{"role": "user", "content": prompt}],
-                    add_generation_prompt=True,
-                    return_tensors="pt",
-                    return_dict=True,
-                ).to(trained.device)
-                with torch.no_grad():
-                    output = trained.generate(
-                        **inputs,
-                        max_new_tokens=200,
-                        do_sample=False,
-                        pad_token_id=tokenizer.pad_token_id,
-                    )
-                prompt_length = inputs["input_ids"].shape[-1]
-                completion = tokenizer.decode(
-                    output[0][prompt_length:],
-                    skip_special_tokens=True,
-                )
-                handle.write(
-                    json.dumps(
-                        {"prompt": prompt, "completion": completion},
-                        ensure_ascii=False,
-                    )
-                    + "\n"
-                )
-        print(f"samples written to: {samples_path}")
+        write_generation_samples(
+            trainer.model,
+            tokenizer,
+            prompts,
+            samples_path,
+        )
 
     return 0
 

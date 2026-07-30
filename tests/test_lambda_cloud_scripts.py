@@ -40,6 +40,24 @@ def test_gemma4_is_the_default_profile():
     assert result.returncode == 0, result.stderr
     assert "model_profile=gemma4" in result.stdout
     assert "model_id=google/gemma-4-12B-it" in result.stdout
+    assert "warmup_ratio=0.03" in result.stdout
+    assert "samples_enabled=1" in result.stdout
+
+
+def test_one_step_smoke_disables_warmup_and_samples():
+    result = run_script(
+        RUN_SCRIPT,
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "MAX_STEPS": "1",
+            "PROFILE_ONLY": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "max_steps=1" in result.stdout
+    assert "warmup_ratio=0" in result.stdout
+    assert "samples_enabled=0" in result.stdout
 
 
 def test_submit_blocks_full_gemma4_run_before_reading_credentials(tmp_path):

@@ -51,9 +51,10 @@ weights. This catches the Transformers/tokenizer blocker before paid compute.
   `HuggingFaceTB/SmolLM2-135M-Instruct` checkpoint at
   `12fd25f77366fa6b3b4b768ec3050bf629380bac` completed the shared
   Transformers/TRL/PEFT training path and saved a LoRA adapter.
-
-This does not replace the Gemma 4 GPU smoke. The 12B model weights and
-4-bit CUDA path have not passed until step 3 completes on the A100.
+- The Gemma 4 A100 smoke completed model loading, 4-bit quantization, LoRA
+  attachment, one training step, validation, adapter saving, and evidence
+  publication. See
+  [`gemma4-qlora-smoke-2026-07-30.md`](gemma4-qlora-smoke-2026-07-30.md).
 
 **2. Launch the GPU** in the Lambda console: 1x A100 40 GB. Check the current
 price in the console, wait until it shows Active, and copy its IP address.
@@ -64,6 +65,11 @@ full run):
 MODEL_PROFILE=gemma4 MAX_STEPS=1 \
   bash scripts/cloud/submit_lambda_job.sh <INSTANCE-IP> <GIT-REF>
 ```
+
+For `MAX_STEPS=1`, the launcher automatically uses zero warmup so the only
+optimizer step has a non-zero learning rate. It also skips the 12 post-training
+sample prompts; those are quality evidence for a full run, not part of the
+infrastructure smoke gate.
 
 **4. Review the smoke artifacts.** A successful one-step run must load the
 quantized model, attach LoRA adapters, complete one optimizer step, save the
@@ -97,9 +103,11 @@ conversations. The result remains explicitly experimental because the rows
 have model-critic review rather than complete fluent-human approval.
 
 Use validation loss and the saved `samples.jsonl` as first-pass training
-evidence. Native-speaker and base-versus-adapter evaluation is a separate
-follow-up after reproducible training succeeds. The script requires
-`ALLOW_EXPERIMENTAL_FULL_RUN=1` so a paid full run cannot start accidentally.
+evidence. Post-training generation explicitly re-enables the model cache, then
+restores the training setting when sampling finishes. Native-speaker and
+base-versus-adapter evaluation is a separate follow-up after reproducible
+training succeeds. The script requires `ALLOW_EXPERIMENTAL_FULL_RUN=1` so a
+paid full run cannot start accidentally.
 
 ## Reminder
 
