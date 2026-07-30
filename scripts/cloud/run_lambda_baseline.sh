@@ -41,6 +41,14 @@ MAX_STEPS="${MAX_STEPS:--1}"
 PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
 PROFILE_ONLY="${PROFILE_ONLY:-0}"
 ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
+WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
+SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE:-configs/training/track2-baseline-prompts.txt}"
+SAMPLES_ENABLED=1
+if [[ "$MAX_STEPS" == "1" ]]; then
+  WARMUP_RATIO=0
+  SAMPLE_PROMPTS_FILE=""
+  SAMPLES_ENABLED=0
+fi
 RUN_ID="${RUN_ID:-$PROFILE_RUN_SLUG-$(date -u +%Y%m%dT%H%M%SZ)}"
 RUN_ROOT="${RUN_ROOT:-$HOME/kinyalm-runs/$RUN_ID}"
 DATA_DIR="$RUN_ROOT/data"
@@ -67,6 +75,9 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_revision=%s\n' "$MODEL_REVISION"
   printf 'output_repo=%s\n' "$OUTPUT_REPO"
   printf 'attention_implementation=%s\n' "$ATTN_IMPLEMENTATION"
+  printf 'max_steps=%s\n' "$MAX_STEPS"
+  printf 'warmup_ratio=%s\n' "$WARMUP_RATIO"
+  printf 'samples_enabled=%s\n' "$SAMPLES_ENABLED"
   exit 0
 fi
 if [[ "$PREFLIGHT_ONLY" == "0" && "$MODEL_PROFILE" == "gemma4" \
@@ -149,11 +160,14 @@ training_args=(
   --eval-file "$DATA_DIR/validation.jsonl"
   --dataset-manifest "$DATA_DIR/dataset-manifest.json"
   --output-dir "$ADAPTER_DIR"
-  --sample-prompts-file configs/training/track2-baseline-prompts.txt
   --experimental
   --attn-implementation "$ATTN_IMPLEMENTATION"
+  --warmup-ratio "$WARMUP_RATIO"
   --max-steps "$MAX_STEPS"
 )
+if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
+  training_args+=(--sample-prompts-file "$SAMPLE_PROMPTS_FILE")
+fi
 
 uv run python scripts/train_qlora.py \
   "${training_args[@]}" \

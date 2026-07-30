@@ -7,6 +7,7 @@ from types import ModuleType
 from scripts.train_qlora import (
     resolve_attention_implementation,
     verify_model_metadata,
+    write_generation_samples,
 )
 
 
@@ -210,3 +211,57 @@ def test_verify_model_metadata_selects_multimodal_loader(monkeypatch):
         ("tokenizer", "google/gemma-4-12B-it", {"revision": "abc123"}),
         ("config", "google/gemma-4-12B-it", {"revision": "abc123"}),
     ]
+
+
+def test_generation_samples_enable_and_restore_cache(tmp_path):
+    calls = []
+
+    class FakeConfig:
+        use_cache = False
+
+    class FakeInputIds:
+        shape = (1, 2)
+
+    class FakeBatch(dict):
+        def to(self, device):
+            calls.append(("to", device))
+            return self
+
+    class FakeModel:
+        config = FakeConfig()
+        device = "cpu"
+
+        def eval(self):
+            calls.append(("eval",))
+
+        def generate(self, **kwargs):
+            calls.append(("generate", self.config.use_cache, kwargs["use_cache"]))
+            return [[101, 102, 201, 202]]
+
+    class FakeTokenizer:
+        pad_token_id = 0
+
+        def apply_chat_template(self, messages, **kwargs):
+            calls.append(("template", messages, kwargs))
+            return FakeBatch(input_ids=FakeInputIds())
+
+        def decode(self, tokens, **kwargs):
+            calls.append(("decode", tokens, kwargs))
+            return "Igisubizo."
+
+    model = FakeModel()
+    output_path = tmp_path / "samples.jsonl"
+
+    write_generation_samples(
+        model,
+        FakeTokenizer(),
+        ["Ikibazo."],
+        output_path,
+    )
+
+    assert model.config.use_cache is False
+    assert ("generate", True, True) in calls
+    assert json.loads(output_path.read_text(encoding="utf-8")) == {
+        "prompt": "Ikibazo.",
+        "completion": "Igisubizo.",
+    }
