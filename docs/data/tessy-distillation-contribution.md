@@ -47,6 +47,18 @@ Do not use `--accept-disputed-keeps` unless the team has explicitly adjudicated
 the 38 `Repair first` rows. The option exists to record that decision, not to
 bypass it.
 
+## Hugging Face incoming status
+
+The first Hugging Face upload under `incoming/tessymugisha/sft-ready/` split
+all 326 reviewed conversations into 561 user/assistant pairs, including the 38
+rows where the critic requested repair. That export is retained as historical
+input, but it is not the canonical training set and cannot be reproduced by the
+current audited converter.
+
+Use `incoming/tessymugisha/sft-ready-critic-agreed-v1/` instead. It mirrors the
+258 train / 30 validation files committed here, preserves complete
+conversations, and withholds the disputed rows.
+
 ## task_type mapping note
 
 The distillation `task_family` labels were mapped onto the project's allowed
