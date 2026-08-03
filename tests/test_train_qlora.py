@@ -6,6 +6,7 @@ from types import ModuleType
 
 from scripts.train_qlora import (
     resolve_attention_implementation,
+    to_prompt_completion_rows,
     verify_model_metadata,
     write_generation_samples,
 )
@@ -79,7 +80,41 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
     assert manifest["experimental"] is True
     assert manifest["data"]["train"]["rows"] == 1
     assert manifest["data"]["validation"]["rows"] == 1
+    assert manifest["data"]["train"]["supervised_assistant_turns"] == 1
+    assert manifest["data"]["validation"]["supervised_assistant_turns"] == 1
+    assert manifest["training"]["loss_scope"] == "assistant-completions-only"
     assert manifest["training"]["attention_implementation"] == "sdpa"
+
+
+def test_prompt_completion_rows_preserve_history_and_mask_user_turns():
+    record = experimental_record("row-001", "experimental-train")
+    record["messages"].extend(
+        [
+            {"role": "user", "content": "Witwa nde?"},
+            {"role": "assistant", "content": "Nitwa KinyaLM."},
+        ]
+    )
+
+    examples = to_prompt_completion_rows([record])
+
+    assert examples == [
+        {
+            "prompt": [{"role": "user", "content": "Muraho."}],
+            "completion": [
+                {"role": "assistant", "content": "Muraho neza."}
+            ],
+        },
+        {
+            "prompt": [
+                {"role": "user", "content": "Muraho."},
+                {"role": "assistant", "content": "Muraho neza."},
+                {"role": "user", "content": "Witwa nde?"},
+            ],
+            "completion": [
+                {"role": "assistant", "content": "Nitwa KinyaLM."}
+            ],
+        },
+    ]
 
 
 def test_train_qlora_requires_explicit_experimental_flag(tmp_path):

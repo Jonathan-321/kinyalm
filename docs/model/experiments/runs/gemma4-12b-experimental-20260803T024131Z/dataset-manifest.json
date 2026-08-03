@@ -1,0 +1,82 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-03T02:42:10.672886+00:00",
+  "dataset_tier": "experimental-critic-filtered",
+  "production_eligible": false,
+  "human_reviewed": false,
+  "intended_use": "Baseline fine-tuning and infrastructure evaluation only; replace with fluent-human-approved rows for the curated model run.",
+  "source": {
+    "repo_id": "kinyalm/kinyalm-data-lake",
+    "requested_revision": "754a58b021cfe1e505f432df0de45ce2f63a3b21",
+    "resolved_revision": "754a58b021cfe1e505f432df0de45ce2f63a3b21",
+    "batch": "sft-distillation-production-1000-v3-final",
+    "source_policy_can_train": false,
+    "source_policy_status": "needs-fluent-human-review",
+    "files": {
+      "drafts": {
+        "path": "data/drafts/sft-distillation-production-1000-v3-final/distillation-drafts.jsonl",
+        "sha256": "8c5437f9278df930029229a84e92733870f6fac40c750f2f13b0b5451398786a",
+        "bytes": 2115894
+      },
+      "critic_jobs": {
+        "path": "generation/sft-distillation-production-1000-v3-final/critic-jobs.jsonl",
+        "sha256": "a0e1cbc1fed555d47da200efd3b7741273eba08341d78a0b77c513b593ea04d1",
+        "bytes": 3920091
+      },
+      "critic_responses": {
+        "path": "generation/sft-distillation-production-1000-v3-final/critic-responses.jsonl",
+        "sha256": "811b1fc447fbb51498910f12b82140f56c4d0c088835e8412adc6833b98de270",
+        "bytes": 1029220
+      },
+      "source_summary": {
+        "path": "quality/generation/sft-distillation-production-1000-v3-final/production-review-summary.json",
+        "sha256": "7d8c77c41b5d3e3fa10846d174d7c1c20bb783362ccb0e523b840ee3ac67d4d1",
+        "bytes": 2017
+      }
+    }
+  },
+  "build": {
+    "mode": "critic-accepted",
+    "train_ratio": 0.9,
+    "split_seed": "kinyalm-hf-baseline-v1",
+    "draft_rows": 1000,
+    "critic_recommendation_counts": {
+      "accept": 863,
+      "repair": 137
+    },
+    "selected_rows": 863,
+    "split_counts": {
+      "experimental-train": 776,
+      "experimental-validation": 87
+    },
+    "task_family_counts": {
+      "ambiguity-and-hallucination-resistance": 30,
+      "conversation-practice": 122,
+      "grammar-and-structure": 118,
+      "learner-correction-feedback": 124,
+      "multi-turn-consistency": 67,
+      "pronunciation-and-orthography": 30,
+      "reading-comprehension": 76,
+      "register-culture-code-switching": 40,
+      "sentence-generation": 26,
+      "translation-with-explanation": 126,
+      "vocabulary-definition-usage": 104
+    },
+    "connected_groups": 863,
+    "dropped_exact_duplicate_rows": []
+  },
+  "outputs": {
+    "train": {
+      "path": "train.jsonl",
+      "rows": 776,
+      "bytes": 2015616,
+      "sha256": "bd8642e1bcf9eb53cf48f26081b4e6e39d747b64fd33982872faada57908718b"
+    },
+    "validation": {
+      "path": "validation.jsonl",
+      "rows": 87,
+      "bytes": 223270,
+      "sha256": "6a815c6b8cb06b304038eb4e096659af589ff1fa38c6d96615762b524fd250d1"
+    }
+  }
+}

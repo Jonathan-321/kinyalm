@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-03T03:12:42.943075+00:00",
+  "run_id": "gemma4-12b-experimental-20260803T024131Z",
+  "status": "experimental-critic-filtered",
+  "human_reviewed": false,
+  "production_eligible": false,
+  "base_model": {
+    "repo_id": "google/gemma-4-12B-it",
+    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+  },
+  "dataset": {
+    "repo_id": "kinyalm/kinyalm-data-lake",
+    "revision": "754a58b021cfe1e505f432df0de45ce2f63a3b21"
+  },
+  "artifacts": [
+    {
+      "filename": "adapter_config.json",
+      "bytes": 1154,
+      "sha256": "6bf29db9e0d72b46691dbd5e981e70a752f99e0bb9b494c1d67d843f49b368dc"
+    },
+    {
+      "filename": "run-preflight.json",
+      "bytes": 1798,
+      "sha256": "2c176f37227bcb750be13b196998722347b18e6ed1fd555c3a186fccb15eae73"
+    },
+    {
+      "filename": "adapter_model.safetensors",
+      "bytes": 131235784,
+      "sha256": "508ff76bcfa124c75678a0abc4887668ff1850d4b9e74a9a21642bb0582dca23"
+    },
+    {
+      "filename": "dataset-manifest.json",
+      "bytes": 2955,
+      "sha256": "a2f0ac639d242d8f3f1c279885a556670e2c26a75e8fd3dee7e375138a611bcd"
+    },
+    {
+      "filename": "train.log",
+      "bytes": 74971,
+      "sha256": "67652cb6c8cc424ad802d4ab01cb589e707d3f578eb95940ffb565061e0fbe78"
+    },
+    {
+      "filename": "system-info.txt",
+      "bytes": 604,
+      "sha256": "2030013f56ee947fe5571d6b1bb293b3102e132ba0b425bfb0f2a95765f89b4a"
+    }
+  ]
+}

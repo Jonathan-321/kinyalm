@@ -30,6 +30,19 @@ def test_convert_peft_key_to_mlx_layout():
     )
 
 
+def test_convert_gemma_peft_key_to_nested_mlx_layout():
+    converted = convert_peft_key(
+        "base_model.model.model.language_model.layers.5."
+        "self_attn.q_proj.lora_A.weight"
+    )
+
+    assert converted == (
+        "language_model.model.layers.5.self_attn.q_proj.lora_a",
+        5,
+        "self_attn.q_proj",
+    )
+
+
 def test_build_mlx_config_uses_peft_scaling_and_all_layers():
     keys = []
     for layer in range(2):
@@ -59,12 +72,16 @@ def test_build_mlx_config_rejects_missing_middle_layer():
         build_mlx_config(peft_config(), keys)
 
 
-def test_build_mlx_config_rejects_inconsistent_modules_between_layers():
+def test_build_mlx_config_allows_architecture_specific_missing_modules():
     keys = [
         ("model.layers.0.self_attn.q_proj.lora_a", 0, "self_attn.q_proj"),
         ("model.layers.0.self_attn.v_proj.lora_a", 0, "self_attn.v_proj"),
         ("model.layers.1.self_attn.q_proj.lora_a", 1, "self_attn.q_proj"),
     ]
 
-    with pytest.raises(ValueError, match="same LoRA modules"):
-        build_mlx_config(peft_config(), keys)
+    config = build_mlx_config(peft_config(), keys)
+
+    assert config["lora_parameters"]["keys"] == [
+        "self_attn.q_proj",
+        "self_attn.v_proj",
+    ]

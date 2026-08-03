@@ -81,21 +81,35 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", type=int, default=8090)
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--feedback-dir", type=Path)
+    parser.add_argument("--adapter-path", type=Path)
+    parser.add_argument("--adapter-repo")
+    parser.add_argument("--adapter-revision")
     parser.add_argument("--mock", action="store_true")
     parser.add_argument("--open", action="store_true", dest="open_browser")
     return parser.parse_args()
 
 
-def load_real_runtime(config_path: Path) -> tuple[MlxGenerator, dict[str, Any]]:
+def load_real_runtime(
+    config_path: Path,
+    adapter_path: Path | None = None,
+    adapter_repo: str | None = None,
+    adapter_revision: str | None = None,
+) -> tuple[MlxGenerator, dict[str, Any]]:
     config = load_bakeoff_config(config_path.resolve())
     candidate = resolve_runtime_candidates(config, ["gemma4-12b-it"], "mlx")[0]
-    runtime = MlxGenerator(candidate, config.seed)
+    runtime = MlxGenerator(candidate, config.seed, adapter_path=adapter_path)
+    adapter_label = "None (base model)"
+    if adapter_path is not None:
+        adapter_label = adapter_repo or str(adapter_path.expanduser().resolve())
+        if adapter_revision:
+            adapter_label = f"{adapter_label}@{adapter_revision[:12]}"
     return runtime, {
-        "name": "KinyaLM",
+        "name": "KinyaLM experimental adapter" if adapter_path else "KinyaLM",
         "base_model": candidate.source_model_id,
         "checkpoint": candidate.model_id,
         "backend": f"MLX-LM {candidate.backend_version}",
         "quantization": candidate.quantization,
+        "adapter": adapter_label,
         "location": "On this Mac",
     }
 
@@ -121,7 +135,14 @@ def main() -> int:
             },
         )
     else:
-        state.load_in_background(lambda: load_real_runtime(args.config))
+        state.load_in_background(
+            lambda: load_real_runtime(
+                args.config,
+                adapter_path=args.adapter_path,
+                adapter_repo=args.adapter_repo,
+                adapter_revision=args.adapter_revision,
+            )
+        )
 
     application = ChatApplication(
         runtime=state,

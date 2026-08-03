@@ -41,6 +41,10 @@ def test_gemma4_is_the_default_profile():
     assert "model_profile=gemma4" in result.stdout
     assert "model_id=google/gemma-4-12B-it" in result.stdout
     assert "warmup_ratio=0.03" in result.stdout
+    assert "learning_rate=5e-5" in result.stdout
+    assert "epochs=1" in result.stdout
+    assert "save_steps=25" in result.stdout
+    assert "eval_steps=25" in result.stdout
     assert "samples_enabled=1" in result.stdout
 
 

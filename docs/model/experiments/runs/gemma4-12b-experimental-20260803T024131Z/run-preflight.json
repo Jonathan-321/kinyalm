@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "created_at_utc": "2026-08-03T02:42:19.118727+00:00",
+  "experimental": true,
+  "model": "google/gemma-4-12B-it",
+  "model_revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+  "model_metadata": null,
+  "training": {
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "learning_rate": 0.0002,
+    "warmup_ratio": 0.03,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "max_sequence_length": 1024,
+    "epochs": 2,
+    "max_steps": -1,
+    "seed": 42,
+    "attention_implementation": "eager",
+    "quantization_disabled": false
+  },
+  "data": {
+    "train": {
+      "path": "/home/ubuntu/kinyalm-runs/gemma4-12b-experimental-20260803T024131Z/data/train.jsonl",
+      "bytes": 2015616,
+      "sha256": "bd8642e1bcf9eb53cf48f26081b4e6e39d747b64fd33982872faada57908718b",
+      "rows": 776,
+      "review_statuses": [
+        "critic-accepted"
+      ],
+      "splits": [
+        "experimental-train"
+      ]
+    },
+    "validation": {
+      "path": "/home/ubuntu/kinyalm-runs/gemma4-12b-experimental-20260803T024131Z/data/validation.jsonl",
+      "bytes": 223270,
+      "sha256": "6a815c6b8cb06b304038eb4e096659af589ff1fa38c6d96615762b524fd250d1",
+      "rows": 87,
+      "review_statuses": [
+        "critic-accepted"
+      ],
+      "splits": [
+        "experimental-validation"
+      ]
+    },
+    "source_manifest": {
+      "path": "/home/ubuntu/kinyalm-runs/gemma4-12b-experimental-20260803T024131Z/data/dataset-manifest.json",
+      "bytes": 2955,
+      "sha256": "a2f0ac639d242d8f3f1c279885a556670e2c26a75e8fd3dee7e375138a611bcd",
+      "dataset_tier": "experimental-critic-filtered",
+      "human_reviewed": false,
+      "production_eligible": false,
+      "resolved_revision": "754a58b021cfe1e505f432df0de45ce2f63a3b21"
+    }
+  }
+}

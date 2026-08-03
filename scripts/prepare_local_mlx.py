@@ -22,10 +22,10 @@ DEFAULT_ADAPTER_REVISION = "e370728b6c9f5c0c6df57d450261982a69536b83"
 
 PEFT_LORA_KEY = re.compile(
     r"^(?:base_model\.model\.)?"
-    r"(?P<module>model\.layers\.(?P<layer>\d+)\..+)\."
+    r"(?P<root>model(?:\.language_model)?\.layers)\."
+    r"(?P<layer>\d+)\.(?P<module>.+)\."
     r"lora_(?P<matrix>[AB])(?:\.[^.]+)?\.weight$"
 )
-LAYER_MODULE = re.compile(r"^model\.layers\.(?P<layer>\d+)\.(?P<module>.+)$")
 
 
 def sha256_file(path: Path) -> str:
@@ -42,16 +42,19 @@ def convert_peft_key(key: str) -> tuple[str, int, str]:
     if match is None:
         raise ValueError(f"Unsupported PEFT adapter weight: {key}")
 
+    source_root = match.group("root")
+    destination_root = (
+        "language_model.model.layers"
+        if source_root == "model.language_model.layers"
+        else "model.layers"
+    )
+    layer = int(match.group("layer"))
     module = match.group("module")
-    layer_match = LAYER_MODULE.fullmatch(module)
-    if layer_match is None:  # pragma: no cover - guarded by PEFT_LORA_KEY
-        raise ValueError(f"Adapter weight is not attached to a model layer: {key}")
-
     matrix = match.group("matrix").lower()
     return (
-        f"{module}.lora_{matrix}",
-        int(match.group("layer")),
-        layer_match.group("module"),
+        f"{destination_root}.{layer}.{module}.lora_{matrix}",
+        layer,
+        module,
     )
 
 
@@ -95,16 +98,6 @@ def build_mlx_config(
         raise ValueError("MLX conversion requires LoRA weights for every model layer")
 
     module_keys = sorted({module for _, _, module in converted_keys})
-    modules_by_layer = {
-        layer: {
-            module
-            for _, item_layer, module in converted_keys
-            if item_layer == layer
-        }
-        for layer in expected_layers
-    }
-    if any(modules != set(module_keys) for modules in modules_by_layer.values()):
-        raise ValueError("Every model layer must contain the same LoRA modules")
     return {
         "fine_tune_type": "lora",
         "num_layers": len(expected_layers),

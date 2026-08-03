@@ -336,7 +336,12 @@ class TransformersGenerator:
 class MlxGenerator:
     """One local Apple-silicon MLX checkpoint and its tokenizer."""
 
-    def __init__(self, candidate: RuntimeCandidate, seed: int) -> None:
+    def __init__(
+        self,
+        candidate: RuntimeCandidate,
+        seed: int,
+        adapter_path: Path | None = None,
+    ) -> None:
         if platform.system() != "Darwin" or platform.machine() != "arm64":
             raise RuntimeError("the MLX backend requires an Apple-silicon Mac")
 
@@ -362,13 +367,20 @@ class MlxGenerator:
                 for token_id in candidate.suppress_token_ids
             }
         )
-        self.model, self.tokenizer = load_text_only_mlx_model(candidate)
+        self.model, self.tokenizer = load_text_only_mlx_model(
+            candidate,
+            adapter_path=adapter_path,
+        )
         self.make_prompt_cache = make_prompt_cache
         self.prompt_cache = LRUPromptCache(
             max_size=4,
             max_bytes=512 * 1024 * 1024,
         )
-        self.cache_key = (candidate.model_id, candidate.revision)
+        self.cache_key = (
+            candidate.model_id,
+            candidate.revision,
+            str(adapter_path.resolve()) if adapter_path is not None else None,
+        )
 
     def generate(
         self,
@@ -516,12 +528,15 @@ def filter_ignored_weights(
     }
 
 
-def load_text_only_mlx_model(candidate: RuntimeCandidate) -> tuple[Any, Any]:
+def load_text_only_mlx_model(
+    candidate: RuntimeCandidate,
+    adapter_path: Path | None = None,
+) -> tuple[Any, Any]:
     """Strictly load Gemma text weights while excluding pinned vision tensors."""
 
     from huggingface_hub import snapshot_download
     from mlx_lm.models import gemma4
-    from mlx_lm.utils import load_model, load_tokenizer
+    from mlx_lm.utils import load_adapters, load_model, load_tokenizer
 
     model_path = Path(
         snapshot_download(
@@ -542,6 +557,18 @@ def load_text_only_mlx_model(candidate: RuntimeCandidate) -> tuple[Any, Any]:
         model_config={"model_type": candidate.model_type_override},
         get_model_classes=lambda config: (TextOnlyGemma4, gemma4.ModelArgs),
     )
+    if adapter_path is not None:
+        adapter_path = adapter_path.expanduser().resolve()
+        if not (adapter_path / "adapter_config.json").is_file():
+            raise FileNotFoundError(
+                f"MLX adapter config is missing: {adapter_path / 'adapter_config.json'}"
+            )
+        if not (adapter_path / "adapters.safetensors").is_file():
+            raise FileNotFoundError(
+                "MLX adapter weights are missing: "
+                f"{adapter_path / 'adapters.safetensors'}"
+            )
+        model = load_adapters(model, str(adapter_path))
     tokenizer = load_tokenizer(
         model_path,
         eos_token_ids=model_config.get("eos_token_id"),

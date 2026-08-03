@@ -125,11 +125,18 @@ Initial settings to try:
 | max sequence length | 1024 | 512 |
 | per-device batch size | 1 | 1 |
 | gradient accumulation | 8 | 16 |
-| epochs | 2 | 1 smoke epoch |
-| learning rate | 2e-4 | 1e-4 |
+| epochs | 1 | 1 smoke epoch |
+| learning rate | 5e-5 | 2e-5 |
 | warmup ratio | 0.03 | 0.03 |
+| loss scope | assistant completions only | same |
+| save/evaluate | every 25 optimizer steps | every 50 steps |
 
-These are starting points, not proof of quality.
+These conservative settings replace the original two-epoch, `2e-4` recipe
+after that experimental adapter collapsed during generation. They are starting
+points, not proof of quality. The trainer must receive conversational
+prompt/completion examples with `completion_only_loss=True`; a plain `messages`
+language-modeling dataset trains on the learner's prompt as well as the desired
+assistant answer.
 
 Gemma-2 specific: train with attention implementation `eager`. Gemma-2 uses
 logit soft-capping that is incompatible with flash/sdpa attention during

@@ -57,6 +57,29 @@ port can be selected with `--port`, for example:
 bash scripts/local/chat_gemma4_web.sh --port 8091 --open
 ```
 
+## Experimental Adapter Review
+
+Reviewers with access to the private Hugging Face adapter can run the exact
+Gemma 4 QLoRA checkpoint locally:
+
+```bash
+hf auth login
+bash scripts/local/chat_gemma4_adapter_web.sh --port 8091 --open
+```
+
+The launcher pins the base checkpoint and adapter revisions, converts the PEFT
+weights into MLX layout, and refuses to load if either converted adapter file is
+missing. Before scoring responses, open **Runtime details** and confirm that the
+Adapter row reads:
+
+```text
+kinyalm/kinyalm-gemma-4-12b-experimental@feefb1e7ac35
+```
+
+Use a fresh conversation for each held-out prompt and save a rating plus a
+correction when the answer is unnatural or wrong. The adapter remains
+experimental until the native-speaker comparison is complete.
+
 Frontend work can be tested without loading the 12B model:
 
 ```bash

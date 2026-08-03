@@ -1,0 +1,12 @@
+run_id=gemma4-12b-experimental-20260803T024131Z
+started_at_utc=2026-08-03T02:41:31Z
+git_commit=d1d7a48e118c5ae08dd6f5f962eee2704b3cc460
+model=google/gemma-4-12B-it@707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7
+dataset=kinyalm/kinyalm-data-lake@754a58b021cfe1e505f432df0de45ce2f63a3b21
+uv=uv 0.12.1 (x86_64-unknown-linux-gnu)
+Linux 132-145-130-203 6.8.0-1046-nvidia #49~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Wed Jan 28 22:29:18 UTC 2 x86_64 x86_64 x86_64 GNU/Linux
+NVIDIA A100-SXM4-40GB, GPU-9aa8ce6b-b511-b78d-ebd3-95e6ee012862, 40960 MiB, 580.105.08
+torch=2.13.0+cu130
+transformers=5.14.1
+trl=1.9.2
+peft=0.20.0

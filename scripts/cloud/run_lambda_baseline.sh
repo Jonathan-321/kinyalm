@@ -42,6 +42,10 @@ PREFLIGHT_ONLY="${PREFLIGHT_ONLY:-0}"
 PROFILE_ONLY="${PROFILE_ONLY:-0}"
 ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
+LEARNING_RATE="${LEARNING_RATE:-5e-5}"
+EPOCHS="${EPOCHS:-1}"
+SAVE_STEPS="${SAVE_STEPS:-25}"
+EVAL_STEPS="${EVAL_STEPS:-25}"
 SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE:-configs/training/track2-baseline-prompts.txt}"
 SAMPLES_ENABLED=1
 if [[ "$MAX_STEPS" == "1" ]]; then
@@ -77,6 +81,10 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'attention_implementation=%s\n' "$ATTN_IMPLEMENTATION"
   printf 'max_steps=%s\n' "$MAX_STEPS"
   printf 'warmup_ratio=%s\n' "$WARMUP_RATIO"
+  printf 'learning_rate=%s\n' "$LEARNING_RATE"
+  printf 'epochs=%s\n' "$EPOCHS"
+  printf 'save_steps=%s\n' "$SAVE_STEPS"
+  printf 'eval_steps=%s\n' "$EVAL_STEPS"
   printf 'samples_enabled=%s\n' "$SAMPLES_ENABLED"
   exit 0
 fi
@@ -163,6 +171,10 @@ training_args=(
   --experimental
   --attn-implementation "$ATTN_IMPLEMENTATION"
   --warmup-ratio "$WARMUP_RATIO"
+  --learning-rate "$LEARNING_RATE"
+  --epochs "$EPOCHS"
+  --save-steps "$SAVE_STEPS"
+  --eval-steps "$EVAL_STEPS"
   --max-steps "$MAX_STEPS"
 )
 if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
