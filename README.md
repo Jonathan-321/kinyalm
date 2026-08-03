@@ -18,9 +18,10 @@ and evaluation prompts are ready.
 
 ## Start Here
 
-The current project push is SFT readiness: define the conversation format,
-prepare held-out evaluation prompts, confirm source permissions, and prove the
-compute path before training.
+The current project push is controlled model evaluation: consolidate the
+human-approved split, compare the unchanged Gemma 4 base with the experimental
+adapter on identical held-out prompts, and use native-speaker findings to drive
+the final training run.
 
 1. Read [project-charter.md](docs/project/project-charter.md).
 2. Read the full [master-plan.md](docs/project/master-plan.md).
@@ -59,6 +60,14 @@ compute path before training.
     [Gemma 4 local screening report](docs/model/experiments/2026-07-21-gemma4-12b-local-screen.md).
 22. Test the selected local checkpoint through the
     [KinyaLM browser chat demo](docs/model/local-kinyalm-chat-demo.md).
+23. Read the current project truth in the
+    [presentation evidence packet](docs/project/presentation-evidence-packet.md).
+24. Inspect every major run in the
+    [experiment ledger](docs/project/appendix-experiment-ledger.md).
+25. Trace methodological claims to primary sources in the
+    [paper decision matrix](docs/project/appendix-paper-matrix.md).
+26. Review the completed two-epoch result in the
+    [Gemma 4 experimental QLoRA report](docs/model/experiments/2026-08-03-gemma4-12b-experimental-qlora.md).
 
 ## Local KinyaLM Chat
 
