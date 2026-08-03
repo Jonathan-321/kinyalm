@@ -6,10 +6,10 @@ Run date: 2026-08-03
 
 The complete two-epoch Gemma 4 QLoRA run finished, evaluated all validation
 rows, generated samples, published its adapter, and terminated the Lambda
-instance. The optimization result is valid and reproducible. The adapter is not
-ready to present as a language-quality improvement: its first 12 saved samples
-still contain serious Kinyarwanda tutoring failures, and no blinded comparison
-against the unchanged base has been scored.
+instance. The optimization result is reproducible, but the checkpoint is now
+rejected for demonstration. Its first 12 CUDA samples contained serious
+Kinyarwanda tutoring failures, and a later native-speaker local session exposed
+severe response collapse across unrelated prompts.
 
 ## Reproducible setup
 
@@ -71,6 +71,37 @@ The English translation of `Nubwo imvura yagwaga, twakomeje urugendo` is the
 clearest usable response in the sample set. One good answer is not enough to
 offset the systematic failures above.
 
+## Live native-speaker rejection
+
+The locally converted adapter was tested through the browser interface. It
+answered `Uri nde?` with a malformed identity response and then converged on
+the same sentence for unrelated conversation, identity, and factual prompts:
+
+> `Ndakora imyitozo y'ubyandikwa.`
+
+The sentence appears zero times in the frozen training split, system prompt,
+and project code. This is therefore not direct memorization of one row. It is a
+generation collapse severe enough to reject the checkpoint without waiting for
+a full blind study. The session is useful failure evidence, but it is not a
+quantitative base-versus-adapter score.
+
+## Root-cause audit
+
+- The original PEFT checkpoint already produced a repetition loop on Lambda,
+  so MLX is not the primary source of the failure.
+- All 656 PEFT tensors were preserved exactly by the MLX conversion after the
+  required transpose; maximum absolute tensor difference was `0.0`.
+- The original trainer passed a conversational `messages` dataset to TRL
+  without assistant-only masking. In the pinned TRL version, this computes loss
+  over the full chat, including user prompts.
+- The run used two epochs at `2e-4` while adapting all attention and MLP
+  projections on data that the manifest explicitly marks as not human-reviewed
+  and not production-eligible.
+- The local MLX checkpoint uses a different quantization scheme from the CUDA
+  NF4 training base. Output parity still needs a controlled A100-versus-MLX
+  check, but that residual risk does not explain the failures already saved on
+  Lambda.
+
 ## Evidence and publication
 
 Private adapter repository:
@@ -90,12 +121,17 @@ The Lambda console showed **No running instances** at 2026-08-03 03:22 UTC.
 
 ## Decision
 
-Keep this adapter as the controlled experimental checkpoint. Do not call it the
-final KinyaLM model. The next quality gate is:
+Keep this adapter only as a rejected, controlled experimental artifact. Do not
+add steps, present it as KinyaLM, or use it as the starting point for preference
+optimization. The recovery plan is:
 
-1. generate identical held-out prompts with the unchanged base and this adapter;
-2. randomize and blind the answer labels;
-3. collect two fluent-speaker scores per answer;
-4. report wins, ties, losses, regressions, and reviewer agreement;
-5. use those failures to revise the human-approved data;
-6. retrain the final adapter only after freezing that approved split.
+1. verify direct PEFT versus MLX output parity on identical prompts;
+2. rerun one controlled experiment with assistant-only loss, one epoch, and
+   learning rate `5e-5`;
+3. freeze and train a fluent-human-approved split;
+4. randomize and blind all base-versus-adapter labels;
+5. report wins, ties, losses, regressions, and reviewer agreement by task
+   family.
+
+The detailed sequence is in
+[`gemma4-adapter-recovery-plan.md`](../gemma4-adapter-recovery-plan.md).

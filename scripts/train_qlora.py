@@ -60,12 +60,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
-    parser.add_argument("--learning-rate", type=float, default=2e-4)
+    parser.add_argument("--learning-rate", type=float, default=5e-5)
     parser.add_argument("--warmup-ratio", type=float, default=0.03)
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--grad-accum", type=int, default=8)
     parser.add_argument("--max-seq-len", type=int, default=1024)
-    parser.add_argument("--epochs", type=int, default=2)
+    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument(
+        "--save-steps",
+        type=int,
+        default=25,
+        help="Save a resumable adapter checkpoint every N optimizer steps.",
+    )
+    parser.add_argument(
+        "--eval-steps",
+        type=int,
+        default=25,
+        help="Evaluate every N optimizer steps when validation data is present.",
+    )
     parser.add_argument(
         "--max-steps",
         type=int,
@@ -136,10 +148,28 @@ def load_split(path: str, allowed_splits: set[str]) -> list[dict]:
     return kept
 
 
+def to_prompt_completion_rows(records: list[dict]) -> list[dict]:
+    """Expand conversations into assistant-only supervision examples."""
+
+    examples = []
+    for record in records:
+        history = []
+        for message in record["messages"]:
+            if message["role"] == "assistant":
+                examples.append(
+                    {
+                        "prompt": [dict(item) for item in history],
+                        "completion": [dict(message)],
+                    }
+                )
+            history.append(message)
+    return examples
+
+
 def to_dataset(records: list[dict]):
     from datasets import Dataset
 
-    return Dataset.from_list([{"messages": r["messages"]} for r in records])
+    return Dataset.from_list(to_prompt_completion_rows(records))
 
 
 def write_generation_samples(
@@ -217,6 +247,9 @@ def write_preflight_manifest(
             "max_sequence_length": args.max_seq_len,
             "epochs": args.epochs,
             "max_steps": args.max_steps,
+            "save_steps": args.save_steps,
+            "eval_steps": args.eval_steps,
+            "loss_scope": "assistant-completions-only",
             "seed": args.seed,
             "attention_implementation": resolve_attention_implementation(
                 args.model, args.attn_implementation
@@ -237,6 +270,13 @@ def write_preflight_manifest(
             ),
         },
     }
+    manifest["data"]["train"]["supervised_assistant_turns"] = len(
+        to_prompt_completion_rows(train_records)
+    )
+    if manifest["data"]["validation"] is not None and eval_records is not None:
+        manifest["data"]["validation"]["supervised_assistant_turns"] = len(
+            to_prompt_completion_rows(eval_records)
+        )
     path = output_dir / "run-preflight.json"
     path.write_text(
         json.dumps(manifest, indent=2, ensure_ascii=False) + "\n",
@@ -488,6 +528,13 @@ def main() -> int:
         ],
     )
 
+    use_step_checkpoints = args.max_steps < 0 or args.max_steps > 1
+    eval_strategy = (
+        ("steps" if use_step_checkpoints else "epoch")
+        if eval_records
+        else "no"
+    )
+    save_strategy = "steps" if use_step_checkpoints else "epoch"
     config = SFTConfig(
         output_dir=args.output_dir,
         num_train_epochs=args.epochs,
@@ -506,8 +553,15 @@ def main() -> int:
         fp16=use_fp16,
         dataloader_pin_memory=use_cuda,
         logging_steps=1,
-        eval_strategy="epoch" if eval_records else "no",
-        save_strategy="epoch",
+        eval_strategy=eval_strategy,
+        eval_steps=args.eval_steps,
+        save_strategy=save_strategy,
+        save_steps=args.save_steps,
+        save_total_limit=4,
+        load_best_model_at_end=bool(eval_records),
+        metric_for_best_model="eval_loss" if eval_records else None,
+        greater_is_better=False if eval_records else None,
+        completion_only_loss=True,
         seed=args.seed,
         report_to="none",
     )

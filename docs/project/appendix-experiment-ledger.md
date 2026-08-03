@@ -356,13 +356,15 @@ produce an adapter ready for a controlled base-versus-adapter review?
 
 ### Decision
 
-The full optimization and publication gate passed. This is not yet the final
-KinyaLM quality result because the 863 selected conversations were approved by
-an automated critic, not by fluent humans, and the generated answers have not
-yet been blindly compared with the unchanged base. Loss and token accuracy
-show that the adapter learned the training distribution; only held-out task
-evaluation and native-speaker review can show whether it became a better
-Kinyarwanda tutor.
+The full optimization and publication gate passed, but the checkpoint failed
+the subsequent live native-speaker gate and is rejected for demonstration. It
+collapsed onto `Ndakora imyitozo y'ubyandikwa` across unrelated prompts. The
+same phrase was absent from the frozen data and code, while the original CUDA
+samples already contained a separate repetition loop. The audit also found
+that the run computed loss over the full conversation rather than assistant
+answers only. The next run must use assistant-completion-only loss, a lower
+`5e-5` learning rate, one epoch, checkpointed evaluation, and a separately
+frozen fluent-human-approved split.
 
 ## D1: Local MLX browser demo
 

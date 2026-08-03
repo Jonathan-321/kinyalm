@@ -2,6 +2,8 @@
 
 Snapshot date: 2026-08-03
 
+Working Drive catalog: [KinyaLM Research Paper Catalog](https://docs.google.com/document/d/1e_4mcLxR6DzX1FWvL8RSZ0kPJua3aCzbamK6phW7b6U/edit)
+
 This is a decision matrix, not a reading list. A source belongs here only when
 it explains a choice the team made, a limitation the team discovered, or a
 future experiment that has a clear prerequisite.

@@ -9,9 +9,9 @@ result.
 
 ## Executive conclusion
 
-KinyaLM now has a complete experimental Gemma 4 QLoRA adapter and a working
-research/demo foundation, but it does not yet have a native-speaker-validated
-final model.
+KinyaLM now has a complete but rejected experimental Gemma 4 QLoRA adapter and
+a working research/demo foundation. It does not yet have a
+native-speaker-validated final model.
 
 - Track A produced two useful findings. A 5.07M-parameter sandbox reduced
   held-out perplexity from about 599 to 21 and demonstrated real next-token
@@ -21,6 +21,10 @@ final model.
 - Track B proved the complete QLoRA delivery path on Qwen and proved that Gemma
   4 12B can complete a two-epoch CUDA/QLoRA run, save a 126 MiB adapter,
   publish reproducible artifacts, and run locally through MLX.
+- The Gemma 4 adapter failed its later live native-speaker check by collapsing
+  onto one sentence across unrelated prompts. The audit found that the run
+  trained on full chat sequences instead of assistant completions only. The
+  trainer and next-run configuration have been corrected.
 - The Qwen adapter and Gemma 2 2B adapter failed the actual language-quality
   gate. Gemma 4 12B is the most promising local candidate the team tried, but
   the formal 26-prompt screen recorded multiple objective errors and has not
@@ -31,9 +35,9 @@ final model.
   the final human-approved run.
 
 The defensible final claim today is: **the project has a reproducible data,
-training, evaluation, publication, and local-demo pipeline, plus a complete
-experimental Gemma 4 adapter; its language-quality improvement is still
-pending blind native-speaker evaluation.**
+training, evaluation, publication, and local-demo pipeline; its first complete
+Gemma 4 adapter failed the language-quality gate, and the corrected
+human-approved run is still pending.**
 
 ## Current project snapshot
 
@@ -50,7 +54,7 @@ pending blind native-speaker evaluation.**
 | Held-out task bank | 50 total tasks; 26 permanently benchmark-only | The 26 prompts must never enter training |
 | Gemma 4 blind base review | 0 of 26 rows scored | Formal native-speaker quality is still pending |
 | Experimental Gemma 4 SFT | Complete: 194 steps, 2 epochs, 1,572 seconds | Optimization passed on critic-filtered data; this is not a human-approved quality result |
-| Experimental adapter | Private HF revision `feefb1e7ac359b60ca45af9db8fd883af8cac933` | Artifact is preserved for blind base-versus-adapter review |
+| Experimental adapter | Private HF revision `feefb1e7ac359b60ca45af9db8fd883af8cac933` | Rejected artifact preserved for failure analysis and parity testing |
 | Lambda status | No running instances at 2026-08-03 03:22 UTC | Billing stopped after publication |
 
 Links:
@@ -338,7 +342,7 @@ repository. Treat it as a recollection until evidence is attached.
 | We built and trained a 109.5M model from scratch as a learning experiment | We trained a useful 109.5M Kinyarwanda LM from scratch |
 | The Qwen cloud-to-local QLoRA pipeline worked | The Qwen adapter improved Kinyarwanda quality |
 | Gemma 4 12B runs locally in quantized form on a 32 GB M5 Mac | Gemma 4 is already a validated Kinyarwanda tutor |
-| The Gemma 4 two-epoch experimental QLoRA run completed and published | The adapter improved Kinyarwanda tutoring quality |
+| The Gemma 4 two-epoch experimental QLoRA run completed, published, and then failed the live language gate | The adapter improved Kinyarwanda tutoring quality |
 | The lake contains 460 unique human-approved conversations across artifacts | We have a final reviewed 1,000-row training release |
 | Synthetic generation accelerated candidate creation | LLM critic acceptance equals fluent-human approval |
 | The interface is demo-ready as a base-model research prototype | The interface is serving the final fine-tuned model |
@@ -348,13 +352,13 @@ repository. Treat it as a recollection until evidence is attached.
 1. Consolidate the 460 unique approved conversations into one versioned split.
 2. Resolve Tessy's 38 critic-disputed rows and record the decision rule.
 3. Complete blind native-speaker review of the unchanged Gemma 4 screen.
-4. Evaluate the unchanged base and experimental adapter on identical held-out
-   prompts.
-5. Run the final Gemma 4 12B QLoRA experiment on the frozen human-approved data.
-6. Report external benchmark results without mixing benchmark rows into SFT.
-7. Save actual cloud runtime and invoice evidence.
-8. Rebuild or qualify KILM's corpus because Digital Umuganda MT is now blocked.
-9. Push the two local KILM commits (the deep-dive guide and loader hardening) so
+4. Verify direct PEFT versus MLX parity on identical held-out prompts.
+5. Run one corrected-objective control at one epoch and `5e-5`.
+6. Run the final Gemma 4 12B QLoRA experiment on the frozen human-approved data.
+7. Report external benchmark results without mixing benchmark rows into SFT.
+8. Save actual cloud runtime and invoice evidence.
+9. Rebuild or qualify KILM's corpus because Digital Umuganda MT is now blocked.
+10. Push the two local KILM commits (the deep-dive guide and loader hardening) so
    GitHub matches the local evidence repository.
 
 ## Recommended final narrative
