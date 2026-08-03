@@ -381,6 +381,7 @@ function updateHealth(health) {
     ["Status", elements.status.textContent],
     ["Model", runtime.base_model || "Loading"],
     ["Checkpoint", runtime.checkpoint || "—"],
+    ["Adapter", runtime.adapter || "None (base model)"],
     ["Backend", runtime.backend || "—"],
     ["Quantization", runtime.quantization || "—"],
     ["Location", runtime.location || "On this Mac"],

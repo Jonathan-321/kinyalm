@@ -83,6 +83,18 @@ ratings and reviewer corrections are saved privately for later review. See the
 screenshots, mock mode, and the boundary between a usable prototype and a
 quality-approved model.
 
+To test the pinned experimental Gemma 4 QLoRA adapter instead, authenticate to
+Hugging Face and launch the adapter-specific entry point:
+
+```bash
+hf auth login
+bash scripts/local/chat_gemma4_adapter_web.sh --port 8091 --open
+```
+
+The Runtime panel must show
+`kinyalm/kinyalm-gemma-4-12b-experimental@feefb1e7ac35`. This checkpoint is a
+review candidate, not a quality-approved release.
+
 ## Contributors
 
 - Jonathan Muhire ([@Jonathan-321](https://github.com/Jonathan-321))
