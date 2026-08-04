@@ -166,10 +166,62 @@ def to_prompt_completion_rows(records: list[dict]) -> list[dict]:
     return examples
 
 
-def to_dataset(records: list[dict]):
+def tokenize_prompt_completion_rows(records: list[dict], tokenizer) -> list[dict]:
+    """Tokenize conversations with an exact assistant-content loss boundary.
+
+    Some chat templates add generation-only control tokens that are absent when
+    an assistant message already has content. Deriving the boundary from a
+    separately rendered generation prompt would then mask real answer tokens.
+    Instead, compare the complete conversation with the same final assistant
+    turn rendered empty; their common prefix ends exactly where supervision
+    should begin.
+    """
+
+    tokenized = []
+    for example in to_prompt_completion_rows(records):
+        full_messages = example["prompt"] + example["completion"]
+        empty_completion = [{**example["completion"][0], "content": ""}]
+        boundary_messages = example["prompt"] + empty_completion
+
+        full = tokenizer.apply_chat_template(
+            full_messages,
+            tokenize=True,
+            return_dict=True,
+            add_generation_prompt=False,
+        )
+        boundary = tokenizer.apply_chat_template(
+            boundary_messages,
+            tokenize=True,
+            return_dict=True,
+            add_generation_prompt=False,
+        )
+        full_ids = list(full["input_ids"])
+        boundary_ids = list(boundary["input_ids"])
+        prefix_length = 0
+        for full_id, boundary_id in zip(full_ids, boundary_ids, strict=False):
+            if full_id != boundary_id:
+                break
+            prefix_length += 1
+        if prefix_length == 0 or prefix_length >= len(full_ids):
+            raise ValueError(
+                "could not locate assistant-content boundary in rendered chat"
+            )
+
+        tokenized.append(
+            {
+                "input_ids": full_ids,
+                "completion_mask": (
+                    [0] * prefix_length + [1] * (len(full_ids) - prefix_length)
+                ),
+            }
+        )
+    return tokenized
+
+
+def to_dataset(records: list[dict], tokenizer):
     from datasets import Dataset
 
-    return Dataset.from_list(to_prompt_completion_rows(records))
+    return Dataset.from_list(tokenize_prompt_completion_rows(records, tokenizer))
 
 
 def write_generation_samples(
@@ -570,8 +622,8 @@ def main() -> int:
         model=model,
         args=config,
         processing_class=tokenizer,
-        train_dataset=to_dataset(train_records),
-        eval_dataset=to_dataset(eval_records) if eval_records else None,
+        train_dataset=to_dataset(train_records, tokenizer),
+        eval_dataset=(to_dataset(eval_records, tokenizer) if eval_records else None),
         peft_config=peft_config,
     )
     result = trainer.train()

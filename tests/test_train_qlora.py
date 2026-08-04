@@ -7,6 +7,7 @@ from types import ModuleType
 from scripts.train_qlora import (
     resolve_attention_implementation,
     to_prompt_completion_rows,
+    tokenize_prompt_completion_rows,
     verify_model_metadata,
     write_generation_samples,
 )
@@ -115,6 +116,40 @@ def test_prompt_completion_rows_preserve_history_and_mask_user_turns():
             ],
         },
     ]
+
+
+def test_tokenization_masks_from_rendered_assistant_boundary():
+    calls = []
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, **kwargs):
+            calls.append((messages, kwargs))
+            assistant_content = messages[-1]["content"]
+            input_ids = (
+                [1, 10, 20, 30, 31, 99] if assistant_content else [1, 10, 20, 99]
+            )
+            return {"input_ids": input_ids}
+
+    rows = tokenize_prompt_completion_rows(
+        [experimental_record("row-001", "experimental-train")],
+        FakeTokenizer(),
+    )
+
+    assert rows == [
+        {
+            "input_ids": [1, 10, 20, 30, 31, 99],
+            "completion_mask": [0, 0, 0, 1, 1, 1],
+        }
+    ]
+    assert all(
+        kwargs
+        == {
+            "tokenize": True,
+            "return_dict": True,
+            "add_generation_prompt": False,
+        }
+        for _, kwargs in calls
+    )
 
 
 def test_train_qlora_requires_explicit_experimental_flag(tmp_path):
