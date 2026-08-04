@@ -296,7 +296,7 @@ class TransformersGenerator:
         import torch
         from transformers import (
             AutoModelForMultimodalLM,
-            AutoProcessor,
+            AutoTokenizer,
             set_seed,
         )
 
@@ -305,7 +305,7 @@ class TransformersGenerator:
 
         set_seed(seed)
         self.torch = torch
-        self.processor = AutoProcessor.from_pretrained(
+        self.processor = AutoTokenizer.from_pretrained(
             candidate.model_id,
             revision=candidate.revision,
         )
@@ -351,7 +351,6 @@ class TransformersGenerator:
             enable_thinking=enable_thinking,
         )
         input_tokens = int(inputs["input_ids"].shape[-1])
-        prefix_ids = inputs["input_ids"][0].detach().cpu()
         inputs = inputs.to(self.input_device)
 
         for device_index in range(self.torch.cuda.device_count()):
@@ -370,14 +369,7 @@ class TransformersGenerator:
             generated_ids,
             skip_special_tokens=False,
         )
-        parsed_response = self.processor.parse_response(
-            generated_ids,
-            prefix=prefix_ids,
-        )
-        if not isinstance(parsed_response, dict):
-            raise RuntimeError("Gemma response parser did not return one message")
-        response = str(parsed_response.get("content", "")).strip()
-        thinking = str(parsed_response.get("thinking", "")).strip()
+        response, thinking = parse_gemma4_response(raw_response)
         if not response:
             raise RuntimeError("Gemma generated no visible response content")
         peak_memory = max(
