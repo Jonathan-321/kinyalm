@@ -96,6 +96,38 @@ both generally distinguished `Muraho` from `Mwaramutse` on `T003`. Native
 speakers still need to score every row before an aggregate preference result is
 reported.
 
+## Local MLX parity result
+
+The corrected adapter was then converted to MLX and applied to
+`mlx-community/gemma-4-12B-it-qat-4bit` revision
+`e70c6b3ba0979b3357dcd2f223ad8bde7787a6b6`. The exact same ten tasks, system
+prompt, greedy decoding, and 768-token budget were used. This local composition
+is not behaviorally equivalent to the CUDA PEFT run.
+
+| Runtime | Successful tasks | Token-limit failure | Mean output tokens |
+| --- | ---: | --- | ---: |
+| CUDA BF16 base + PEFT adapter | 10/10 | `T010` | 170.6 |
+| MLX QAT base + converted adapter | 10/10 | `T005` | 132.5 |
+
+The disagreement is qualitative, not just normal quantization noise:
+
+- On `T005`, CUDA stopped after 77 tokens; MLX repeated an unnatural dialogue
+  until the 768-token cap.
+- On `T010`, CUDA repeated until the cap; MLX stopped after 126 tokens but still
+  supplied incorrect school vocabulary.
+- On `T016`, CUDA correctly returned `Ndi umunyeshuri`; MLX returned the
+  incorrect `Ndi umunzi` under the exact benchmark prompt.
+- On `T018`, CUDA correctly returned `Izina ryanjye ni Aline`; MLX returned
+  `Wiyita Aline`, which changes the meaning.
+
+The MLX run completed at a median 7.60 tokens per second and peaked at 11.85 GB
+of unified memory. These results do not identify one root cause: the local
+runtime overlays the adapter on a separately produced QAT checkpoint, and MLX
+adapter application may also differ from PEFT. They do establish that this
+local build must not be used as a faithful score of the CUDA checkpoint. The
+next deployment experiment should merge the adapter into the exact source base
+first, convert and quantize that merged checkpoint, and repeat this parity gate.
+
 ## Evidence
 
 Durable evaluation artifacts are in
@@ -104,6 +136,8 @@ Durable evaluation artifacts are in
 - `base.jsonl` and `adapter.jsonl`: raw, revision-pinned generations;
 - `base-run-manifest.json` and `adapter-run-manifest.json`: environment and
   candidate metadata;
+- `mlx.jsonl`, `mlx-run-manifest.json`, and `mlx-automatic-metrics.json`: the
+  exact-prompt local parity run and mechanical summary;
 - `blind-review.csv`: randomized reviewer sheet;
 - `parity-review-manifest.json`: input hashes and task identities.
 

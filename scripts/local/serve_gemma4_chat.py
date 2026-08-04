@@ -104,7 +104,7 @@ def load_real_runtime(
         if adapter_revision:
             adapter_label = f"{adapter_label}@{adapter_revision[:12]}"
     return runtime, {
-        "name": "KinyaLM experimental adapter" if adapter_path else "KinyaLM",
+        "name": "KinyaLM SFT review candidate" if adapter_path else "KinyaLM",
         "base_model": candidate.source_model_id,
         "checkpoint": candidate.model_id,
         "backend": f"MLX-LM {candidate.backend_version}",

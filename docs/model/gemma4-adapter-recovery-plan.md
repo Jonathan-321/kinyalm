@@ -117,8 +117,13 @@ elementary translations reversed by the adapter. See
 [`experiments/2026-08-03-gemma4-base-vs-adapter-eval.md`](experiments/2026-08-03-gemma4-base-vs-adapter-eval.md)
 and
 [`experiments/2026-08-04-gemma4-12b-mlx-adapter-heldout.md`](experiments/2026-08-04-gemma4-12b-mlx-adapter-heldout.md).
-Exact same-prompt BF16-versus-PEFT-versus-MLX parity remains pending, but it is
-no longer required before the corrected-objective control.
+The corrected adapter completed an exact same-prompt CUDA-versus-MLX check on
+2026-08-04 and failed output parity. The MLX arm moved the catastrophic loop
+from `T010` to `T005` and reversed two elementary translations that CUDA got
+right. This does not isolate quantization from adapter-runtime semantics, but it
+does disqualify the current QAT-base-plus-adapter composition as a faithful
+local representation of the PEFT checkpoint. See
+[`experiments/2026-08-04-gemma4-12b-corrected-control.md`](experiments/2026-08-04-gemma4-12b-corrected-control.md).
 
 ### Gate 2: corrected-objective control
 
