@@ -135,6 +135,15 @@ Save checkpoints every 25 steps. Evaluate each checkpoint on the same held-out
 task bank so a late regression can be discarded instead of accepted merely
 because final validation loss is lower.
 
+**Status (2026-08-04): completed, but failed the model-quality gate.** The
+one-epoch control reached validation loss `1.3750` and token accuracy `0.6993`,
+then completed an exact BF16 base-versus-PEFT comparison on ten held-out tasks.
+The adapter reduced mean output length from 379.2 to 170.6 tokens, but one task
+entered a factually wrong 768-token repetition loop while the base had zero
+token-limit failures. The training correction is retained; this adapter is not
+promoted. See
+[`experiments/2026-08-04-gemma4-12b-corrected-control.md`](experiments/2026-08-04-gemma4-12b-corrected-control.md).
+
 ### Gate 3: curated-data run
 
 Freeze a native-speaker-approved split and repeat the same configuration. Start
