@@ -7,6 +7,7 @@ from types import ModuleType
 from scripts.train_qlora import (
     resolve_attention_implementation,
     to_prompt_completion_rows,
+    tokenize_assistant_completion_rows,
     verify_model_metadata,
     write_generation_samples,
 )
@@ -115,6 +116,41 @@ def test_prompt_completion_rows_preserve_history_and_mask_user_turns():
             ],
         },
     ]
+
+
+def test_tokenized_rows_preserve_generation_prefix_and_label_full_answer():
+    calls = []
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, **kwargs):
+            calls.append(("template", messages, kwargs))
+            if kwargs["tokenize"]:
+                return {"input_ids": [2, 10, 11, 12]}
+            return (
+                "<bos><user>Muraho.<assistant>"
+                "KINYALM_ASSISTANT_COMPLETION_BOUNDARY_4C9E7A<turn-end>"
+            )
+
+        def __call__(self, text, **kwargs):
+            calls.append(("tokenize", text, kwargs))
+            assert text == "Muraho neza.<turn-end>"
+            return {"input_ids": [21, 22, 1]}
+
+    rows = tokenize_assistant_completion_rows(
+        [experimental_record("row-001", "experimental-train")],
+        FakeTokenizer(),
+    )
+
+    assert rows == [
+        {
+            "input_ids": [2, 10, 11, 12, 21, 22, 1],
+            "labels": [-100, -100, -100, -100, 21, 22, 1],
+        }
+    ]
+    template_calls = [call for call in calls if call[0] == "template"]
+    assert all(call[2]["enable_thinking"] is False for call in template_calls)
+    assert template_calls[0][2]["add_generation_prompt"] is True
+    assert template_calls[1][2]["add_generation_prompt"] is False
 
 
 def test_train_qlora_requires_explicit_experimental_flag(tmp_path):

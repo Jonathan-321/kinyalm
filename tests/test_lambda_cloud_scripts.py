@@ -65,6 +65,8 @@ def test_gemma4_sft10k_profile_is_pinned():
         in result.stdout
     )
     assert "output_repo=kinyalm/kinyalm-gemma-4-12b-sft10k-v1" in result.stdout
+    assert "save_steps=200" in result.stdout
+    assert "eval_steps=200" in result.stdout
 
 
 def test_one_step_smoke_disables_warmup_and_samples():
