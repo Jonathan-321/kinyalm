@@ -99,7 +99,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--experimental",
         action="store_true",
-        help="Allow only explicitly labeled experimental-train/validation rows.",
+        help="Include experimental-train/validation rows, plus any "
+        "human-approved train/validation rows, so a retrain can mix tiers.",
     )
     parser.add_argument(
         "--dataset-manifest",
@@ -424,9 +425,17 @@ def verify_model_metadata(model: str, revision: str | None = None) -> dict:
 def main() -> int:
     args = parse_args()
 
-    train_splits = {"experimental-train"} if args.experimental else {"train"}
+    # --experimental includes the critic-filtered tier AND any human-approved
+    # (train/validation) rows, so a retrain can mix the experimental baseline
+    # with fluent-speaker corrections. Each row is still validated against its
+    # own tier's rules, so the labeling stays honest.
+    train_splits = (
+        {"experimental-train", "train"} if args.experimental else {"train"}
+    )
     validation_splits = (
-        {"experimental-validation"} if args.experimental else {"validation"}
+        {"experimental-validation", "validation"}
+        if args.experimental
+        else {"validation"}
     )
     train_records = load_split(args.train_file, train_splits)
     eval_records = (
