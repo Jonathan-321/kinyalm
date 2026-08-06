@@ -48,6 +48,25 @@ def test_gemma4_is_the_default_profile():
     assert "samples_enabled=1" in result.stdout
 
 
+def test_gemma4_sft10k_profile_is_pinned():
+    result = run_script(
+        RUN_SCRIPT,
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "DATA_PROFILE": "sft10k-v4",
+            "PROFILE_ONLY": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "data_profile=sft10k-v4" in result.stdout
+    assert (
+        "data_revision=2092af49ec3478dbdebee9e65a936ec0dc1b3e7c"
+        in result.stdout
+    )
+    assert "output_repo=kinyalm/kinyalm-gemma-4-12b-sft10k-v1" in result.stdout
+
+
 def test_one_step_smoke_disables_warmup_and_samples():
     result = run_script(
         RUN_SCRIPT,

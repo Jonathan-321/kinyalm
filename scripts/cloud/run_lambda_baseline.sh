@@ -2,7 +2,20 @@
 set -Eeuo pipefail
 
 DATA_REPO="${DATA_REPO:-kinyalm/kinyalm-data-lake}"
-DATA_REVISION="${DATA_REVISION:-754a58b021cfe1e505f432df0de45ce2f63a3b21}"
+DATA_PROFILE="${DATA_PROFILE:-legacy-critic-1k}"
+case "$DATA_PROFILE" in
+  legacy-critic-1k)
+    PROFILE_DATA_REVISION="754a58b021cfe1e505f432df0de45ce2f63a3b21"
+    ;;
+  sft10k-v4)
+    PROFILE_DATA_REVISION="2092af49ec3478dbdebee9e65a936ec0dc1b3e7c"
+    ;;
+  *)
+    echo "DATA_PROFILE must be legacy-critic-1k or sft10k-v4" >&2
+    exit 2
+    ;;
+esac
+DATA_REVISION="${DATA_REVISION:-$PROFILE_DATA_REVISION}"
 MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
 case "$MODEL_PROFILE" in
   gemma)
@@ -33,6 +46,10 @@ case "$MODEL_PROFILE" in
     exit 2
     ;;
 esac
+if [[ "$DATA_PROFILE" == "sft10k-v4" && "$MODEL_PROFILE" == "gemma4" ]]; then
+  PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-sft10k-v1"
+  PROFILE_RUN_SLUG="gemma4-12b-sft10k-v1"
+fi
 MODEL_ID="${MODEL_ID:-$PROFILE_MODEL_ID}"
 MODEL_REVISION="${MODEL_REVISION:-$PROFILE_MODEL_REVISION}"
 OUTPUT_REPO="${OUTPUT_REPO:-$PROFILE_OUTPUT_REPO}"
@@ -75,6 +92,8 @@ if [[ "$ALLOW_EXPERIMENTAL_FULL_RUN" != "0" && "$ALLOW_EXPERIMENTAL_FULL_RUN" !=
 fi
 if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_profile=%s\n' "$MODEL_PROFILE"
+  printf 'data_profile=%s\n' "$DATA_PROFILE"
+  printf 'data_revision=%s\n' "$DATA_REVISION"
   printf 'model_id=%s\n' "$MODEL_ID"
   printf 'model_revision=%s\n' "$MODEL_REVISION"
   printf 'output_repo=%s\n' "$OUTPUT_REPO"
@@ -139,6 +158,7 @@ fi
   printf 'git_commit=%s\n' "$(git rev-parse HEAD)"
   printf 'model=%s@%s\n' "$MODEL_ID" "$MODEL_REVISION"
   printf 'dataset=%s@%s\n' "$DATA_REPO" "$DATA_REVISION"
+  printf 'data_profile=%s\n' "$DATA_PROFILE"
   printf 'uv=%s\n' "$(uv --version)"
   uname -a
   if command -v nvidia-smi >/dev/null 2>&1; then
@@ -154,12 +174,20 @@ uv run python -c \
   'import peft, torch, transformers, trl; print(f"torch={torch.__version__}"); print(f"transformers={transformers.__version__}"); print(f"trl={trl.__version__}"); print(f"peft={peft.__version__}")' \
   >> "$SYSTEM_INFO"
 
-uv run python scripts/prepare_hf_sft_baseline.py \
-  --repo-id "$DATA_REPO" \
-  --revision "$DATA_REVISION" \
-  --mode critic-accepted \
-  --output-dir "$DATA_DIR" \
-  --acknowledge-experimental
+if [[ "$DATA_PROFILE" == "sft10k-v4" ]]; then
+  uv run python scripts/prepare_hf_candidate_sft.py \
+    --repo-id "$DATA_REPO" \
+    --revision "$DATA_REVISION" \
+    --output-dir "$DATA_DIR" \
+    --include-flagged
+else
+  uv run python scripts/prepare_hf_sft_baseline.py \
+    --repo-id "$DATA_REPO" \
+    --revision "$DATA_REVISION" \
+    --mode critic-accepted \
+    --output-dir "$DATA_DIR" \
+    --acknowledge-experimental
+fi
 
 training_args=(
   --model "$MODEL_ID"

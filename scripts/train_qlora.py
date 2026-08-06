@@ -37,6 +37,11 @@ if str(SRC) not in sys.path:
 
 from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
+EXPERIMENTAL_DATASET_TIERS = {
+    "experimental-critic-filtered",
+    "experimental-candidate-unreviewed",
+}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -336,9 +341,9 @@ def verify_dataset_manifest(
         raise SystemExit(f"invalid dataset manifest {manifest_path}: {exc}") from exc
 
     if args.experimental:
-        if manifest.get("dataset_tier") != "experimental-critic-filtered":
+        if manifest.get("dataset_tier") not in EXPERIMENTAL_DATASET_TIERS:
             raise SystemExit(
-                "experimental run requires an experimental-critic-filtered manifest"
+                "experimental run requires an explicitly experimental manifest"
             )
         if manifest.get("human_reviewed") is not False:
             raise SystemExit("experimental manifest must state human_reviewed=false")

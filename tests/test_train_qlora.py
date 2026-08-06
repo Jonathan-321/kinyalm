@@ -187,6 +187,51 @@ def test_train_qlora_rejects_data_that_does_not_match_manifest(tmp_path):
     assert "does not match dataset manifest sha256" in result.stderr
 
 
+def test_train_qlora_accepts_explicit_candidate_manifest(tmp_path):
+    train_path = tmp_path / "train.jsonl"
+    output_dir = tmp_path / "run"
+    manifest_path = tmp_path / "dataset-manifest.json"
+    row = experimental_record("row-001", "experimental-train")
+    row["review_status"] = "candidate-unreviewed"
+    write_jsonl(train_path, [row])
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "dataset_tier": "experimental-candidate-unreviewed",
+                "human_reviewed": False,
+                "production_eligible": False,
+                "outputs": {
+                    "train": {
+                        "rows": 1,
+                        "sha256": file_sha256(train_path),
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/train_qlora.py",
+            "--train-file",
+            str(train_path),
+            "--dataset-manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+            "--experimental",
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "dry run complete" in result.stdout
+
+
 def test_attention_backend_only_special_cases_gemma_2():
     assert resolve_attention_implementation("google/gemma-2-9b-it", "auto") == "eager"
     assert resolve_attention_implementation("Qwen/Qwen2.5-7B-Instruct", "auto") is None

@@ -10,6 +10,7 @@ HOST="$1"
 REPO_REF="${2:-main}"
 REMOTE_MAX_STEPS="${MAX_STEPS:--1}"
 REMOTE_MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
+REMOTE_DATA_PROFILE="${DATA_PROFILE:-legacy-critic-1k}"
 REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 SSH_KEY="${LAMBDA_SSH_KEY:-$HOME/.ssh/coolify_key}"
 HF_MODEL_TOKEN_NAME="${HF_MODEL_TOKEN_NAME:-}"
@@ -28,6 +29,10 @@ if [[ ! "$REMOTE_MAX_STEPS" =~ ^-?[0-9]+$ ]]; then
 fi
 if [[ "$REMOTE_MODEL_PROFILE" != "gemma4" && "$REMOTE_MODEL_PROFILE" != "gemma" && "$REMOTE_MODEL_PROFILE" != "qwen" ]]; then
   echo "MODEL_PROFILE must be gemma4, gemma, or qwen" >&2
+  exit 2
+fi
+if [[ "$REMOTE_DATA_PROFILE" != "legacy-critic-1k" && "$REMOTE_DATA_PROFILE" != "sft10k-v4" ]]; then
+  echo "DATA_PROFILE must be legacy-critic-1k or sft10k-v4" >&2
   exit 2
 fi
 if [[ "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "0" && "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "1" ]]; then
@@ -72,7 +77,7 @@ printf '%s' "$HF_PUBLISH_TOKEN_VALUE" | ssh -i "$SSH_KEY" "ubuntu@$HOST" \
 unset HF_PUBLISH_TOKEN_VALUE
 
 ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' bash -se" <<'REMOTE_SCRIPT'
+  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' DATA_PROFILE='$REMOTE_DATA_PROFILE' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' bash -se" <<'REMOTE_SCRIPT'
 if [[ ! -d "$HOME/kinyalm/.git" ]]; then
   git clone --filter=blob:none https://github.com/Jonathan-321/kinyalm.git \
     "$HOME/kinyalm"
@@ -85,6 +90,7 @@ nohup env \
   KINYALM_HF_PUBLISH_TOKEN_FILE="$HOME/.config/kinyalm/hf-publish-token" \
   MAX_STEPS="$MAX_STEPS" \
   MODEL_PROFILE="$MODEL_PROFILE" \
+  DATA_PROFILE="$DATA_PROFILE" \
   ALLOW_EXPERIMENTAL_FULL_RUN="$ALLOW_EXPERIMENTAL_FULL_RUN" \
   bash "$HOME/kinyalm/scripts/cloud/bootstrap_lambda_instance.sh" \
   > "$HOME/kinyalm-bootstrap.log" 2>&1 < /dev/null &
