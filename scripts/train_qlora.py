@@ -545,7 +545,7 @@ def main() -> int:
         lr_scheduler_type="cosine",
         # Transformers 5 accepts ratios below 1 through warmup_steps and
         # deprecates the separate warmup_ratio argument.
-        warmup_steps=args.warmup_ratio,
+        warmup_ratio=args.warmup_ratio,
         max_length=args.max_seq_len,
         gradient_checkpointing=use_cuda,
         optim="paged_adamw_8bit" if quantize else "adamw_torch",
