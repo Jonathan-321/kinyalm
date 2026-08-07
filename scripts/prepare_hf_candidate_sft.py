@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import sys
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -28,6 +29,18 @@ DEFAULT_DATA_PATH = (
 )
 DEFAULT_MANIFEST_PATH = "data/candidates/kinyalm-sft-10k-v4/manifest.json"
 TRAINING_TIER = "experimental-candidate-unreviewed"
+QUALITY_POLICIES = ("unflagged", "strict-script-clean", "core-direct")
+CORE_DIRECT_FAMILIES = {
+    "translation-with-explanation",
+    "grammar-and-structure",
+    "vocabulary-definition-usage",
+    "pronunciation-and-orthography",
+    "learner-correction-feedback",
+    "conversation-practice",
+    "multi-turn-consistency",
+    "register-culture-code-switching",
+}
+ALLOWED_NON_ASCII = frozenset("’‘“”–—…×÷≤≥°")
 
 
 def load_jsonl(path: Path) -> list[dict[str, Any]]:
@@ -47,17 +60,66 @@ def stable_key(seed: str, row_id: str) -> str:
     return hashlib.sha256(f"{seed}:{row_id}".encode()).hexdigest()
 
 
+def unsupported_script_characters(row: dict[str, Any]) -> set[str]:
+    """Return non-Latin or invisible characters from generated row text."""
+
+    texts = [str(row.get("lesson_focus", ""))]
+    texts.extend(
+        str(message.get("content", ""))
+        for message in row.get("messages", [])
+        if isinstance(message, dict)
+    )
+    unsupported: set[str] = set()
+    for text in texts:
+        for character in text:
+            if ord(character) < 128 or character in ALLOWED_NON_ASCII:
+                continue
+            if unicodedata.name(character, "").startswith("LATIN "):
+                continue
+            unsupported.add(character)
+    return unsupported
+
+
+def candidate_rejection_reasons(
+    row: dict[str, Any], *, include_flagged: bool, quality_policy: str
+) -> list[str]:
+    reasons = []
+    if row.get("candidate_flags") and not include_flagged:
+        reasons.append("candidate-flagged")
+    if quality_policy in {"strict-script-clean", "core-direct"}:
+        if unsupported_script_characters(row):
+            reasons.append("unsupported-script-character")
+    if quality_policy == "core-direct":
+        family = str(row.get("task_family", ""))
+        if family not in CORE_DIRECT_FAMILIES:
+            reasons.append(f"excluded-task-family:{family or 'missing'}")
+    return reasons
+
+
 def build_candidate_splits(
     rows: list[dict[str, Any]],
     *,
     split_seed: str,
     include_flagged: bool,
+    quality_policy: str = "unflagged",
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    selected = [
-        json.loads(json.dumps(row, ensure_ascii=False))
-        for row in rows
-        if include_flagged or not row.get("candidate_flags")
-    ]
+    if quality_policy not in QUALITY_POLICIES:
+        raise ValueError(f"unknown quality policy: {quality_policy}")
+
+    rejection_counts: Counter[str] = Counter()
+    rejected_rows = 0
+    selected = []
+    for row in rows:
+        reasons = candidate_rejection_reasons(
+            row,
+            include_flagged=include_flagged,
+            quality_policy=quality_policy,
+        )
+        if reasons:
+            rejected_rows += 1
+            rejection_counts.update(reasons)
+            continue
+        selected.append(json.loads(json.dumps(row, ensure_ascii=False)))
     if not selected:
         raise ValueError("candidate selection is empty")
 
@@ -122,7 +184,10 @@ def build_candidate_splits(
         family_split_counts[row["task_family"]][row["split"]] += 1
     return selected, {
         "selected_rows": len(selected),
+        "rejected_rows": rejected_rows,
+        "rejection_counts": dict(sorted(rejection_counts.items())),
         "include_flagged": include_flagged,
+        "quality_policy": quality_policy,
         "flagged_rows": sum(bool(row.get("candidate_flags")) for row in selected),
         "split_seed": split_seed,
         "split_counts": dict(sorted(split_counts.items())),
@@ -175,6 +240,7 @@ def materialize_hf_candidate_sft(
     output_dir: Path,
     split_seed: str,
     include_flagged: bool,
+    quality_policy: str,
 ) -> dict[str, Any]:
     api = HfApi()
     resolved_revision = api.dataset_info(repo_id, revision=revision).sha
@@ -202,6 +268,7 @@ def materialize_hf_candidate_sft(
         load_jsonl(local_data),
         split_seed=split_seed,
         include_flagged=include_flagged,
+        quality_policy=quality_policy,
     )
     output_dir.mkdir(parents=True, exist_ok=True)
     split_paths: dict[str, Path] = {}
@@ -260,6 +327,12 @@ def main() -> int:
         action="store_true",
         help="Include explicitly flagged candidates in this experimental run.",
     )
+    parser.add_argument(
+        "--quality-policy",
+        choices=QUALITY_POLICIES,
+        default="unflagged",
+        help="Deterministic candidate filtering policy (default: unflagged).",
+    )
     args = parser.parse_args()
 
     try:
@@ -271,6 +344,7 @@ def main() -> int:
             output_dir=args.output_dir.expanduser(),
             split_seed=args.split_seed,
             include_flagged=args.include_flagged,
+            quality_policy=args.quality_policy,
         )
     except (OSError, ValueError, json.JSONDecodeError) as error:
         raise SystemExit(f"candidate split build failed: {error}") from error

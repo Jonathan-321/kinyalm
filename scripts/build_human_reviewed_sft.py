@@ -155,6 +155,18 @@ def main() -> int:
             "train_ratio": args.train_ratio,
             "withheld_review_ids": withheld,
         },
+        "outputs": {
+            "train": {
+                "path": train_path.name,
+                "rows": len(train),
+                "sha256": sha256_path(train_path),
+            },
+            "validation": {
+                "path": validation_path.name,
+                "rows": len(validation),
+                "sha256": sha256_path(validation_path),
+            },
+        },
         "quality_note": (
             "Every row was approved by a named fluent reviewer. Automated critic "
             "agreement is recorded as a separate curation tier, not treated as a "

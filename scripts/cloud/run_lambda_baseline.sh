@@ -10,8 +10,11 @@ case "$DATA_PROFILE" in
   sft10k-v4)
     PROFILE_DATA_REVISION="2092af49ec3478dbdebee9e65a936ec0dc1b3e7c"
     ;;
+  human-reviewed-432)
+    PROFILE_DATA_REVISION="9e599494681e30beac36e5d5b95ffc193d3bb99c"
+    ;;
   *)
-    echo "DATA_PROFILE must be legacy-critic-1k or sft10k-v4" >&2
+    echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, or human-reviewed-432" >&2
     exit 2
     ;;
 esac
@@ -51,6 +54,11 @@ if [[ "$DATA_PROFILE" == "sft10k-v4" && "$MODEL_PROFILE" == "gemma4" ]]; then
   PROFILE_RUN_SLUG="gemma4-12b-sft10k-v1"
   PROFILE_SAVE_STEPS=200
   PROFILE_EVAL_STEPS=200
+elif [[ "$DATA_PROFILE" == "human-reviewed-432" && "$MODEL_PROFILE" == "gemma4" ]]; then
+  PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-human432"
+  PROFILE_RUN_SLUG="gemma4-12b-human432"
+  PROFILE_SAVE_STEPS=25
+  PROFILE_EVAL_STEPS=25
 else
   PROFILE_SAVE_STEPS=25
   PROFILE_EVAL_STEPS=25
@@ -68,6 +76,7 @@ LEARNING_RATE="${LEARNING_RATE:-5e-5}"
 EPOCHS="${EPOCHS:-1}"
 SAVE_STEPS="${SAVE_STEPS:-$PROFILE_SAVE_STEPS}"
 EVAL_STEPS="${EVAL_STEPS:-$PROFILE_EVAL_STEPS}"
+CANDIDATE_QUALITY_POLICY="${CANDIDATE_QUALITY_POLICY:-unflagged}"
 SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE:-configs/training/track2-baseline-prompts.txt}"
 SAMPLES_ENABLED=1
 if [[ "$MAX_STEPS" == "1" ]]; then
@@ -109,6 +118,7 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'epochs=%s\n' "$EPOCHS"
   printf 'save_steps=%s\n' "$SAVE_STEPS"
   printf 'eval_steps=%s\n' "$EVAL_STEPS"
+  printf 'candidate_quality_policy=%s\n' "$CANDIDATE_QUALITY_POLICY"
   printf 'samples_enabled=%s\n' "$SAMPLES_ENABLED"
   exit 0
 fi
@@ -179,20 +189,30 @@ uv run python -c \
   'import peft, torch, transformers, trl; print(f"torch={torch.__version__}"); print(f"transformers={transformers.__version__}"); print(f"trl={trl.__version__}"); print(f"peft={peft.__version__}")' \
   >> "$SYSTEM_INFO"
 
-if [[ "$DATA_PROFILE" == "sft10k-v4" ]]; then
-  uv run python scripts/prepare_hf_candidate_sft.py \
-    --repo-id "$DATA_REPO" \
-    --revision "$DATA_REVISION" \
-    --output-dir "$DATA_DIR" \
-    --include-flagged
-else
-  uv run python scripts/prepare_hf_sft_baseline.py \
-    --repo-id "$DATA_REPO" \
-    --revision "$DATA_REVISION" \
-    --mode critic-accepted \
-    --output-dir "$DATA_DIR" \
-    --acknowledge-experimental
-fi
+case "$DATA_PROFILE" in
+  sft10k-v4)
+    uv run python scripts/prepare_hf_candidate_sft.py \
+      --repo-id "$DATA_REPO" \
+      --revision "$DATA_REVISION" \
+      --output-dir "$DATA_DIR" \
+      --quality-policy "$CANDIDATE_QUALITY_POLICY"
+    ;;
+  human-reviewed-432)
+    uv run python scripts/build_human_reviewed_sft.py \
+      --repo-id "$DATA_REPO" \
+      --revision "$DATA_REVISION" \
+      --output-dir "$DATA_DIR" \
+      --include-human-approved-critic-disagreements
+    ;;
+  legacy-critic-1k)
+    uv run python scripts/prepare_hf_sft_baseline.py \
+      --repo-id "$DATA_REPO" \
+      --revision "$DATA_REVISION" \
+      --mode critic-accepted \
+      --output-dir "$DATA_DIR" \
+      --acknowledge-experimental
+    ;;
+esac
 
 training_args=(
   --model "$MODEL_ID"
@@ -201,7 +221,6 @@ training_args=(
   --eval-file "$DATA_DIR/validation.jsonl"
   --dataset-manifest "$DATA_DIR/dataset-manifest.json"
   --output-dir "$ADAPTER_DIR"
-  --experimental
   --attn-implementation "$ATTN_IMPLEMENTATION"
   --warmup-ratio "$WARMUP_RATIO"
   --learning-rate "$LEARNING_RATE"
@@ -210,6 +229,9 @@ training_args=(
   --eval-steps "$EVAL_STEPS"
   --max-steps "$MAX_STEPS"
 )
+if [[ "$DATA_PROFILE" != "human-reviewed-432" ]]; then
+  training_args+=(--experimental)
+fi
 if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
   training_args+=(--sample-prompts-file "$SAMPLE_PROMPTS_FILE")
 fi

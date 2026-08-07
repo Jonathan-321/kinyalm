@@ -1,4 +1,7 @@
-from scripts.prepare_hf_candidate_sft import build_candidate_splits
+from scripts.prepare_hf_candidate_sft import (
+    build_candidate_splits,
+    unsupported_script_characters,
+)
 
 
 def candidate(row_id: str, family: str, *, flagged: bool = False) -> dict:
@@ -71,3 +74,46 @@ def test_candidate_split_can_exclude_flagged_rows() -> None:
 
     assert len(selected) == 19
     assert report["flagged_rows"] == 0
+    assert report["rejection_counts"] == {"candidate-flagged": 1}
+
+
+def test_strict_policy_rejects_mixed_script_generation() -> None:
+    rows = [
+        candidate(f"row-{index:03d}", "conversation-practice")
+        for index in range(20)
+    ]
+    rows[0]["messages"][1]["content"] = "Iyo nteruro irak дұрыс."
+
+    selected, report = build_candidate_splits(
+        rows,
+        split_seed="split-v1",
+        include_flagged=False,
+        quality_policy="strict-script-clean",
+    )
+
+    assert len(selected) == 19
+    assert unsupported_script_characters(rows[0]) == set("дұрыс")
+    assert report["rejection_counts"] == {"unsupported-script-character": 1}
+
+
+def test_core_policy_keeps_only_direct_tutoring_families() -> None:
+    rows = [
+        candidate(f"core-{index:03d}", "conversation-practice")
+        for index in range(20)
+    ] + [
+        candidate(f"risk-{index:03d}", "ambiguity-and-hallucination-resistance")
+        for index in range(20)
+    ]
+
+    selected, report = build_candidate_splits(
+        rows,
+        split_seed="split-v1",
+        include_flagged=False,
+        quality_policy="core-direct",
+    )
+
+    assert len(selected) == 20
+    assert {row["task_family"] for row in selected} == {"conversation-practice"}
+    assert report["rejection_counts"] == {
+        "excluded-task-family:ambiguity-and-hallucination-resistance": 20
+    }

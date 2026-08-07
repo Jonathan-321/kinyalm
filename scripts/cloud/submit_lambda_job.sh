@@ -12,6 +12,15 @@ REMOTE_MAX_STEPS="${MAX_STEPS:--1}"
 REMOTE_MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
 REMOTE_DATA_PROFILE="${DATA_PROFILE:-legacy-critic-1k}"
 REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
+REMOTE_CANDIDATE_QUALITY_POLICY="${CANDIDATE_QUALITY_POLICY:-unflagged}"
+REMOTE_LEARNING_RATE="${LEARNING_RATE:-5e-5}"
+REMOTE_WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
+REMOTE_EPOCHS="${EPOCHS:-1}"
+REMOTE_SAVE_STEPS="${SAVE_STEPS:-}"
+REMOTE_EVAL_STEPS="${EVAL_STEPS:-}"
+REMOTE_OUTPUT_REPO="${OUTPUT_REPO:-}"
+REMOTE_RUN_ID="${RUN_ID:-}"
+SUBMIT_DRY_RUN="${SUBMIT_DRY_RUN:-0}"
 SSH_KEY="${LAMBDA_SSH_KEY:-$HOME/.ssh/coolify_key}"
 HF_MODEL_TOKEN_NAME="${HF_MODEL_TOKEN_NAME:-}"
 HF_PUBLISH_TOKEN_NAME="${HF_PUBLISH_TOKEN_NAME:-}"
@@ -31,12 +40,51 @@ if [[ "$REMOTE_MODEL_PROFILE" != "gemma4" && "$REMOTE_MODEL_PROFILE" != "gemma" 
   echo "MODEL_PROFILE must be gemma4, gemma, or qwen" >&2
   exit 2
 fi
-if [[ "$REMOTE_DATA_PROFILE" != "legacy-critic-1k" && "$REMOTE_DATA_PROFILE" != "sft10k-v4" ]]; then
-  echo "DATA_PROFILE must be legacy-critic-1k or sft10k-v4" >&2
+if [[ "$REMOTE_DATA_PROFILE" != "legacy-critic-1k" \
+  && "$REMOTE_DATA_PROFILE" != "sft10k-v4" \
+  && "$REMOTE_DATA_PROFILE" != "human-reviewed-432" ]]; then
+  echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, or human-reviewed-432" >&2
   exit 2
 fi
 if [[ "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "0" && "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "1" ]]; then
   echo "ALLOW_EXPERIMENTAL_FULL_RUN must be 0 or 1" >&2
+  exit 2
+fi
+if [[ "$REMOTE_CANDIDATE_QUALITY_POLICY" != "unflagged" \
+  && "$REMOTE_CANDIDATE_QUALITY_POLICY" != "strict-script-clean" \
+  && "$REMOTE_CANDIDATE_QUALITY_POLICY" != "core-direct" ]]; then
+  echo "CANDIDATE_QUALITY_POLICY must be unflagged, strict-script-clean, or core-direct" >&2
+  exit 2
+fi
+if [[ ! "$REMOTE_LEARNING_RATE" =~ ^[0-9]+([.][0-9]+)?([eE][-+]?[0-9]+)?$ ]]; then
+  echo "LEARNING_RATE must be a non-negative number" >&2
+  exit 2
+fi
+if [[ ! "$REMOTE_WARMUP_RATIO" =~ ^[0-9]+([.][0-9]+)?([eE][-+]?[0-9]+)?$ ]]; then
+  echo "WARMUP_RATIO must be a non-negative number" >&2
+  exit 2
+fi
+if [[ ! "$REMOTE_EPOCHS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+  echo "EPOCHS must be a non-negative number" >&2
+  exit 2
+fi
+for step_value in "$REMOTE_SAVE_STEPS" "$REMOTE_EVAL_STEPS"; do
+  if [[ -n "$step_value" && ! "$step_value" =~ ^[1-9][0-9]*$ ]]; then
+    echo "SAVE_STEPS and EVAL_STEPS must be positive integers when set" >&2
+    exit 2
+  fi
+done
+if [[ -n "$REMOTE_OUTPUT_REPO" \
+  && ! "$REMOTE_OUTPUT_REPO" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]]; then
+  echo "OUTPUT_REPO must be a Hugging Face namespace/repository ID" >&2
+  exit 2
+fi
+if [[ -n "$REMOTE_RUN_ID" && ! "$REMOTE_RUN_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "RUN_ID contains unsupported characters" >&2
+  exit 2
+fi
+if [[ "$SUBMIT_DRY_RUN" != "0" && "$SUBMIT_DRY_RUN" != "1" ]]; then
+  echo "SUBMIT_DRY_RUN must be 0 or 1" >&2
   exit 2
 fi
 if [[ "$REMOTE_MODEL_PROFILE" == "gemma4" && "$REMOTE_MAX_STEPS" != "1" \
@@ -44,6 +92,23 @@ if [[ "$REMOTE_MODEL_PROFILE" == "gemma4" && "$REMOTE_MAX_STEPS" != "1" \
   echo "Gemma 4 is limited to MAX_STEPS=1 until the smoke gate passes." >&2
   echo "After review, set ALLOW_EXPERIMENTAL_FULL_RUN=1 explicitly." >&2
   exit 2
+fi
+
+if [[ "$SUBMIT_DRY_RUN" == "1" ]]; then
+  printf 'host=%s\n' "$HOST"
+  printf 'git_ref=%s\n' "$REPO_REF"
+  printf 'model_profile=%s\n' "$REMOTE_MODEL_PROFILE"
+  printf 'data_profile=%s\n' "$REMOTE_DATA_PROFILE"
+  printf 'max_steps=%s\n' "$REMOTE_MAX_STEPS"
+  printf 'candidate_quality_policy=%s\n' "$REMOTE_CANDIDATE_QUALITY_POLICY"
+  printf 'learning_rate=%s\n' "$REMOTE_LEARNING_RATE"
+  printf 'warmup_ratio=%s\n' "$REMOTE_WARMUP_RATIO"
+  printf 'epochs=%s\n' "$REMOTE_EPOCHS"
+  printf 'save_steps=%s\n' "$REMOTE_SAVE_STEPS"
+  printf 'eval_steps=%s\n' "$REMOTE_EVAL_STEPS"
+  printf 'output_repo=%s\n' "$REMOTE_OUTPUT_REPO"
+  printf 'run_id=%s\n' "$REMOTE_RUN_ID"
+  exit 0
 fi
 
 if [[ ! -f "$SSH_KEY" ]]; then
@@ -77,7 +142,7 @@ printf '%s' "$HF_PUBLISH_TOKEN_VALUE" | ssh -i "$SSH_KEY" "ubuntu@$HOST" \
 unset HF_PUBLISH_TOKEN_VALUE
 
 ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' DATA_PROFILE='$REMOTE_DATA_PROFILE' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' bash -se" <<'REMOTE_SCRIPT'
+  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' DATA_PROFILE='$REMOTE_DATA_PROFILE' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' CANDIDATE_QUALITY_POLICY='$REMOTE_CANDIDATE_QUALITY_POLICY' LEARNING_RATE='$REMOTE_LEARNING_RATE' WARMUP_RATIO='$REMOTE_WARMUP_RATIO' EPOCHS='$REMOTE_EPOCHS' SAVE_STEPS='$REMOTE_SAVE_STEPS' EVAL_STEPS='$REMOTE_EVAL_STEPS' OUTPUT_REPO='$REMOTE_OUTPUT_REPO' RUN_ID='$REMOTE_RUN_ID' bash -se" <<'REMOTE_SCRIPT'
 if [[ ! -d "$HOME/kinyalm/.git" ]]; then
   git clone --filter=blob:none https://github.com/Jonathan-321/kinyalm.git \
     "$HOME/kinyalm"
@@ -92,6 +157,14 @@ nohup env \
   MODEL_PROFILE="$MODEL_PROFILE" \
   DATA_PROFILE="$DATA_PROFILE" \
   ALLOW_EXPERIMENTAL_FULL_RUN="$ALLOW_EXPERIMENTAL_FULL_RUN" \
+  CANDIDATE_QUALITY_POLICY="$CANDIDATE_QUALITY_POLICY" \
+  LEARNING_RATE="$LEARNING_RATE" \
+  WARMUP_RATIO="$WARMUP_RATIO" \
+  EPOCHS="$EPOCHS" \
+  SAVE_STEPS="$SAVE_STEPS" \
+  EVAL_STEPS="$EVAL_STEPS" \
+  OUTPUT_REPO="$OUTPUT_REPO" \
+  RUN_ID="$RUN_ID" \
   bash "$HOME/kinyalm/scripts/cloud/bootstrap_lambda_instance.sh" \
   > "$HOME/kinyalm-bootstrap.log" 2>&1 < /dev/null &
 echo "$!"

@@ -1,9 +1,12 @@
+import hashlib
+import json
 from pathlib import Path
 
 import pytest
 
 from kinyalm.evaluation import load_bakeoff_config
 from scripts.run_multilingual_bakeoff import (
+    add_mlx_adapter_candidate,
     filter_ignored_weights,
     load_held_out_tasks,
     parse_gemma4_response,
@@ -63,6 +66,74 @@ def test_runner_rejects_candidate_without_local_mlx_runtime():
 
     with pytest.raises(ValueError, match="no pinned local MLX runtime"):
         resolve_runtime_candidates(config, ["gemma4-31b-it"], "mlx")
+
+
+def test_runner_adds_hash_verified_mlx_adapter_candidate(tmp_path: Path):
+    config = load_bakeoff_config(CONFIG)
+    candidates = resolve_runtime_candidates(config, ["gemma4-12b-it"], "mlx")
+    adapter_dir = tmp_path / "adapter-mlx"
+    adapter_dir.mkdir()
+    (adapter_dir / "adapter_config.json").write_text("{}", encoding="utf-8")
+    weights = adapter_dir / "adapters.safetensors"
+    weights.write_bytes(b"pinned adapter")
+    digest = hashlib.sha256(weights.read_bytes()).hexdigest()
+    manifest = {
+        "schema_version": 1,
+        "base": {
+            "repo_id": candidates[0].model_id,
+            "revision": candidates[0].revision,
+        },
+        "adapter": {
+            "repo_id": "kinyalm/kinyalm-gemma-4-12b-sft10k-v1",
+            "revision": "7" * 40,
+            "path": str(adapter_dir),
+            "conversion": {"converted_sha256": digest},
+        },
+    }
+    manifest_path = tmp_path / "runtime.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+
+    resolved = add_mlx_adapter_candidate(candidates, manifest_path)
+
+    assert [candidate.id for candidate in resolved] == [
+        "gemma4-12b-it-qat-4bit-mlx",
+        "kinyalm-gemma-4-12b-sft10k-v1-mlx",
+    ]
+    assert resolved[0].adapter_path is None
+    assert resolved[1].adapter_id == manifest["adapter"]["repo_id"]
+    assert resolved[1].adapter_revision == "7" * 40
+    assert resolved[1].adapter_sha256 == digest
+
+
+def test_runner_rejects_changed_mlx_adapter_weights(tmp_path: Path):
+    config = load_bakeoff_config(CONFIG)
+    candidates = resolve_runtime_candidates(config, ["gemma4-12b-it"], "mlx")
+    adapter_dir = tmp_path / "adapter-mlx"
+    adapter_dir.mkdir()
+    (adapter_dir / "adapter_config.json").write_text("{}", encoding="utf-8")
+    (adapter_dir / "adapters.safetensors").write_bytes(b"changed")
+    manifest_path = tmp_path / "runtime.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "base": {
+                    "repo_id": candidates[0].model_id,
+                    "revision": candidates[0].revision,
+                },
+                "adapter": {
+                    "repo_id": "kinyalm/adapter",
+                    "revision": "7" * 40,
+                    "path": str(adapter_dir),
+                    "conversion": {"converted_sha256": "0" * 64},
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="hash does not match"):
+        add_mlx_adapter_candidate(candidates, manifest_path)
 
 
 def test_select_tasks_preserves_bank_order_and_validates_limit():

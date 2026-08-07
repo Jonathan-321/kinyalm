@@ -69,6 +69,27 @@ def test_gemma4_sft10k_profile_is_pinned():
     assert "eval_steps=200" in result.stdout
 
 
+def test_gemma4_human_reviewed_profile_is_pinned():
+    result = run_script(
+        RUN_SCRIPT,
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "DATA_PROFILE": "human-reviewed-432",
+            "PROFILE_ONLY": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "data_profile=human-reviewed-432" in result.stdout
+    assert (
+        "data_revision=9e599494681e30beac36e5d5b95ffc193d3bb99c"
+        in result.stdout
+    )
+    assert "output_repo=kinyalm/kinyalm-gemma-4-12b-human432" in result.stdout
+    assert "save_steps=25" in result.stdout
+    assert "eval_steps=25" in result.stdout
+
+
 def test_one_step_smoke_disables_warmup_and_samples():
     result = run_script(
         RUN_SCRIPT,
@@ -115,3 +136,35 @@ def test_submit_allows_one_step_to_reach_credential_check(tmp_path):
 
     assert result.returncode == 1
     assert f"Lambda SSH private key not found: {missing_key}" in result.stderr
+
+
+def test_submit_dry_run_preserves_experiment_overrides():
+    result = run_script(
+        SUBMIT_SCRIPT,
+        "203.0.113.10",
+        "codex/experiment-matrix",
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "DATA_PROFILE": "sft10k-v4",
+            "MAX_STEPS": "100",
+            "ALLOW_EXPERIMENTAL_FULL_RUN": "1",
+            "CANDIDATE_QUALITY_POLICY": "core-direct",
+            "LEARNING_RATE": "1e-5",
+            "WARMUP_RATIO": "0.03",
+            "EPOCHS": "1",
+            "SAVE_STEPS": "50",
+            "EVAL_STEPS": "50",
+            "OUTPUT_REPO": "kinyalm/core-smoke",
+            "RUN_ID": "core-smoke-v1",
+            "SUBMIT_DRY_RUN": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "git_ref=codex/experiment-matrix" in result.stdout
+    assert "candidate_quality_policy=core-direct" in result.stdout
+    assert "learning_rate=1e-5" in result.stdout
+    assert "save_steps=50" in result.stdout
+    assert "eval_steps=50" in result.stdout
+    assert "output_repo=kinyalm/core-smoke" in result.stdout
+    assert "run_id=core-smoke-v1" in result.stdout
