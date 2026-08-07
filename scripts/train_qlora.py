@@ -36,11 +36,61 @@ if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
+from kinyalm.evaluation import (  # noqa: E402
+    benchmark_tasks,
+    load_bakeoff_config,
+    load_task_bank,
+)
+from kinyalm.evaluation.repetition import compare_probe_repetition  # noqa: E402
 
 EXPERIMENTAL_DATASET_TIERS = {
     "experimental-critic-filtered",
     "experimental-candidate-unreviewed",
 }
+DEFAULT_TARGET_MODULES = (
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj",
+)
+ALLOWED_TARGET_MODULES = frozenset(DEFAULT_TARGET_MODULES)
+
+
+def parse_target_modules(value: str) -> tuple[str, ...]:
+    """Parse and validate a comma-separated LoRA module list."""
+
+    modules = tuple(item.strip() for item in value.split(",") if item.strip())
+    if not modules:
+        raise argparse.ArgumentTypeError("target modules cannot be empty")
+    if len(modules) != len(set(modules)):
+        raise argparse.ArgumentTypeError("target modules cannot contain duplicates")
+    unknown = sorted(set(modules).difference(ALLOWED_TARGET_MODULES))
+    if unknown:
+        raise argparse.ArgumentTypeError(
+            "unsupported target modules: " + ", ".join(unknown)
+        )
+    return modules
+
+
+def parse_checkpoint_steps(value: str) -> tuple[int, ...]:
+    """Parse a sorted comma-separated list of positive checkpoint steps."""
+
+    try:
+        steps = tuple(int(item.strip()) for item in value.split(",") if item.strip())
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("checkpoint steps must be integers") from exc
+    if not steps or any(step < 1 for step in steps):
+        raise argparse.ArgumentTypeError("checkpoint steps must be positive")
+    if tuple(sorted(set(steps))) != steps:
+        raise argparse.ArgumentTypeError(
+            "checkpoint steps must be unique and increasing"
+        )
+    return steps
+
+
 COMPLETION_SENTINEL = "KINYALM_ASSISTANT_COMPLETION_BOUNDARY_4C9E7A"
 
 
@@ -66,6 +116,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--lora-r", type=int, default=16)
     parser.add_argument("--lora-alpha", type=int, default=32)
     parser.add_argument("--lora-dropout", type=float, default=0.05)
+    parser.add_argument(
+        "--target-modules",
+        type=parse_target_modules,
+        default=DEFAULT_TARGET_MODULES,
+        help="Comma-separated LoRA projection names.",
+    )
     parser.add_argument("--learning-rate", type=float, default=5e-5)
     parser.add_argument("--warmup-ratio", type=float, default=0.03)
     parser.add_argument("--batch-size", type=int, default=1)
@@ -126,6 +182,21 @@ def parse_args() -> argparse.Namespace:
             "are not downloaded."
         ),
     )
+    parser.add_argument(
+        "--quality-gate-config",
+        type=Path,
+        help="Pinned bake-off config used for checkpoint repetition probes.",
+    )
+    parser.add_argument(
+        "--quality-gate-steps",
+        type=parse_checkpoint_steps,
+        default=(25, 50, 100),
+    )
+    parser.add_argument("--quality-gate-prompt-limit", type=int, default=12)
+    parser.add_argument("--quality-gate-max-new-tokens", type=int, default=160)
+    parser.add_argument("--quality-gate-ngram-size", type=int, default=4)
+    parser.add_argument("--quality-gate-minimum-occurrences", type=int, default=5)
+    parser.add_argument("--quality-gate-maximum-new-rows", type=int, default=0)
     return parser.parse_args()
 
 
@@ -252,19 +323,24 @@ def write_generation_samples(
     tokenizer,
     prompts: list[str],
     output_path: Path,
+    *,
+    system_prompt: str = "",
+    max_new_tokens: int = 200,
 ) -> None:
     """Write deterministic samples while restoring the training cache setting."""
 
     import torch
 
     previous_use_cache = model.config.use_cache
+    was_training = bool(getattr(model, "training", False))
     model.config.use_cache = True
     model.eval()
     try:
         with output_path.open("w", encoding="utf-8", buffering=1) as handle:
             for prompt in prompts:
+                content = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
                 inputs = tokenizer.apply_chat_template(
-                    [{"role": "user", "content": prompt}],
+                    [{"role": "user", "content": content}],
                     add_generation_prompt=True,
                     return_tensors="pt",
                     return_dict=True,
@@ -273,7 +349,7 @@ def write_generation_samples(
                 with torch.no_grad():
                     output = model.generate(
                         **inputs,
-                        max_new_tokens=200,
+                        max_new_tokens=max_new_tokens,
                         do_sample=False,
                         use_cache=True,
                         pad_token_id=tokenizer.pad_token_id,
@@ -292,7 +368,96 @@ def write_generation_samples(
                 )
     finally:
         model.config.use_cache = previous_use_cache
+        if was_training:
+            model.train()
     print(f"samples written to: {output_path}")
+
+
+def quality_gate_inputs(args: argparse.Namespace) -> tuple[list[str], str] | None:
+    """Load a small held-out prompt subset and its exact system instruction."""
+
+    if args.quality_gate_config is None:
+        return None
+    config = load_bakeoff_config(args.quality_gate_config)
+    tasks = benchmark_tasks(load_task_bank(ROOT / config.task_bank))
+    if args.quality_gate_prompt_limit < 1:
+        raise ValueError("quality_gate_prompt_limit must be positive")
+    prompts = [task.prompt for task in tasks[: args.quality_gate_prompt_limit]]
+    if len(prompts) < args.quality_gate_prompt_limit:
+        raise ValueError("quality gate config has too few held-out prompts")
+    return prompts, config.system_prompt
+
+
+def build_repetition_gate_callback(
+    *,
+    args: argparse.Namespace,
+    tokenizer,
+    prompts: list[str],
+    system_prompt: str,
+    base_probe: Path,
+):
+    """Create a Trainer callback that stops at the first repetition regression."""
+
+    from transformers import TrainerCallback
+
+    output_dir = Path(args.output_dir) / "quality-gate"
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    class RepetitionGateCallback(TrainerCallback):
+        def __init__(self) -> None:
+            self.reports: list[dict] = []
+            self.failed = False
+            self.stopped_at_step: int | None = None
+
+        def on_save(self, training_args, state, control, model=None, **kwargs):
+            del training_args, kwargs
+            step = int(state.global_step)
+            if step not in args.quality_gate_steps:
+                return control
+            candidate_probe = output_dir / f"checkpoint-{step}.jsonl"
+            write_generation_samples(
+                model,
+                tokenizer,
+                prompts,
+                candidate_probe,
+                system_prompt=system_prompt,
+                max_new_tokens=args.quality_gate_max_new_tokens,
+            )
+            report = compare_probe_repetition(
+                base_probe,
+                candidate_probe,
+                ngram_size=args.quality_gate_ngram_size,
+                minimum_occurrences=args.quality_gate_minimum_occurrences,
+                maximum_new_rows=args.quality_gate_maximum_new_rows,
+            )
+            report["checkpoint_step"] = step
+            self.reports.append(report)
+            if not report["passed"]:
+                self.failed = True
+                self.stopped_at_step = step
+                control.should_training_stop = True
+                print(f"quality gate stopped training at checkpoint {step}")
+            self.write_summary()
+            return control
+
+        def write_summary(self) -> None:
+            summary = {
+                "schema_version": 1,
+                "passed": not self.failed,
+                "stopped_at_step": self.stopped_at_step,
+                "required_checkpoint_steps": list(args.quality_gate_steps),
+                "completed_checkpoint_steps": [
+                    report["checkpoint_step"] for report in self.reports
+                ],
+                "reports": self.reports,
+            }
+            (output_dir / "summary.json").write_text(
+                json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True)
+                + "\n",
+                encoding="utf-8",
+            )
+
+    return RepetitionGateCallback()
 
 
 def write_preflight_manifest(
@@ -316,6 +481,7 @@ def write_preflight_manifest(
             "lora_r": args.lora_r,
             "lora_alpha": args.lora_alpha,
             "lora_dropout": args.lora_dropout,
+            "target_modules": list(args.target_modules),
             "learning_rate": args.learning_rate,
             "warmup_ratio": args.warmup_ratio,
             "batch_size": args.batch_size,
@@ -331,6 +497,19 @@ def write_preflight_manifest(
                 args.model, args.attn_implementation
             ),
             "quantization_disabled": args.no_quant,
+            "quality_gate": (
+                {
+                    "config": str(args.quality_gate_config),
+                    "checkpoint_steps": list(args.quality_gate_steps),
+                    "prompt_limit": args.quality_gate_prompt_limit,
+                    "max_new_tokens": args.quality_gate_max_new_tokens,
+                    "ngram_size": args.quality_gate_ngram_size,
+                    "minimum_occurrences": args.quality_gate_minimum_occurrences,
+                    "maximum_new_rows": args.quality_gate_maximum_new_rows,
+                }
+                if args.quality_gate_config
+                else None
+            ),
         },
         "data": {
             "train": _input_metadata(args.train_file, train_records),
@@ -499,6 +678,7 @@ def verify_model_metadata(model: str, revision: str | None = None) -> dict:
 
 def main() -> int:
     args = parse_args()
+    gate_inputs = quality_gate_inputs(args)
 
     train_splits = {"experimental-train"} if args.experimental else {"train"}
     validation_splits = (
@@ -605,16 +785,35 @@ def main() -> int:
     )
     model.config.use_cache = False
 
+    gate_callback = None
+    if gate_inputs is not None:
+        prompts, system_prompt = gate_inputs
+        gate_dir = Path(args.output_dir) / "quality-gate"
+        gate_dir.mkdir(parents=True, exist_ok=True)
+        base_probe = gate_dir / "base.jsonl"
+        write_generation_samples(
+            model,
+            tokenizer,
+            prompts,
+            base_probe,
+            system_prompt=system_prompt,
+            max_new_tokens=args.quality_gate_max_new_tokens,
+        )
+        gate_callback = build_repetition_gate_callback(
+            args=args,
+            tokenizer=tokenizer,
+            prompts=prompts,
+            system_prompt=system_prompt,
+            base_probe=base_probe,
+        )
+
     peft_config = LoraConfig(
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
         bias="none",
         task_type="CAUSAL_LM",
-        target_modules=[
-            "q_proj", "k_proj", "v_proj", "o_proj",
-            "gate_proj", "up_proj", "down_proj",
-        ],
+        target_modules=list(args.target_modules),
     )
 
     use_step_checkpoints = args.max_steps < 0 or args.max_steps > 1
@@ -663,8 +862,12 @@ def main() -> int:
         eval_dataset=eval_dataset,
         peft_config=peft_config,
     )
+    if gate_callback is not None:
+        trainer.add_callback(gate_callback)
     result = trainer.train()
     trainer.save_model(args.output_dir)
+    if gate_callback is not None:
+        gate_callback.write_summary()
     print(f"final train loss: {result.training_loss:.4f}")
     print(f"adapter saved to: {args.output_dir}")
 

@@ -26,6 +26,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--dataset-repo", required=True)
     parser.add_argument("--dataset-revision", required=True)
     parser.add_argument(
+        "--checkpoint-steps",
+        default="",
+        help="Comma-separated checkpoint steps to preserve when present.",
+    )
+    parser.add_argument(
         "--public",
         action="store_true",
         help="Publish publicly. The experimental baseline is private by default.",
@@ -82,6 +87,26 @@ def build_run_metadata(args: argparse.Namespace) -> dict:
         system_info,
     ]
     dataset_details = json.loads(dataset_manifest.read_text(encoding="utf-8"))
+    checkpoint_steps = parse_checkpoint_steps(getattr(args, "checkpoint_steps", ""))
+    checkpoints = []
+    for step in checkpoint_steps:
+        checkpoint_dir = adapter_dir / f"checkpoint-{step}"
+        if not checkpoint_dir.is_dir():
+            continue
+        files = [path for path in sorted(checkpoint_dir.rglob("*")) if path.is_file()]
+        checkpoints.append(
+            {
+                "step": step,
+                "path": checkpoint_dir.name,
+                "artifacts": [file_metadata(path) for path in files],
+            }
+        )
+    quality_gate_path = adapter_dir / "quality-gate" / "summary.json"
+    quality_gate = (
+        json.loads(quality_gate_path.read_text(encoding="utf-8"))
+        if quality_gate_path.is_file()
+        else None
+    )
     return {
         "schema_version": 1,
         "created_at_utc": datetime.now(UTC).isoformat(),
@@ -100,10 +125,27 @@ def build_run_metadata(args: argparse.Namespace) -> dict:
             "revision": args.dataset_revision,
         },
         "artifacts": [file_metadata(path) for path in tracked_files],
+        "preserved_checkpoints": checkpoints,
+        "quality_gate": quality_gate,
     }
 
 
+def parse_checkpoint_steps(value: str) -> tuple[int, ...]:
+    if not value.strip():
+        return ()
+    try:
+        steps = tuple(int(item.strip()) for item in value.split(","))
+    except ValueError as exc:
+        raise ValueError("checkpoint steps must be integers") from exc
+    if any(step < 1 for step in steps) or len(steps) != len(set(steps)):
+        raise ValueError("checkpoint steps must be unique positive integers")
+    return tuple(sorted(steps))
+
+
 def render_model_card(args: argparse.Namespace, metadata: dict) -> str:
+    gate_passed = str(
+        bool((metadata.get("quality_gate") or {}).get("passed", False))
+    ).lower()
     return f"""---
 base_model:
 - {args.base_model}
@@ -130,12 +172,14 @@ This adapter is not production-eligible.
 It must not be presented as a released KinyaLM model unless later evaluation and
 review change that status.
 
+Checkpoint repetition gate passed: `{gate_passed}`.
+
 ## Provenance
 
 - Base model: `{args.base_model}` at `{args.base_model_revision}`
 - Dataset: `{args.dataset_repo}` at `{args.dataset_revision}`
 - Dataset tier: `{metadata['status']}`
-- Human reviewed: `false`
+- Human reviewed: `{str(metadata['human_reviewed']).lower()}`
 - Training method: 4-bit NF4 QLoRA
 
 The `run/` directory contains the immutable dataset manifest, preflight
@@ -185,6 +229,17 @@ def main() -> int:
         ],
         commit_message=f"Publish experimental run {args.run_id}",
     )
+    for checkpoint in metadata["preserved_checkpoints"]:
+        checkpoint_dir = adapter_dir / checkpoint["path"]
+        api.upload_folder(
+            folder_path=checkpoint_dir,
+            path_in_repo=f"checkpoints/{checkpoint['path']}",
+            repo_id=args.repo_id,
+            repo_type="model",
+            commit_message=(
+                f"Preserve {checkpoint['path']} for {args.run_id}"
+            ),
+        )
     for source, destination in [
         (dataset_manifest, "run/dataset-manifest.json"),
         (training_log, "run/train.log"),

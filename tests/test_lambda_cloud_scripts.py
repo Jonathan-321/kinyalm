@@ -168,3 +168,12 @@ def test_submit_dry_run_preserves_experiment_overrides():
     assert "eval_steps=50" in result.stdout
     assert "output_repo=kinyalm/core-smoke" in result.stdout
     assert "run_id=core-smoke-v1" in result.stdout
+
+
+def test_training_publish_command_keeps_checkpoint_argument_attached():
+    source = RUN_SCRIPT.read_text(encoding="utf-8")
+
+    assert (
+        '--dataset-revision "$DATA_REVISION" \\\n'
+        '  --checkpoint-steps "$PRESERVE_CHECKPOINT_STEPS"'
+    ) in source

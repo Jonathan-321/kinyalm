@@ -346,9 +346,13 @@ def test_generation_samples_enable_and_restore_cache(tmp_path):
     class FakeModel:
         config = FakeConfig()
         device = "cpu"
+        training = True
 
         def eval(self):
             calls.append(("eval",))
+
+        def train(self):
+            calls.append(("train",))
 
         def generate(self, **kwargs):
             calls.append(("generate", self.config.use_cache, kwargs["use_cache"]))
@@ -377,6 +381,7 @@ def test_generation_samples_enable_and_restore_cache(tmp_path):
 
     assert model.config.use_cache is False
     assert ("generate", True, True) in calls
+    assert ("train",) in calls
     template_call = next(call for call in calls if call[0] == "template")
     assert template_call[2]["enable_thinking"] is False
     assert json.loads(output_path.read_text(encoding="utf-8")) == {

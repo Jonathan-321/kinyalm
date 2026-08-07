@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "experiment_id": "gemma4-native-recovery-v1",
+  "base_model": {
+    "repo_id": "google/gemma-4-12B-it",
+    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+  },
+  "dataset_gate": {
+    "dataset_tier": "human-reviewed-recovery-sft",
+    "minimum_rows": 500,
+    "maximum_rows": 1000,
+    "human_reviewed": true
+  },
+  "shared": {
+    "max_steps": 100,
+    "checkpoint_steps": [
+      25,
+      50,
+      100
+    ],
+    "lora_alpha": 8,
+    "lora_dropout": 0.05,
+    "warmup_ratio": 0.03,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "max_sequence_length": 1024,
+    "seed": 42
+  },
+  "quality_gate": {
+    "held_out_config": "configs/evaluation/gemma4_recovery_bakeoff.json",
+    "severe_repetition_ngram": 4,
+    "severe_repetition_min_occurrences": 5,
+    "maximum_new_severe_repetition_rows": 0,
+    "native_score_must_meet_or_exceed_base": true,
+    "native_review_required_before_promotion": true
+  },
+  "arms": [
+    {
+      "id": "qv-r8-lr2e6",
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "lora_r": 8,
+      "learning_rate": 0.000002
+    },
+    {
+      "id": "qv-r8-lr5e6",
+      "target_modules": [
+        "q_proj",
+        "v_proj"
+      ],
+      "lora_r": 8,
+      "learning_rate": 0.000005
+    },
+    {
+      "id": "qvo-r8-lr2e6",
+      "target_modules": [
+        "q_proj",
+        "v_proj",
+        "o_proj"
+      ],
+      "lora_r": 8,
+      "learning_rate": 0.000002
+    }
+  ]
+}

@@ -15,6 +15,8 @@ from kinyalm.evaluation.benchmarks import (
     load_benchmark_manifest,
     validate_benchmark_manifest,
 )
+from kinyalm.evaluation.native_review import summarize_native_review
+from kinyalm.evaluation.repetition import compare_probe_repetition
 from kinyalm.evaluation.task_bank import (
     TutorTask,
     benchmark_tasks,
@@ -30,10 +32,12 @@ __all__ = [
     "TutorTask",
     "append_result",
     "benchmark_tasks",
+    "compare_probe_repetition",
     "latest_results",
     "load_bakeoff_config",
     "load_benchmark_manifest",
     "load_task_bank",
+    "summarize_native_review",
     "validate_benchmark_manifest",
     "write_blind_review_pack",
 ]
