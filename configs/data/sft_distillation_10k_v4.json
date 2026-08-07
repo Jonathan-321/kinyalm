@@ -1,0 +1,230 @@
+{
+  "schema_version": 1,
+  "profile_id": "kinyalm-distillation-10k-v4",
+  "prompt_version": "kinyalm-teacher-json-v3",
+  "scale_multiplier": 20,
+  "batch_ids": {
+    "family-calibration": "sft-distillation-10k-v4-family-calibration-120",
+    "calibration": "sft-distillation-10k-v4-calibration-500",
+    "production": "sft-distillation-10k-v4-production-2000",
+    "scale": "sft-distillation-10k-v4-scale-10000"
+  },
+  "targets": {
+    "family-calibration": 120,
+    "calibration": 500,
+    "production": 2000,
+    "scale": 10000
+  },
+  "generation_defaults": {
+    "temperature": 0.2,
+    "max_tokens": 2400
+  },
+  "review_policy": {
+    "minimum_acceptance_rate_to_scale": 0.95,
+    "minimum_human_score": 4,
+    "double_review_fraction": 0.1,
+    "minimum_double_review_agreement": 0.9,
+    "critic_model_must_differ_from_teacher": true,
+    "fluent_speaker_review_required": true
+  },
+  "seed_pools": {
+    "domains": [
+      "daily routines",
+      "family and friends",
+      "school and study",
+      "work and professional life",
+      "food and cooking",
+      "shopping and prices",
+      "travel and directions",
+      "public transport",
+      "weather and seasons",
+      "time and appointments",
+      "housing and neighborhood",
+      "agriculture and rural life",
+      "technology and communication",
+      "sports and recreation",
+      "community events",
+      "public services",
+      "environment and conservation",
+      "arts and storytelling",
+      "personal goals",
+      "low-stakes wellbeing"
+    ],
+    "scenarios": [
+      "ask for clarification",
+      "explain a choice politely",
+      "make and revise a plan",
+      "describe an everyday event",
+      "compare two alternatives",
+      "ask and answer a follow-up question",
+      "correct a misunderstanding",
+      "request help respectfully",
+      "give short directions",
+      "summarize what happened",
+      "practice a new expression",
+      "respond to incomplete information",
+      "change from informal to formal speech",
+      "continue a conversation consistently",
+      "explain why a sentence sounds unnatural",
+      "use a word in two contexts",
+      "infer an answer from a short passage",
+      "repair unnecessary code-switching",
+      "decline to invent an unknown fact",
+      "teach through a short example"
+    ],
+    "linguistic_foci": [
+      "noun-class agreement",
+      "subject markers",
+      "object markers",
+      "present tense",
+      "past tense",
+      "future tense",
+      "negation",
+      "question formation",
+      "word order",
+      "possessives",
+      "demonstratives",
+      "personal pronouns",
+      "plural formation",
+      "adjective agreement",
+      "prepositions and locatives",
+      "connectors and sequencing",
+      "conditionals",
+      "relative clauses",
+      "polite requests",
+      "formal and informal register",
+      "synonyms and near-synonyms",
+      "context-sensitive meaning",
+      "spelling and apostrophes",
+      "vowel combinations",
+      "natural rhythm in written dialogue",
+      "translation choices",
+      "error explanation",
+      "paraphrasing",
+      "concise definitions",
+      "conversation reference tracking"
+    ]
+  },
+  "families": [
+    {
+      "id": "translation-with-explanation",
+      "counts": {"family-calibration": 10, "calibration": 75, "production": 300, "scale": 1500},
+      "task_type_weights": {"translation-en-rw": 0.55, "translation-rw-en": 0.45},
+      "evaluation_categories": ["translation"],
+      "difficulty_weights": {"beginner": 0.35, "intermediate": 0.45, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda+english": 1.0},
+      "turn_weights": {"1": 0.7, "2": 0.3},
+      "instructions": "Translate naturally and explain one important choice. Preserve tense, number, degree, polarity, and every modifier. Reject word-for-word English constructions, back-translate before answering, and use a clarification turn when the source is genuinely ambiguous."
+    },
+    {
+      "id": "grammar-and-structure",
+      "counts": {"family-calibration": 10, "calibration": 25, "production": 100, "scale": 500},
+      "task_type_weights": {"grammar-explanation": 1.0},
+      "evaluation_categories": ["grammar-correction"],
+      "difficulty_weights": {"beginner": 0.3, "intermediate": 0.5, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.4, "english": 0.2, "kinyarwanda+english": 0.4},
+      "turn_weights": {"1": 0.6, "2": 0.4},
+      "instructions": "Explain one verified pattern with minimal terminology and contrasting examples. Check every noun-class, subject, object, tense, and locative form. Never invent a universal rule from one example."
+    },
+    {
+      "id": "vocabulary-definition-usage",
+      "counts": {"family-calibration": 10, "calibration": 15, "production": 60, "scale": 300},
+      "task_type_weights": {"vocabulary": 1.0},
+      "evaluation_categories": ["vocabulary-explanation"],
+      "difficulty_weights": {"beginner": 0.45, "intermediate": 0.4, "advanced": 0.15},
+      "language_mix_weights": {"kinyarwanda": 0.45, "english": 0.2, "kinyarwanda+english": 0.35},
+      "turn_weights": {"1": 0.6, "2": 0.4},
+      "instructions": "Teach meaning through natural context, contrast a nearby meaning when useful, and include examples. Do not invent etymologies or rare technical labels."
+    },
+    {
+      "id": "pronunciation-and-orthography",
+      "counts": {"family-calibration": 10, "calibration": 10, "production": 40, "scale": 200},
+      "task_type_weights": {"pronunciation": 1.0},
+      "evaluation_categories": ["advanced-language-questions"],
+      "difficulty_weights": {"beginner": 0.45, "intermediate": 0.4, "advanced": 0.15},
+      "language_mix_weights": {"kinyarwanda": 0.3, "english": 0.3, "kinyarwanda+english": 0.4},
+      "turn_weights": {"1": 0.6, "2": 0.4},
+      "instructions": "Teach only pronunciation and spelling facts that plain text can support. Write apostrophes and target forms exactly. Do not claim unverifiable audio properties or confuse punctuation names."
+    },
+    {
+      "id": "learner-correction-feedback",
+      "counts": {"family-calibration": 10, "calibration": 75, "production": 300, "scale": 1500},
+      "task_type_weights": {"sentence-correction": 1.0},
+      "evaluation_categories": ["grammar-correction"],
+      "difficulty_weights": {"beginner": 0.35, "intermediate": 0.45, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.5, "english": 0.15, "kinyarwanda+english": 0.35},
+      "turn_weights": {"1": 0.4, "2": 0.6},
+      "instructions": "Use a plausible learner error, preserve the intended meaning, correct only what is wrong, and explain the exact change respectfully. Include a learner retry in multi-turn examples."
+    },
+    {
+      "id": "conversation-practice",
+      "counts": {"family-calibration": 10, "calibration": 75, "production": 300, "scale": 1500},
+      "task_type_weights": {"dialogue": 1.0},
+      "evaluation_categories": ["multi-turn-conversation"],
+      "difficulty_weights": {"beginner": 0.35, "intermediate": 0.45, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.55, "english": 0.1, "kinyarwanda+english": 0.35},
+      "turn_weights": {"2": 0.2, "3": 0.6, "4": 0.2},
+      "instructions": "Conduct a realistic tutoring conversation. Keep names, goals, tense, references, and corrections consistent. Do not repeat stock phrases, change the scenario, or add unrelated lessons."
+    },
+    {
+      "id": "multi-turn-consistency",
+      "counts": {"family-calibration": 10, "calibration": 25, "production": 100, "scale": 500},
+      "task_type_weights": {"dialogue": 1.0},
+      "evaluation_categories": ["multi-turn-conversation", "conversational-consistency"],
+      "difficulty_weights": {"beginner": 0.2, "intermediate": 0.5, "advanced": 0.3},
+      "language_mix_weights": {"kinyarwanda": 0.5, "english": 0.1, "kinyarwanda+english": 0.4},
+      "turn_weights": {"3": 0.5, "4": 0.5},
+      "instructions": "Make each later turn depend on earlier facts. Track pronouns, noun references, corrections, times, quantities, and the learner's stated goal exactly. Ask only when two readings still remain possible."
+    },
+    {
+      "id": "grounded-reading-comprehension",
+      "counts": {"family-calibration": 10, "calibration": 50, "production": 200, "scale": 1000},
+      "task_type_weights": {"reading-comprehension": 0.6, "context-grounded-qa": 0.4},
+      "evaluation_categories": ["reading-comprehension", "hallucination-resistance"],
+      "difficulty_weights": {"beginner": 0.3, "intermediate": 0.5, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.55, "english": 0.1, "kinyarwanda+english": 0.35},
+      "turn_weights": {"1": 0.4, "2": 0.6},
+      "instructions": "Write a short original passage, ask answerable questions, and answer strictly from the passage. Deliberately leave one plausible detail unstated in multi-turn examples and refuse to invent it when asked."
+    },
+    {
+      "id": "ambiguity-and-hallucination-resistance",
+      "counts": {"family-calibration": 10, "calibration": 50, "production": 200, "scale": 1000},
+      "task_type_weights": {"uncertainty": 1.0},
+      "evaluation_categories": ["ambiguous-incomplete-prompts", "hallucination-resistance"],
+      "difficulty_weights": {"beginner": 0.25, "intermediate": 0.5, "advanced": 0.25},
+      "language_mix_weights": {"kinyarwanda": 0.4, "english": 0.2, "kinyarwanda+english": 0.4},
+      "turn_weights": {"2": 0.5, "3": 0.5},
+      "instructions": "Begin with genuinely missing or ambiguous information. Ask one useful clarification or state the evidence limit, then continue after the learner supplies enough context. Never invent a fact, rule, source, or current event."
+    },
+    {
+      "id": "model-failure-repair",
+      "counts": {"family-calibration": 10, "calibration": 50, "production": 200, "scale": 1000},
+      "task_type_weights": {"sentence-correction": 0.35, "dialogue": 0.3, "uncertainty": 0.2, "sentence-generation": 0.15},
+      "evaluation_categories": ["grammar-correction", "hallucination-resistance", "multi-turn-conversation", "sentence-generation"],
+      "difficulty_weights": {"beginner": 0.3, "intermediate": 0.5, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.45, "english": 0.15, "kinyarwanda+english": 0.4},
+      "turn_weights": {"2": 0.5, "3": 0.5},
+      "instructions": "Create a lesson that repairs one observed failure pattern: repetitive looping, identity confusion, answering the wrong question, literal translation, invented facts, broken agreement, lost conversation context, unnecessary verbosity, or failure to stop. Show the bad behavior only through a short learner attempt, then provide a concise natural correction and a successful retry."
+    },
+    {
+      "id": "register-culture-code-switching",
+      "counts": {"family-calibration": 10, "calibration": 25, "production": 100, "scale": 500},
+      "task_type_weights": {"culture-register": 0.6, "code-switching": 0.4},
+      "evaluation_categories": ["formal-informal-language", "code-switching"],
+      "difficulty_weights": {"beginner": 0.25, "intermediate": 0.5, "advanced": 0.25},
+      "language_mix_weights": {"kinyarwanda": 0.35, "kinyarwanda+english": 0.65},
+      "turn_weights": {"2": 0.6, "3": 0.4},
+      "instructions": "Teach register and code-switching without stereotypes or unsupported cultural claims. Preserve number, ownership, meaning, and politeness when changing the addressee. Replace avoidable English naturally."
+    },
+    {
+      "id": "math-and-structured-reasoning",
+      "counts": {"family-calibration": 10, "calibration": 25, "production": 100, "scale": 500},
+      "task_type_weights": {"math-tutoring": 1.0},
+      "evaluation_categories": ["beginner-tutoring", "advanced-language-questions"],
+      "difficulty_weights": {"beginner": 0.35, "intermediate": 0.45, "advanced": 0.2},
+      "language_mix_weights": {"kinyarwanda": 0.55, "english": 0.1, "kinyarwanda+english": 0.35},
+      "turn_weights": {"1": 0.4, "2": 0.6},
+      "instructions": "Create a low-stakes arithmetic or everyday reasoning lesson in natural Kinyarwanda. Make every quantity explicit, compute the answer correctly, explain briefly, and use a follow-up check in multi-turn examples."
+    }
+  ]
+}

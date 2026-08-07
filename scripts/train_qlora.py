@@ -37,6 +37,12 @@ if str(SRC) not in sys.path:
 
 from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
+EXPERIMENTAL_DATASET_TIERS = {
+    "experimental-critic-filtered",
+    "experimental-candidate-unreviewed",
+}
+COMPLETION_SENTINEL = "KINYALM_ASSISTANT_COMPLETION_BOUNDARY_4C9E7A"
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -167,10 +173,79 @@ def to_prompt_completion_rows(records: list[dict]) -> list[dict]:
     return examples
 
 
-def to_dataset(records: list[dict]):
+def _flat_token_ids(values) -> list[int]:
+    """Normalize tokenizer outputs to one flat Python list."""
+
+    if hasattr(values, "tolist"):
+        values = values.tolist()
+    if values and isinstance(values[0], list):
+        if len(values) != 1:
+            raise ValueError("expected one tokenized sequence")
+        values = values[0]
+    return [int(value) for value in values]
+
+
+def tokenize_assistant_completion_rows(
+    records: list[dict],
+    tokenizer,
+) -> list[dict]:
+    """Build inference-faithful inputs with assistant-only labels.
+
+    Gemma 4's disabled-thinking generation prompt ends with an empty thought
+    channel. Its completed-conversation rendering omits that channel, so TRL's
+    normal prompt/completion prefix comparison masks the first four answer
+    tokens. Constructing the prompt exactly as inference does and appending the
+    answer plus the template's turn suffix keeps the sequence and labels aligned.
+    """
+
+    rows = []
+    for example in to_prompt_completion_rows(records):
+        prompt = example["prompt"]
+        completion = example["completion"][0]
+        prompt_result = tokenizer.apply_chat_template(
+            prompt,
+            tokenize=True,
+            return_dict=True,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+        prompt_ids = _flat_token_ids(prompt_result["input_ids"])
+
+        sentinel_render = tokenizer.apply_chat_template(
+            prompt + [{"role": "assistant", "content": COMPLETION_SENTINEL}],
+            tokenize=False,
+            add_generation_prompt=False,
+            enable_thinking=False,
+        )
+        sentinel_index = sentinel_render.rfind(COMPLETION_SENTINEL)
+        if sentinel_index < 0:
+            raise ValueError(
+                "chat template removed the assistant completion sentinel; "
+                "cannot derive a safe completion suffix"
+            )
+        completion_suffix = sentinel_render[
+            sentinel_index + len(COMPLETION_SENTINEL):
+        ]
+        completion_text = completion["content"].strip() + completion_suffix
+        completion_ids = _flat_token_ids(
+            tokenizer(completion_text, add_special_tokens=False)["input_ids"]
+        )
+        if not completion_ids:
+            raise ValueError("assistant completion produced no tokens")
+
+        rows.append(
+            {
+                "input_ids": prompt_ids + completion_ids,
+                "labels": [-100] * len(prompt_ids) + completion_ids,
+            }
+        )
+    return rows
+
+
+def to_tokenized_dataset(records: list[dict], tokenizer):
     from datasets import Dataset
 
-    return Dataset.from_list(to_prompt_completion_rows(records))
+    return Dataset.from_list(tokenize_assistant_completion_rows(records, tokenizer))
 
 
 def write_generation_samples(
@@ -194,6 +269,7 @@ def write_generation_samples(
                     add_generation_prompt=True,
                     return_tensors="pt",
                     return_dict=True,
+                    enable_thinking=False,
                 ).to(model.device)
                 with torch.no_grad():
                     output = model.generate(
@@ -337,9 +413,9 @@ def verify_dataset_manifest(
         raise SystemExit(f"invalid dataset manifest {manifest_path}: {exc}") from exc
 
     if args.experimental:
-        if manifest.get("dataset_tier") != "experimental-critic-filtered":
+        if manifest.get("dataset_tier") not in EXPERIMENTAL_DATASET_TIERS:
             raise SystemExit(
-                "experimental run requires an experimental-critic-filtered manifest"
+                "experimental run requires an explicitly experimental manifest"
             )
         if manifest.get("human_reviewed") is not False:
             raise SystemExit("experimental manifest must state human_reviewed=false")
@@ -510,6 +586,19 @@ def main() -> int:
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model, **revision_kwargs)
     model_config = AutoConfig.from_pretrained(args.model, **revision_kwargs)
+    train_dataset = to_tokenized_dataset(train_records, tokenizer)
+    eval_dataset = (
+        to_tokenized_dataset(eval_records, tokenizer) if eval_records else None
+    )
+    train_supervised_tokens = sum(
+        sum(label != -100 for label in row["labels"])
+        for row in train_dataset
+    )
+    print(
+        "tokenized supervision: "
+        f"{len(train_dataset)} assistant examples, "
+        f"{train_supervised_tokens} assistant tokens"
+    )
     model_loader = (
         AutoModelForMultimodalLM
         if model_config.model_type == "gemma4_unified"
@@ -579,8 +668,8 @@ def main() -> int:
         model=model,
         args=config,
         processing_class=tokenizer,
-        train_dataset=to_dataset(train_records),
-        eval_dataset=to_dataset(eval_records) if eval_records else None,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         peft_config=peft_config,
     )
     result = trainer.train()

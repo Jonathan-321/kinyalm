@@ -7,6 +7,7 @@ from types import ModuleType
 from scripts.train_qlora import (
     resolve_attention_implementation,
     to_prompt_completion_rows,
+    tokenize_assistant_completion_rows,
     verify_model_metadata,
     write_generation_samples,
 )
@@ -117,6 +118,41 @@ def test_prompt_completion_rows_preserve_history_and_mask_user_turns():
     ]
 
 
+def test_tokenized_rows_preserve_generation_prefix_and_label_full_answer():
+    calls = []
+
+    class FakeTokenizer:
+        def apply_chat_template(self, messages, **kwargs):
+            calls.append(("template", messages, kwargs))
+            if kwargs["tokenize"]:
+                return {"input_ids": [2, 10, 11, 12]}
+            return (
+                "<bos><user>Muraho.<assistant>"
+                "KINYALM_ASSISTANT_COMPLETION_BOUNDARY_4C9E7A<turn-end>"
+            )
+
+        def __call__(self, text, **kwargs):
+            calls.append(("tokenize", text, kwargs))
+            assert text == "Muraho neza.<turn-end>"
+            return {"input_ids": [21, 22, 1]}
+
+    rows = tokenize_assistant_completion_rows(
+        [experimental_record("row-001", "experimental-train")],
+        FakeTokenizer(),
+    )
+
+    assert rows == [
+        {
+            "input_ids": [2, 10, 11, 12, 21, 22, 1],
+            "labels": [-100, -100, -100, -100, 21, 22, 1],
+        }
+    ]
+    template_calls = [call for call in calls if call[0] == "template"]
+    assert all(call[2]["enable_thinking"] is False for call in template_calls)
+    assert template_calls[0][2]["add_generation_prompt"] is True
+    assert template_calls[1][2]["add_generation_prompt"] is False
+
+
 def test_train_qlora_requires_explicit_experimental_flag(tmp_path):
     train_path = tmp_path / "train.jsonl"
     output_dir = tmp_path / "run"
@@ -185,6 +221,51 @@ def test_train_qlora_rejects_data_that_does_not_match_manifest(tmp_path):
     assert file_sha256(train_path) != "0" * 64
     assert result.returncode != 0
     assert "does not match dataset manifest sha256" in result.stderr
+
+
+def test_train_qlora_accepts_explicit_candidate_manifest(tmp_path):
+    train_path = tmp_path / "train.jsonl"
+    output_dir = tmp_path / "run"
+    manifest_path = tmp_path / "dataset-manifest.json"
+    row = experimental_record("row-001", "experimental-train")
+    row["review_status"] = "candidate-unreviewed"
+    write_jsonl(train_path, [row])
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "dataset_tier": "experimental-candidate-unreviewed",
+                "human_reviewed": False,
+                "production_eligible": False,
+                "outputs": {
+                    "train": {
+                        "rows": 1,
+                        "sha256": file_sha256(train_path),
+                    },
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/train_qlora.py",
+            "--train-file",
+            str(train_path),
+            "--dataset-manifest",
+            str(manifest_path),
+            "--output-dir",
+            str(output_dir),
+            "--experimental",
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "dry run complete" in result.stdout
 
 
 def test_attention_backend_only_special_cases_gemma_2():
@@ -296,6 +377,8 @@ def test_generation_samples_enable_and_restore_cache(tmp_path):
 
     assert model.config.use_cache is False
     assert ("generate", True, True) in calls
+    template_call = next(call for call in calls if call[0] == "template")
+    assert template_call[2]["enable_thinking"] is False
     assert json.loads(output_path.read_text(encoding="utf-8")) == {
         "prompt": "Ikibazo.",
         "completion": "Igisubizo.",

@@ -20,9 +20,11 @@ TASK_TYPES = {
     "uncertainty",
     "culture-register",
     "reading-comprehension",
+    "context-grounded-qa",
     "sentence-generation",
     "pronunciation",
     "code-switching",
+    "math-tutoring",
 }
 
 SPLITS = {
@@ -31,6 +33,7 @@ SPLITS = {
     "validation",
     "experimental-train",
     "experimental-validation",
+    "experimental-test",
     "benchmark-only",
 }
 SOURCE_STATUSES = {
@@ -50,6 +53,7 @@ REVIEW_STATUSES = {
     "not-sure",
     "critic-accepted",
     "critic-repaired",
+    "candidate-unreviewed",
 }
 LANGUAGE_MIXES = {"kinyarwanda", "english", "kinyarwanda+english"}
 TRAINABLE_SOURCE_STATUSES = {"approved", "team-authored", "manual"}
@@ -189,14 +193,19 @@ def _check_messages(value: Any, errors: list[str]) -> None:
 
 def _check_training_gate(record: dict[str, Any], errors: list[str]) -> None:
     split = record.get("split")
-    if split in {"experimental-train", "experimental-validation"}:
+    if split in {
+        "experimental-train",
+        "experimental-validation",
+        "experimental-test",
+    }:
         if record.get("review_status") not in {
             "critic-accepted",
             "critic-repaired",
+            "candidate-unreviewed",
         }:
             errors.append(
-                "experimental rows must have review_status=critic-accepted "
-                "or critic-repaired"
+                "experimental rows must have review_status=critic-accepted, "
+                "critic-repaired, or candidate-unreviewed"
             )
         if record.get("source_status") != "model-generated":
             errors.append(

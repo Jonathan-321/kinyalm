@@ -81,13 +81,16 @@ def build_run_metadata(args: argparse.Namespace) -> dict:
         training_log,
         system_info,
     ]
+    dataset_details = json.loads(dataset_manifest.read_text(encoding="utf-8"))
     return {
         "schema_version": 1,
         "created_at_utc": datetime.now(UTC).isoformat(),
         "run_id": args.run_id,
-        "status": "experimental-critic-filtered",
-        "human_reviewed": False,
-        "production_eligible": False,
+        "status": dataset_details.get("dataset_tier", "experimental-unclassified"),
+        "human_reviewed": bool(dataset_details.get("human_reviewed", False)),
+        "production_eligible": bool(
+            dataset_details.get("production_eligible", False)
+        ),
         "base_model": {
             "repo_id": args.base_model,
             "revision": args.base_model_revision,
@@ -114,15 +117,18 @@ tags:
 - experimental
 ---
 
-# KinyaLM Track 2 Baseline A
+# KinyaLM Experimental Adapter
 
 This repository contains the QLoRA adapter from `{args.run_id}`.
 
 ## Status
 
-This is an **experimental critic-filtered baseline**. Its examples have not
-completed fluent-human review, so the adapter is not production-eligible and
-must not be presented as a released KinyaLM model.
+This is an **experimental `{metadata['status']}` adapter**. Human reviewed:
+`{str(metadata['human_reviewed']).lower()}`. Production eligible:
+`{str(metadata['production_eligible']).lower()}`.
+This adapter is not production-eligible.
+It must not be presented as a released KinyaLM model unless later evaluation and
+review change that status.
 
 ## Provenance
 
