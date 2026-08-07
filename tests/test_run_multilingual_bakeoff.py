@@ -4,6 +4,7 @@ import pytest
 
 from kinyalm.evaluation import load_bakeoff_config
 from scripts.run_multilingual_bakeoff import (
+    apply_adapter_variant,
     filter_ignored_weights,
     load_held_out_tasks,
     parse_gemma4_response,
@@ -63,6 +64,64 @@ def test_runner_rejects_candidate_without_local_mlx_runtime():
 
     with pytest.raises(ValueError, match="no pinned local MLX runtime"):
         resolve_runtime_candidates(config, ["gemma4-31b-it"], "mlx")
+
+
+def test_runner_attaches_adapter_without_losing_base_identity():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    adapted = apply_adapter_variant(
+        base,
+        adapter_id="kinyalm/adapter",
+        adapter_revision="d" * 40,
+        run_as="original-peft",
+    )
+
+    assert adapted[0].id == "original-peft"
+    assert adapted[0].model_id == "google/gemma-4-12B-it"
+    assert adapted[0].revision == config.candidates[0].revision
+    assert adapted[0].adapter_id == "kinyalm/adapter"
+    assert adapted[0].adapter_revision == "d" * 40
+    assert base[0].adapter_id is None
+
+
+def test_runner_requires_unique_adapter_variant_id():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="unique --run-as"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision="d" * 40,
+            run_as=None,
+        )
+
+
+def test_runner_requires_pinned_adapter_revision():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="40-character"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision=None,
+            run_as="original-peft",
+        )
+
+
+def test_runner_rejects_unsafe_adapter_variant_id():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="may contain only"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision="d" * 40,
+            run_as="../outside",
+        )
 
 
 def test_select_tasks_preserves_bank_order_and_validates_limit():

@@ -17,9 +17,9 @@ case "$MODEL_PROFILE" in
     # still require the appropriate Hugging Face organization permissions.
     PROFILE_MODEL_ID="google/gemma-4-12B-it"
     PROFILE_MODEL_REVISION="707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
-    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-experimental"
+    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-corrected-control"
     PROFILE_ATTN_IMPLEMENTATION="eager"
-    PROFILE_RUN_SLUG="gemma4-12b-experimental"
+    PROFILE_RUN_SLUG="gemma4-12b-corrected-control"
     ;;
   qwen)
     PROFILE_MODEL_ID="Qwen/Qwen2.5-7B-Instruct"

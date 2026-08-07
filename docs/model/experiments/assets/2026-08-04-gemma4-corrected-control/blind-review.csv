@@ -1,0 +1,372 @@
+blind_id,model_label,task_id,category,prompt,review_focus,response,kinyarwanda_correctness_1_5,beginner_clarity_1_5,grammar_explanation_1_5,cultural_register_1_5,helpfulness_1_5,uncertainty_behavior_1_5,hallucination_flag,pass_fail,reviewer,reviewer_notes
+B001,Model B,T001,Greeting,Explain when to use `Muraho`.,"correctness, register, beginner clarity","Use **Muraho** as a general greeting to one or more people. It is the plural form of *Mwiriwe*.
+
+Here is how to use it naturally:
+
+### 1. Addressing a group
+When you see a group of people, say:
+*   **Muraho!** (Hello to you all!)
+*   **Muraho, mwiriwe!** (Hello, good day to you all!)
+
+### 2. Addressing one person respectfully
+You can also use **Muraho** to greet one person if you want to show respect or maintain a polite distance. In this context, it is not plural; it is a respectful singular form.
+*   **Muraho, mwiriwe!** (Hello, good day to you!)
+
+### Comparison with Mwiriwe
+*   **Mwiriwe:** Use this for one person in a familiar or informal setting (e.g., a friend).
+*   **Muraho:** Use this for a group, or for one person when being formal or respectful.
+
+**Example:**
+*   To a friend: *Mwiriwe, mugabo.* (Hello, my friend.)
+*   To a group: *Muraho, mwiriwe.* (Hello, good day to you all.)",,,,,,,,,,
+B002,Model A,T001,Greeting,Explain when to use `Muraho`.,"correctness, register, beginner clarity","In Kinyarwanda, **""Muraho""** is the standard way to say **""Hello""** or **""Greetings.""**
+
+Here is a breakdown of when and how to use it correctly:
+
+### 1. General Use (The ""Safe"" Choice)
+*Muraho* is a versatile, polite greeting. You can use it in almost any situation—whether you are speaking to a stranger, a shopkeeper, a colleague, or a friend. It is the equivalent of a neutral ""Hello.""
+
+### 2. Formal vs. Informal
+While *Muraho* is polite, Kinyarwanda culture often favors more specific greetings depending on the time of day or the level of familiarity.
+
+*   **Formal/Standard:** *Muraho* (Good for first meetings or professional settings).
+*   **Informal/Friendly:** If you are speaking to a close friend, you might use **""Bite?""** (What's up?) or **""Amakuru?""** (How is the news/How are you?).
+
+### 3. Time-Specific Greetings
+In Rwanda, it is very common to use time-specific greetings instead of a general ""Hello."" If you want to sound more like a native speaker, use these:
+
+*   **Mwaramutse:** Good morning (Used from sunrise until about 12:00 PM).
+*   **Mwiriwe:** Good afternoon/evening (Used from 12:00 PM until sunset).
+*   **Mwiriwe neza:** A slightly more formal way to say ""Good evening.""
+
+### 4. The ""Response"" Rule
+When someone says *Muraho* to you, the standard response is:
+*   **Muraho** (You can simply say it back).
+*   **Ni meza** (It is good—usually used if they asked ""Amakuru?"").
+
+### Summary Table
+
+| Situation | Kinyarwanda | English Equivalent |
+| :--- | :--- | :--- |
+| **General/Neutral** | *Muraho* | Hello |
+| **Morning** | *Mwaramutse* | Good morning |
+| **Afternoon/Evening** | *Mwiriwe* | Good afternoon/evening |
+| **Asking ""How are you?""** | *Amakuru?* | How are you? / What's the news? |
+| **Casual (Friends)** | *Bite?* | What's up? |
+
+**Pro-tip:** When saying *Muraho*, it is culturally polite to accompany the greeting with a slight nod of the head or a smile.",,,,,,,,,,
+B003,Model B,T003,Greeting,Explain the difference between `Muraho` and `Mwaramutse`.,"nuance, register, time-of-day usage","Both are greetings, but they differ in the time of day and the level of formality.
+
+**Muraho** is a general greeting. It can be used at any time of the day and day of the week. It is the equivalent of ""Hello"" or ""Hi.""
+
+**Mwaramutse** is specifically used in the morning. It means ""Good morning."" It is a polite form used when addressing one or more people.
+
+**Comparison:**
+*   **Muraho:** Use this at noon, in the afternoon, or in the evening.
+*   **Mwaramutse:** Use this only from sunrise until about midday.
+
+**Example:**
+*   At 10:00 AM: ""Mwaramutse!"" (Good morning!)
+*   At 4:00 PM: ""Muraho!"" (Hello!)",,,,,,,,,,
+B004,Model A,T003,Greeting,Explain the difference between `Muraho` and `Mwaramutse`.,"nuance, register, time-of-day usage","In Kinyarwanda, both **Muraho** and **Mwaramutse** are used to say ""Hello,"" but the difference lies in the **time of day** and the **level of formality**.
+
+Here is the breakdown:
+
+### 1. Muraho (General Greeting)
+*   **Meaning:** Hello / Hi.
+*   **Usage:** This is a general greeting that can be used at any time of the day (morning, afternoon, or evening).
+*   **Context:** It is slightly more informal than time-specific greetings. It is similar to saying ""Hi"" or ""Hey"" in English.
+*   **Example:** You can use *Muraho* when walking past someone you know quickly or when entering a shop at 3:00 PM.
+
+### 2. Mwaramutse (Morning Greeting)
+*   **Meaning:** Good morning.
+*   **Usage:** This is used **only in the morning**.
+*   **Context:** It is a polite and standard way to greet someone during the first half of the day. It is derived from the verb *kwaramuka* (to rise/to wake up).
+*   **Example:** You would use *Mwaramutse* when you see a neighbor at 8:00 AM or when you first see a colleague at the start of the workday.
+
+---
+
+### Summary Table
+
+| Word | English Equivalent | Time of Day | Formality |
+| :--- | :--- | :--- | :--- |
+| **Muraho** | Hello / Hi | Any time | Neutral / Informal |
+| **Mwaramutse** | Good morning | Morning only | Polite / Standard |
+
+### Pro-Tip for Learners:
+If you want to be very polite and specific throughout the day, Kinyarwanda has specific greetings for other times as well:
+*   **Mwaramutse:** Good morning.
+*   **Mwiriwe:** Good afternoon / Good evening (Used from midday until late at night).
+*   **Mwiriwe neza:** A slightly more formal/warm way to say ""Good afternoon/evening.""",,,,,,,,,,
+B005,Model B,T005,Greeting,Write a short greeting exchange between a student and a teacher.,"naturalness, level, turn-taking","Turoze: Mwaramutse, mwabaye neza?
+Umwarimu: Mwaramutse. Ntabwo naba neza cyane, ariko niteguye kwigisha.
+Turoze: Ni byiza. Twiyubaka?
+Umwarimu: Twiyubaka. Twiyubake.",,,,,,,,,,
+B006,Model A,T005,Greeting,Write a short greeting exchange between a student and a teacher.,"naturalness, level, turn-taking","thought
+<channel|>Here is a short, polite greeting exchange between a student and a teacher in Kinyarwanda, followed by the English translation.
+
+### Kinyarwanda
+**Umunyeshuri:** Mwaramutse, Mwarimu. Amakuru?
+**Umwarimu:** Mwaramutse, umunyeshuri. Ni meza. Wowe wari ute?
+**Umunyeshuri:** Ni meza, murakoze.
+
+### English Translation
+**Student:** Good morning, Teacher. How are you?
+**Teacher:** Good morning, student. I am well. How are you?
+**Student:** I am well, thank you.
+
+---
+
+### Key Vocabulary & Grammar Notes:
+
+1.  **Mwaramutse:** This is the formal way to say ""Good morning."" It is used when speaking to someone older or in a position of authority (like a teacher).
+    *   *Note:* If you were speaking to a friend, you would say **""Mwiriwe""** (Good afternoon/evening) or **""Muraho""** (Hello).
+2.  **Mwarimu:** This means ""Teacher.""
+3.  **Amakuru?:** Literally ""News?"", but it is the standard way to ask ""How are you?""
+4.  **Ni meza:** This means ""It is good"" or ""I am well.""
+5.  **Wowe wari ute?:** This means ""How were you?"" or ""How are you?"" (The ""wari"" implies a slightly more formal/polite inquiry about your state).
+6.  **Murakoze:** This means ""Thank you.""",,,,,,,,,,
+B007,Model B,T008,Vocabulary,Teach the word `ishuri` and give two simple example sentences.,"word meaning, example quality","`Ishuri` means ""school"" in Kinyarwanda. Here are two simple example sentences:
+
+1. **Ishuri ririmo abana.**
+   (The school has children.)
+
+2. **Naza mu ishuri saa tatu.**
+   (I came to school at nine o'clock.)",,,,,,,,,,
+B008,Model A,T008,Vocabulary,Teach the word `ishuri` and give two simple example sentences.,"word meaning, example quality","The Kinyarwanda word **ishuri** means **""school.""**
+
+Here is a breakdown of the word:
+*   **Ishuri** (Noun): School
+
+### Example Sentences
+
+**1. Njenda kugenda ku ishuri.**
+*   *Pronunciation:* N-jen-da ku ee-shoo-ree.
+*   *English:* I like going to school.
+
+**2. Ishuri riri he?**
+*   *Pronunciation:* Ee-shoo-ree ree hay?
+*   *English:* Where is the school?
+
+### Grammar Note:
+In Kinyarwanda, the prefix **i-** indicates that the word is a noun. When you want to say ""to the school,"" you add the preposition **ku** before the word (**ku ishuri**).",,,,,,,,,,
+B009,Model B,T010,Vocabulary,Give a mini vocabulary lesson about people at school.,"accuracy, useful grouping","Here is a mini vocabulary lesson about people at school. I will provide the Kinyarwanda term, the English translation, and a simple example sentence for each.
+
+### Vocabulary List
+
+1. **Umwarimu** – Teacher
+   * *Umuwarimu aracyigisha abana.* (The teacher is still teaching the children.)
+2. **Umwana** – Child / Student
+   * *Umwana arasoma mu nzu y'ishuri.* (The child is reading in the classroom.)
+3. **Umuyobozi w'ishuri** – School Principal / Headteacher
+   * *Umuyobozi w'ishuri arashaka kubona umwarimu.* (The school principal wants to see the teacher.)
+4. **Abanyamuziki** – Musicians (often used for a school choir or band)
+   * *Abanyamuziki bafite umuyobozi wabo.* (The musicians have their own leader.)
+5. **Abanyamahanga** – Foreigners / International students
+   * *Abanyamahanga basanzwe bafite ibyerekeye isoko.* (The international students usually have questions about the market.)
+
+### Grammar Note: Plurals
+In Kinyarwanda, the prefix changes to show plural. For example:
+* **Umwana** (one child) becomes **Abana** (children).
+* **Umwarimu** (one teacher) becomes **Abanyamuziki** (musicians) or **Abanyamuziki** is a different word; the plural of **Umwarimu** is **Abanyamuziki** is incorrect. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is a different group. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **Abanyamuziki** is wrong; it is **Abanyamuziki** is wrong. The plural of **Umwarimu** is **",,,,,,,,,,
+B010,Model A,T010,Vocabulary,Give a mini vocabulary lesson about people at school.,"accuracy, useful grouping","Muraho! (Hello!) Let's learn some essential Kinyarwanda vocabulary for people you will encounter at school.
+
+In Kinyarwanda, many titles are based on the person's role or relationship to the institution. Here is your mini-lesson:
+
+### 1. The Core Staff (Abakozi b'ishuri)
+
+*   **Umwarimu** – Teacher
+    *   *Pronunciation:* Um-wa-ree-moo
+    *   *Note:* This is the most common word for a teacher.
+*   **Umuyobozi w'ishuri** – School Principal / Headmaster
+    *   *Pronunciation:* Um-oo-yoh-bo-zee wee-shoo-ree
+    *   *Breakdown:* *Umuyobozi* means ""leader"" and *ishuri* means ""school.""
+*   **Umufasha-umwarimu** – Teaching Assistant
+    *   *Pronunciation:* Um-oo-fa-sha-um-wa-ree-moo
+    *   *Breakdown:* *Umufasha* means ""helper.""
+
+### 2. The Students (Abanyeshuri)
+
+*   **Umunyeshuri** – A student (singular)
+    *   *Pronunciation:* Um-nyeh-shoo-ree
+*   **Abanyeshuri** – Students (plural)
+    *   *Pronunciation:* Ah-ban-yeh-shoo-ree
+*   **Umuririrwa** – A pupil (usually used for younger children)
+    *   *Pronunciation:* Um-oo-ree-ree-wa
+
+### 3. Useful Phrases for Context
+
+To use these words in a sentence, you can use these simple structures:
+
+*   **Uyu ni umwarimu.** (This is a teacher.)
+*   **Ni we umuyobozi?** (Who is the principal?)
+*   **Abanyeshuri bari mu kigufi.** (The students are in the classroom.)
+    *   *Note:* *Kigufi* means ""classroom.""
+
+---
+
+### Quick Practice Quiz
+Try to translate these into Kinyarwanda based on the list above:
+1. A student
+2. The teacher
+3. School principal
+
+*(Answers: 1. Umunyeshuri, 2. Umwarimu, 3. Umuyobozi w'ishuri)*
+
+**Pro-tip:** In Rwanda, it is very common and respectful to address a teacher as **""Mwarimu""** (Teacher) directly when speaking to them!",,,,,,,,,,
+B011,Model A,T011,Sentence correction,Correct: `Ndi kwiga Ikinyarwanda.`,"grammar, humility if uncertain","Your sentence is **grammatically correct** and very natural.
+
+**Ndi kwiga Ikinyarwanda.**
+*(I am learning Kinyarwanda.)*
+
+### Breakdown:
+*   **Ndi**: I am (from the verb *kuba* - to be).
+*   **kwiga**: learning (the infinitive form of the verb *kwiga*).
+*   **Ikinyarwanda**: The Kinyarwanda language.
+
+---
+
+### Alternative ways to say this:
+
+Depending on the context, you might also hear or use these variations:
+
+**1. Using the present continuous (More common in casual speech):**
+> **Ndi kwiga Ikinyarwanda.** (This is what you wrote; it is perfectly fine).
+
+**2. Using the simple present (To state a general fact):**
+> **Niyiga Ikinyarwanda.**
+> *(I learn Kinyarwanda / I study Kinyarwanda.)*
+> *Note: In Kinyarwanda, the simple present is often used to describe ongoing actions.*
+
+**3. If you want to say ""I am studying"" (like for an exam or a specific book):**
+> **Ndi kwiga.**
+> *(I am studying.)*
+
+### Quick Tip:
+In Kinyarwanda, when you use the structure **""Ndi + [Infinitive]""**, it emphasizes the action happening *right now*. You did a great job!",,,,,,,,,,
+B012,Model B,T011,Sentence correction,Correct: `Ndi kwiga Ikinyarwanda.`,"grammar, humility if uncertain","The sentence is already correct: **Ndi kwiga Ikinyarwanda.**
+
+Here is the breakdown:
+*   **Ndi:** I am.
+*   **Kwiga:** To learn/study.
+*   **Ikinyarwanda:** The Kinyarwanda language.
+
+Together, it means: ""I am learning Kinyarwanda.""",,,,,,,,,,
+B013,Model A,T013,Sentence correction,"Correct: `Ndi umwarimu?` if the learner meant ""Am I a teacher?""","question formation, uncertainty","The sentence you provided, **""Ndi umwarimu?""**, is grammatically correct and is the most common way to say ""Am I a teacher?"" in Kinyarwanda.
+
+Here is a breakdown of why it works and some nuances:
+
+### 1. The Structure
+*   **Ndi**: I am
+*   **Umwarimu**: A teacher
+*   **?**: The question mark indicates the rising intonation.
+
+In Kinyarwanda, you do not need to change the word order to form a question (unlike in English where ""I am"" becomes ""Am I""). You simply say the statement with a rising tone at the end.
+
+### 2. Alternative (More Formal)
+If you want to be very explicit or formal, you can add the question particle **""Ese""** at the beginning:
+> **Ese ndi umwarimu?**
+*(Literally: ""As for me, am I a teacher?"")*
+
+### 3. Pronunciation Tip
+To make it sound natural as a question, ensure your voice rises on the last syllable of ""umwarimu"":
+*   *Ndi umwarimu?* (Low-High)
+
+### Summary Table
+| English | Kinyarwanda | Notes |
+| :--- | :--- | :--- |
+| I am a teacher. | Ndi umwarimu. | Statement (Falling tone) |
+| Am I a teacher? | Ndi umwarimu? | Question (Rising tone) |
+| Am I a teacher? | Ese ndi umwarimu? | Formal/Emphatic question |",,,,,,,,,,
+B014,Model B,T013,Sentence correction,"Correct: `Ndi umwarimu?` if the learner meant ""Am I a teacher?""","question formation, uncertainty","The correct translation is: **""Ndi umwarimu?""**
+
+The sentence is already correct as written. In Kinyarwanda, the question mark at the end changes the statement into a question, so you do not need to change the word order or the verb form.",,,,,,,,,,
+B015,Model B,T015,Sentence correction,Correct a learner who used a literal English word order in Kinyarwanda.,non-literal translation handling,"To help the learner, please provide the specific sentence they wrote. I will then show the natural Kinyarwanda word order and explain the difference.
+
+For example, if a learner says: *""Nshaka kugura ibirori,""* which literally means ""I want to buy the celebrations,"" I would correct it to: *""Nshaka kugura ibirori by'umunsi w'umwuka.""* I would explain that while the words are correct, the natural phrasing requires a clearer description of the event.",,,,,,,,,,
+B016,Model A,T015,Sentence correction,Correct a learner who used a literal English word order in Kinyarwanda.,non-literal translation handling,"To correct a learner who is using English word order in Kinyarwanda, I will provide a clear explanation of the grammatical difference, show the ""incorrect"" vs. ""correct"" versions, and explain the logic behind the change.
+
+Since you didn't provide a specific sentence, I will use a very common mistake: **The placement of the adjective.**
+
+### Example Scenario
+**Learner's Sentence:** *""Inzu nziza""* (Literal translation of ""A beautiful house"")
+**The Error:** The learner placed the adjective *after* the noun, following English syntax.
+
+---
+
+### 💡 The Correction
+
+**Incorrect:** *Inzu nziza*
+**Correct:** **Inzu nziza** (Wait—actually, in this specific case, Kinyarwanda and English both place adjectives after the noun! Let's try a different, more common structural error.)
+
+---
+
+### 💡 Better Example: Verb Placement (Subject-Verb-Object)
+**Learner's Sentence:** *""Ndiya kurya ibiryo.""* (Literal translation of ""I am eating food."")
+**The Error:** The learner is trying to use a ""to be"" verb (*ndi*) + ""to"" (*ya*) + ""eat"" (*kurya*).
+
+**Correct:** **""Ndirya ibiryo.""**
+
+**Explanation:**
+In English, we use ""helper verbs"" (am, is, are) to show continuous action. In Kinyarwanda, you do not need a helper verb. You simply attach the prefix to the main verb.
+
+*   **Ndi** (I am) + **kurya** (to eat) $\rightarrow$ **Ndirya** (I am eating / I eat).
+
+---
+
+### 💡 Another Common Error: Possession
+**Learner's Sentence:** *""Icyitonderwa cyanjye""* (Literal translation of ""The attention of mine"")
+**The Error:** Trying to use a possessive pronoun at the end like ""mine"" or ""his.""
+
+**Correct:** **""Icyitonderwa cyanjye""** (Actually, Kinyarwanda *does* put the possessive after the noun).
+
+**Let's look at a ""Word Order"" error regarding Time:**
+**Learner's Sentence:** *""Naza kuva mu gitondo.""* (Literal: ""I came from in the morning."")
+**Correct:** **""Naje mu gitondo.""**
+
+**Explanation:**
+In English, we often use ""from"" to indicate a starting point in time. In Kinyarwanda, when talking about ""in the morning"" or ""at night,"" you usually go straight to the time marker without the preposition ""kuva"" (from) unless you are specifically emphasizing a starting point of a duration.
+
+---
+
+### 🎓 Tutor Tip for the Learner:
+> *""In Kinyarwanda, verbs are 'sticky.' Instead of saying 'I am [verb]ing,' you must attach the subject prefix directly to the verb root. Also, remember that Kinyarwanda is a Bantu language; it prefers a more compact structure than English. Try to think of the action as one single word rather than a string of words.""*
+
+**If you have a specific sentence you would like me to correct, please paste it below!**",,,,,,,,,,
+B017,Model A,T016,Translation EN-RW,Translate: `I am a student.`,grammar and naturalness,"The translation for ""I am a student"" in Kinyarwanda is:
+
+**Ndi umunyeshuri.**
+
+### Breakdown:
+*   **Ndi**: I am (from the verb *kuba* - to be).
+*   **Umunyeshuri**: A student.
+
+### Pronunciation Tip:
+*   **Ndi**: Pronounced like ""N-dee"" (the 'd' is soft).
+*   **Umunyeshuri**: Pronounced *Oo-moo-nyeh-shoo-ree*.
+    *   *Note: The 'u' at the beginning is a soft ""oo"" sound.*",,,,,,,,,,
+B018,Model B,T016,Translation EN-RW,Translate: `I am a student.`,grammar and naturalness,"The translation is: `Ndi umunyeshuri.`
+
+Breakdown:
+*   `Ndi`: I am.
+*   `umunyeshuri`: a student.",,,,,,,,,,
+B019,Model A,T018,Translation EN-RW,Translate: `My name is Aline.`,name construction,"The translation for ""My name is Aline"" in Kinyarwanda is:
+
+**Izina ryanjye ni Aline.**
+
+### Breakdown:
+*   **Izina**: Name
+*   **ryanjye**: my (the suffix *-anjye* indicates possession)
+*   **ni**: is/are (a linking verb)
+*   **Aline**: (The proper noun remains the same)
+
+### Pronunciation Tip:
+*   **Izina**: *Ee-zee-nah*
+*   **ryanjye**: *ryan-jyeh* (The 'j' is soft, like in ""jam"")
+*   **ni**: *nee*",,,,,,,,,,
+B020,Model B,T018,Translation EN-RW,Translate: `My name is Aline.`,name construction,"The translation is: `Izina ryanjye ni Aline.`
+
+Here is a breakdown:
+*   `Izina`: Name
+*   `ryanjye`: My (the `-y-` connects it to `izina`)
+*   `ni`: Is",,,,,,,,,,

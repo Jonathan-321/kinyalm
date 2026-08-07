@@ -31,7 +31,10 @@ def test_gemma4_profile_is_pinned_without_starting_a_run():
         "model_revision=707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
         in result.stdout
     )
-    assert "output_repo=kinyalm/kinyalm-gemma-4-12b-experimental" in result.stdout
+    assert (
+        "output_repo=kinyalm/kinyalm-gemma-4-12b-corrected-control"
+        in result.stdout
+    )
 
 
 def test_gemma4_is_the_default_profile():
@@ -40,6 +43,10 @@ def test_gemma4_is_the_default_profile():
     assert result.returncode == 0, result.stderr
     assert "model_profile=gemma4" in result.stdout
     assert "model_id=google/gemma-4-12B-it" in result.stdout
+    assert (
+        "output_repo=kinyalm/kinyalm-gemma-4-12b-corrected-control"
+        in result.stdout
+    )
     assert "warmup_ratio=0.03" in result.stdout
     assert "learning_rate=5e-5" in result.stdout
     assert "epochs=1" in result.stdout

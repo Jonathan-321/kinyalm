@@ -91,7 +91,7 @@ Storage is ephemeral, so make sure the upload finished before terminating.
 ## Full experimental run
 
 After the one-step GPU smoke succeeds and this training-stack change is merged,
-run the full critic-filtered experiment:
+run the corrected-objective control:
 
 ```bash
 MODEL_PROFILE=gemma4 ALLOW_EXPERIMENTAL_FULL_RUN=1 \
@@ -99,15 +99,20 @@ MODEL_PROFILE=gemma4 ALLOW_EXPERIMENTAL_FULL_RUN=1 \
 ```
 
 This trains on the current deterministic split: 776 train and 87 validation
-conversations. The result remains explicitly experimental because the rows
-have model-critic review rather than complete fluent-human approval.
+conversations. It supervises only assistant completions for one epoch at
+`5e-5`, while preserving the same frozen data split used by the rejected run.
+The adapter publishes to
+`kinyalm/kinyalm-gemma-4-12b-corrected-control`, separate from the rejected
+checkpoint. The result remains explicitly experimental because the rows have
+model-critic review rather than complete fluent-human approval.
 
 Use validation loss and the saved `samples.jsonl` as first-pass training
 evidence. Post-training generation explicitly re-enables the model cache, then
 restores the training setting when sampling finishes. Native-speaker and
 base-versus-adapter evaluation is a separate follow-up after reproducible
 training succeeds. The script requires `ALLOW_EXPERIMENTAL_FULL_RUN=1` so a
-paid full run cannot start accidentally.
+paid full run cannot start accidentally. Do not override `OUTPUT_REPO` back to
+the rejected `kinyalm-gemma-4-12b-experimental` repository.
 
 ## Reminder
 

@@ -57,10 +57,10 @@ port can be selected with `--port`, for example:
 bash scripts/local/chat_gemma4_web.sh --port 8091 --open
 ```
 
-## Experimental Adapter Review
+## Corrected SFT Adapter Review
 
 Reviewers with access to the private Hugging Face adapter can run the exact
-Gemma 4 QLoRA checkpoint locally:
+Gemma 4 corrected-objective QLoRA checkpoint locally:
 
 ```bash
 hf auth login
@@ -73,12 +73,15 @@ missing. Before scoring responses, open **Runtime details** and confirm that the
 Adapter row reads:
 
 ```text
-kinyalm/kinyalm-gemma-4-12b-experimental@feefb1e7ac35
+kinyalm/kinyalm-gemma-4-12b-corrected-control@fb911c9b842c
 ```
 
 Use a fresh conversation for each held-out prompt and save a rating plus a
-correction when the answer is unnatural or wrong. The adapter remains
-experimental until the native-speaker comparison is complete.
+correction when the answer is unnatural or wrong. This control has already
+shown one repetition failure in CUDA evaluation and remains experimental until
+the native-speaker comparison is complete. The current MLX composition also
+failed exact output parity with CUDA, so use it for local failure analysis, not
+as a substitute for scoring the source PEFT checkpoint.
 
 Frontend work can be tested without loading the 12B model:
 

@@ -187,8 +187,18 @@ def write_blind_review_pack(
                     "blind_id": blind_id,
                     "model_label": label_by_candidate[candidate_id],
                     "candidate_id": candidate_id,
-                    "model_id": str(result.get("model_id", "")),
-                    "model_revision": str(result.get("model_revision", "")),
+                    "model_id": _optional_text(result.get("model_id")),
+                    "model_revision": _optional_text(
+                        result.get("model_revision")
+                    ),
+                    "adapter_id": _optional_text(result.get("adapter_id")),
+                    "adapter_revision": _optional_text(
+                        result.get("adapter_revision")
+                    ),
+                    "inference_backend": _optional_text(
+                        result.get("inference_backend")
+                    ),
+                    "quantization": _optional_text(result.get("quantization")),
                 }
             )
 
@@ -290,6 +300,10 @@ def _review_response(result: dict[str, Any]) -> str:
         return str(result.get("response", ""))
     error = str(result.get("error", "unknown generation error"))
     return f"[GENERATION ERROR] {error}"
+
+
+def _optional_text(value: Any) -> str:
+    return "" if value is None else str(value)
 
 
 def _string(raw: dict[str, Any], key: str, *, label: str = "config") -> str:
