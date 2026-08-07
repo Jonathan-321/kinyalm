@@ -268,6 +268,7 @@ def write_generation_samples(
                     add_generation_prompt=True,
                     return_tensors="pt",
                     return_dict=True,
+                    enable_thinking=False,
                 ).to(model.device)
                 with torch.no_grad():
                     output = model.generate(

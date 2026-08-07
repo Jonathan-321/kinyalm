@@ -377,6 +377,8 @@ def test_generation_samples_enable_and_restore_cache(tmp_path):
 
     assert model.config.use_cache is False
     assert ("generate", True, True) in calls
+    template_call = next(call for call in calls if call[0] == "template")
+    assert template_call[2]["enable_thinking"] is False
     assert json.loads(output_path.read_text(encoding="utf-8")) == {
         "prompt": "Ikibazo.",
         "completion": "Igisubizo.",
