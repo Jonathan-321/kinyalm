@@ -75,13 +75,14 @@ def load_model_and_tokenizer(args):
 
     revision_kwargs = {"revision": args.model_revision} if args.model_revision else {}
     model_kwargs = {"dtype": dtype}
+    if use_cuda:
+        model_kwargs["device_map"] = {"": torch.cuda.current_device()}
     attn = resolve_attention_implementation(args.model)
     if attn:
         model_kwargs["attn_implementation"] = attn
     if quantize:
         from transformers import BitsAndBytesConfig
 
-        model_kwargs["device_map"] = {"": torch.cuda.current_device()}
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
