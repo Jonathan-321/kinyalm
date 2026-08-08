@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "run_name": "gemma4-recovery-native-bakeoff-v1",
+  "task_bank": "docs/evaluation/recovery-task-bank.md",
+  "task_split": "benchmark-only",
+  "expected_task_count": 150,
+  "system_prompt": "You are KinyaLM, a concise Kinyarwanda-English language tutor. Answer the learner's request directly, accurately, and naturally. Use the language requested by the learner. Give the answer or correction first, then only the explanation needed for the task. Do not invent grammar, pronunciation, cultural claims, or current facts. State uncertainty briefly when needed. Do not mention the underlying model. Avoid decorative formatting and unnecessary repetition.",
+  "seed": 20260807,
+  "max_new_tokens": 256,
+  "enable_thinking": false,
+  "candidates": [
+    {
+      "id": "gemma4-12b-it",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "local_mlx": {
+        "id": "gemma4-12b-it-qat-4bit-mlx",
+        "model_id": "mlx-community/gemma-4-12B-it-qat-4bit",
+        "revision": "e70c6b3ba0979b3357dcd2f223ad8bde7787a6b6",
+        "mlx_lm_version": "0.31.3",
+        "model_type": "gemma4",
+        "ignored_weight_prefixes": [
+          "vision_embedder."
+        ],
+        "suppress_token_ids": [
+          258882,
+          258883
+        ],
+        "quantization": "QAT-derived mixed 4/8-bit affine MLX conversion"
+      }
+    },
+    {
+      "id": "gemma4-31b-it",
+      "model_id": "google/gemma-4-31B-it",
+      "revision": "842da3794eaa0b77d5f08bae87a17459d91ff475"
+    }
+  ]
+}

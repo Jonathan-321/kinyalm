@@ -10,6 +10,7 @@ import importlib.metadata
 import json
 import os
 import platform
+import re
 import subprocess
 import sys
 import time
@@ -57,6 +58,10 @@ class RuntimeCandidate:
     ignored_weight_prefixes: tuple[str, ...]
     suppress_token_ids: tuple[int, ...]
     quantization: str | None
+    adapter_id: str | None = None
+    adapter_revision: str | None = None
+    adapter_path: str | None = None
+    adapter_sha256: str | None = None
 
 
 def parse_args() -> argparse.Namespace:
@@ -95,6 +100,14 @@ def parse_args() -> argparse.Namespace:
         "--limit",
         type=int,
         help="Run only the first N selected tasks (for smoke testing)",
+    )
+    parser.add_argument(
+        "--adapter-runtime",
+        type=Path,
+        help=(
+            "Prepared MLX runtime.json; adds a base-plus-adapter candidate "
+            "beside the unchanged base"
+        ),
     )
     return parser.parse_args()
 
@@ -226,6 +239,76 @@ def _mlx_runtime_candidate(
         suppress_token_ids=local.suppress_token_ids,
         quantization=local.quantization,
     )
+
+
+def add_mlx_adapter_candidate(
+    candidates: list[RuntimeCandidate], manifest_path: Path
+) -> list[RuntimeCandidate]:
+    """Add the pinned adapter described by a prepare_local_mlx manifest."""
+
+    path = manifest_path.expanduser().resolve()
+    manifest = json.loads(path.read_text(encoding="utf-8"))
+    if manifest.get("schema_version") != 1:
+        raise ValueError("unsupported MLX adapter runtime schema_version")
+
+    base = manifest.get("base")
+    adapter = manifest.get("adapter")
+    if not isinstance(base, dict) or not isinstance(adapter, dict):
+        raise ValueError("MLX adapter runtime must contain base and adapter objects")
+
+    base_repo = base.get("repo_id")
+    base_revision = base.get("revision")
+    matches = [
+        candidate
+        for candidate in candidates
+        if candidate.backend == "mlx"
+        and candidate.model_id == base_repo
+        and candidate.revision == base_revision
+        and candidate.adapter_path is None
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            "MLX adapter runtime must match exactly one selected base candidate"
+        )
+
+    adapter_repo = adapter.get("repo_id")
+    adapter_revision = adapter.get("revision")
+    adapter_path_raw = adapter.get("path")
+    conversion = adapter.get("conversion")
+    if not isinstance(adapter_repo, str) or not adapter_repo.strip():
+        raise ValueError("MLX adapter runtime repo_id must be a non-empty string")
+    if not isinstance(adapter_revision, str) or not re.fullmatch(
+        r"[0-9a-f]{40}", adapter_revision
+    ):
+        raise ValueError("MLX adapter runtime revision must be a 40-character SHA")
+    if not isinstance(adapter_path_raw, str) or not adapter_path_raw.strip():
+        raise ValueError("MLX adapter runtime path must be a non-empty string")
+    if not isinstance(conversion, dict):
+        raise ValueError("MLX adapter runtime conversion must be an object")
+
+    adapter_path = Path(adapter_path_raw).expanduser().resolve()
+    config_path = adapter_path / "adapter_config.json"
+    weights_path = adapter_path / "adapters.safetensors"
+    if not config_path.is_file() or not weights_path.is_file():
+        raise ValueError("MLX adapter runtime is missing converted adapter files")
+    expected_sha256 = conversion.get("converted_sha256")
+    if not isinstance(expected_sha256, str) or _sha256(weights_path) != expected_sha256:
+        raise ValueError("MLX adapter runtime converted adapter hash does not match")
+
+    base_candidate = matches[0]
+    adapter_candidate = RuntimeCandidate(
+        **{
+            **asdict(base_candidate),
+            "id": f"{adapter_repo.rsplit('/', 1)[-1]}-mlx",
+            "adapter_id": adapter_repo,
+            "adapter_revision": adapter_revision,
+            "adapter_path": str(adapter_path),
+            "adapter_sha256": expected_sha256,
+        }
+    )
+    if adapter_candidate.id in {candidate.id for candidate in candidates}:
+        raise ValueError(f"duplicate runtime candidate ID: {adapter_candidate.id}")
+    return [*candidates, adapter_candidate]
 
 
 class TransformersGenerator:
@@ -602,7 +685,15 @@ def run_candidate(
             if candidate.backend == "transformers"
             else MlxGenerator
         )
-        generator = generator_class(candidate, config.seed)
+        generator = generator_class(
+            candidate,
+            config.seed,
+            **(
+                {"adapter_path": Path(candidate.adapter_path)}
+                if candidate.adapter_path is not None
+                else {}
+            ),
+        )
     except Exception as exc:
         error = f"{type(exc).__name__}: {exc}"
         print(f"{candidate.id}: model load failed: {error}", file=sys.stderr)
@@ -696,6 +787,10 @@ def main() -> int:
     task_bank_path, all_tasks = load_held_out_tasks(config)
     tasks = select_tasks(all_tasks, args.task_id, args.limit)
     candidates = resolve_runtime_candidates(config, args.candidate, args.backend)
+    if args.adapter_runtime is not None:
+        if args.backend != "mlx":
+            raise ValueError("--adapter-runtime requires --backend mlx")
+        candidates = add_mlx_adapter_candidate(candidates, args.adapter_runtime)
 
     summary = {
         "run_name": config.run_name,
@@ -768,6 +863,9 @@ def _base_record(
         "ignored_weight_prefixes": candidate.ignored_weight_prefixes,
         "suppress_token_ids": candidate.suppress_token_ids,
         "quantization": candidate.quantization,
+        "adapter_id": candidate.adapter_id,
+        "adapter_revision": candidate.adapter_revision,
+        "adapter_sha256": candidate.adapter_sha256,
         "task_id": task.id,
         "category": task.category,
         "split": task.split,

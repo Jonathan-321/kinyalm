@@ -17,7 +17,17 @@ def publication_args(tmp_path):
     (adapter_dir / "adapter_model.safetensors").write_bytes(b"weights")
     (adapter_dir / "run-preflight.json").write_text("{}\n", encoding="utf-8")
     dataset_manifest = tmp_path / "dataset-manifest.json"
-    dataset_manifest.write_text(json.dumps({"schema_version": 1}), encoding="utf-8")
+    dataset_manifest.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "dataset_tier": "experimental-critic-filtered",
+                "human_reviewed": False,
+                "production_eligible": False,
+            }
+        ),
+        encoding="utf-8",
+    )
     training_log = tmp_path / "train.log"
     training_log.write_text("loss=1.0\n", encoding="utf-8")
     system_info = tmp_path / "system-info.txt"
@@ -67,3 +77,42 @@ def test_publication_rejects_missing_adapter_weights(tmp_path):
             tmp_path / "train.log",
             tmp_path / "system-info.txt",
         )
+
+
+def test_publication_uses_candidate_tier_from_manifest(tmp_path):
+    args = publication_args(tmp_path)
+    (tmp_path / "dataset-manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_tier": "experimental-candidate-unreviewed",
+                "human_reviewed": False,
+                "production_eligible": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    metadata = build_run_metadata(args)
+    card = render_model_card(args, metadata)
+
+    assert metadata["status"] == "experimental-candidate-unreviewed"
+    assert "experimental-candidate-unreviewed" in card
+
+
+def test_publication_card_reports_native_review_truthfully(tmp_path):
+    args = publication_args(tmp_path)
+    (tmp_path / "dataset-manifest.json").write_text(
+        json.dumps(
+            {
+                "dataset_tier": "human-reviewed-recovery-sft",
+                "human_reviewed": True,
+                "production_eligible": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    card = render_model_card(args, build_run_metadata(args))
+
+    assert "Human reviewed: `true`" in card
+    assert "- Human reviewed: `true`" in card

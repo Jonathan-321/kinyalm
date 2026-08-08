@@ -23,10 +23,9 @@ then compare_probes.py renders the comparison.
 
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
 import json
-import sys
+from pathlib import Path
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are a bilingual Kinyarwanda-English language tutor. Answer the "
@@ -67,18 +66,23 @@ def load_model_and_tokenizer(args):
     use_cuda = torch.cuda.is_available()
     quantize = use_cuda and not args.no_quant
     use_bf16 = use_cuda and torch.cuda.is_bf16_supported()
-    dtype = torch.bfloat16 if use_bf16 else (torch.float16 if use_cuda else torch.float32)
+    dtype = (
+        torch.bfloat16
+        if use_bf16
+        else (torch.float16 if use_cuda else torch.float32)
+    )
     print(f"device: {'cuda' if use_cuda else 'cpu'}, dtype: {dtype}, 4-bit: {quantize}")
 
     revision_kwargs = {"revision": args.model_revision} if args.model_revision else {}
     model_kwargs = {"dtype": dtype}
+    if use_cuda:
+        model_kwargs["device_map"] = {"": torch.cuda.current_device()}
     attn = resolve_attention_implementation(args.model)
     if attn:
         model_kwargs["attn_implementation"] = attn
     if quantize:
         from transformers import BitsAndBytesConfig
 
-        model_kwargs["device_map"] = {"": torch.cuda.current_device()}
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
@@ -119,6 +123,7 @@ def build_inputs(tokenizer, system_prompt: str, prompt: str, device):
         add_generation_prompt=True,
         return_tensors="pt",
         return_dict=True,
+        enable_thinking=False,
     ).to(device)
 
 
@@ -151,8 +156,13 @@ def main() -> int:
             completion = tokenizer.decode(
                 output[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True
             ).strip()
-            handle.write(json.dumps(
-                {"prompt": prompt, "completion": completion}, ensure_ascii=False) + "\n")
+            handle.write(
+                json.dumps(
+                    {"prompt": prompt, "completion": completion},
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
             print(f"[{index}/{len(prompts)}] done")
 
     print(f"wrote: {out_path}")

@@ -127,6 +127,21 @@ def test_experimental_rows_keep_critic_review_distinct_from_human_approval():
     assert results[0].ok
 
 
+def test_experimental_candidate_rows_keep_unreviewed_status_visible():
+    results = validate_sft_records(
+        [
+            valid_record(
+                split="experimental-test",
+                source="synthetic-distillation",
+                source_status="model-generated",
+                review_status="candidate-unreviewed",
+            )
+        ]
+    )
+
+    assert results[0].ok
+
+
 def test_experimental_rows_reject_unreviewed_drafts():
     results = validate_sft_records(
         [
