@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Submit one pinned low-impact Gemma 4 recovery arm to Lambda."""
+"""Submit one pinned Gemma 4 team-reviewed long-form probe to Lambda."""
 
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ def main() -> int:
     parser.add_argument("host")
     parser.add_argument("arm_id")
     parser.add_argument("data_revision")
-    parser.add_argument("--git-ref", default="codex/human-reviewed-sft-432")
+    parser.add_argument("--git-ref", default="codex/longform-sft-probes")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -44,13 +44,18 @@ def main() -> int:
         raise SystemExit(f"invalid recovery arm: {exc}") from exc
 
     shared = config["shared"]
+    dataset_gate = config["dataset_gate"]
     env = os.environ.copy()
     env.update(
         {
             "MODEL_PROFILE": "gemma4",
-            "DATA_PROFILE": "native-recovery-v1",
+            "DATA_PROFILE": dataset_gate["profile"],
             "DATA_REVISION": args.data_revision,
+            "DATA_PATH_IN_REPO": dataset_gate["path_in_repo"],
+            "DATA_MINIMUM_ROWS": str(dataset_gate["minimum_rows"]),
+            "DATA_MAXIMUM_ROWS": str(dataset_gate["maximum_rows"]),
             "MAX_STEPS": str(shared["max_steps"]),
+            "MAX_SEQ_LEN": str(shared["max_sequence_length"]),
             "ALLOW_EXPERIMENTAL_FULL_RUN": "1",
             "LORA_R": str(arm["lora_r"]),
             "LORA_ALPHA": str(shared["lora_alpha"]),
@@ -66,8 +71,10 @@ def main() -> int:
             "PRESERVE_CHECKPOINT_STEPS": ",".join(
                 str(step) for step in shared["checkpoint_steps"]
             ),
-            "OUTPUT_REPO": f"kinyalm/kinyalm-gemma-4-12b-{args.arm_id}",
-            "RUN_ID": f"gemma4-native-recovery-{args.arm_id}",
+            "OUTPUT_REPO": (
+                f"kinyalm/kinyalm-gemma-4-12b-longform-probe-{args.arm_id}"
+            ),
+            "RUN_ID": f"gemma4-longform-probe-{args.arm_id}",
         }
     )
     if args.dry_run:
@@ -86,8 +93,14 @@ def main() -> int:
                 str(ROOT / "scripts/download_reviewed_sft.py"),
                 "--revision",
                 args.data_revision,
+                "--path-in-repo",
+                dataset_gate["path_in_repo"],
                 "--output-dir",
                 tmp,
+                "--minimum-rows",
+                str(dataset_gate["minimum_rows"]),
+                "--maximum-rows",
+                str(dataset_gate["maximum_rows"]),
             ],
             cwd=ROOT,
             env=env,

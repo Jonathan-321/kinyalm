@@ -1,18 +1,22 @@
 {
   "schema_version": 1,
-  "experiment_id": "gemma4-native-recovery-v1",
+  "experiment_id": "gemma4-team-reviewed-longform-probes-v1",
   "base_model": {
     "repo_id": "google/gemma-4-12B-it",
     "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
   },
   "dataset_gate": {
-    "dataset_tier": "human-reviewed-recovery-sft",
-    "minimum_rows": 500,
-    "maximum_rows": 1000,
-    "human_reviewed": true
+    "profile": "team-reviewed-longform-v1",
+    "path_in_repo": "data/reviewed/kinyalm-team-reviewed-longform-sft3144-v1",
+    "dataset_tier": "team-reviewed-experimental-sft",
+    "minimum_rows": 3144,
+    "maximum_rows": 3144,
+    "human_reviewed": true,
+    "team_reviewed": true
   },
   "shared": {
     "max_steps": 100,
+    "full_epoch_steps": 780,
     "checkpoint_steps": [
       25,
       50,
@@ -23,7 +27,7 @@
     "warmup_ratio": 0.03,
     "batch_size": 1,
     "gradient_accumulation_steps": 8,
-    "max_sequence_length": 1024,
+    "max_sequence_length": 1536,
     "seed": 42
   },
   "quality_gate": {
@@ -36,32 +40,31 @@
   },
   "arms": [
     {
-      "id": "qv-r8-lr2e6",
+      "id": "qv-r8-lr2e5",
       "target_modules": [
         "q_proj",
         "v_proj"
       ],
       "lora_r": 8,
-      "learning_rate": 0.000002
+      "learning_rate": 0.00002
     },
     {
-      "id": "qv-r8-lr5e6",
+      "id": "qv-r8-lr5e5",
       "target_modules": [
         "q_proj",
         "v_proj"
       ],
       "lora_r": 8,
-      "learning_rate": 0.000005
+      "learning_rate": 0.00005
     },
     {
-      "id": "qvo-r8-lr2e6",
+      "id": "qv-r8-lr1e4",
       "target_modules": [
         "q_proj",
-        "v_proj",
-        "o_proj"
+        "v_proj"
       ],
       "lora_r": 8,
-      "learning_rate": 0.000002
+      "learning_rate": 0.0001
     }
   ]
 }

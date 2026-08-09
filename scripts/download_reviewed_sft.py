@@ -17,6 +17,11 @@ if str(SRC) not in sys.path:
 
 from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
+REVIEWED_DATASET_TIERS = {
+    "human-reviewed-recovery-sft",
+    "team-reviewed-experimental-sft",
+}
+
 
 def _sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
@@ -35,8 +40,8 @@ def verify_package(
         if not path.is_file():
             raise ValueError(f"missing reviewed dataset artifact: {path}")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    if manifest.get("dataset_tier") != "human-reviewed-recovery-sft":
-        raise ValueError("dataset tier is not human-reviewed-recovery-sft")
+    if manifest.get("dataset_tier") not in REVIEWED_DATASET_TIERS:
+        raise ValueError("dataset tier is not an accepted reviewed SFT tier")
     if manifest.get("human_reviewed") is not True:
         raise ValueError("dataset manifest must state human_reviewed=true")
     if manifest.get("training_eligible") is not True:

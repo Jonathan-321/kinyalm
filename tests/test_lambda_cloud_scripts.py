@@ -90,6 +90,29 @@ def test_gemma4_human_reviewed_profile_is_pinned():
     assert "eval_steps=25" in result.stdout
 
 
+def test_gemma4_team_reviewed_longform_profile_uses_exact_package_gate():
+    result = run_script(
+        RUN_SCRIPT,
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "DATA_PROFILE": "team-reviewed-longform-v1",
+            "DATA_REVISION": "a" * 40,
+            "MAX_SEQ_LEN": "1536",
+            "PROFILE_ONLY": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "data_profile=team-reviewed-longform-v1" in result.stdout
+    assert "data_minimum_rows=3144" in result.stdout
+    assert "data_maximum_rows=3144" in result.stdout
+    assert (
+        "data_path_in_repo=data/reviewed/"
+        "kinyalm-team-reviewed-longform-sft3144-v1"
+    ) in result.stdout
+    assert "max_sequence_length=1536" in result.stdout
+
+
 def test_one_step_smoke_disables_warmup_and_samples():
     result = run_script(
         RUN_SCRIPT,
@@ -152,6 +175,7 @@ def test_submit_dry_run_preserves_experiment_overrides():
             "LEARNING_RATE": "1e-5",
             "WARMUP_RATIO": "0.03",
             "EPOCHS": "1",
+            "MAX_SEQ_LEN": "1536",
             "SAVE_STEPS": "50",
             "EVAL_STEPS": "50",
             "OUTPUT_REPO": "kinyalm/core-smoke",
@@ -166,6 +190,7 @@ def test_submit_dry_run_preserves_experiment_overrides():
     assert "learning_rate=1e-5" in result.stdout
     assert "save_steps=50" in result.stdout
     assert "eval_steps=50" in result.stdout
+    assert "max_sequence_length=1536" in result.stdout
     assert "output_repo=kinyalm/core-smoke" in result.stdout
     assert "run_id=core-smoke-v1" in result.stdout
 

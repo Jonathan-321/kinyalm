@@ -14,6 +14,7 @@ from kinyalm.evaluation import (
     write_blind_review_pack,
 )
 from scripts.build_targeted_rewrite_queue import build_rewrite_rows
+from scripts.build_team_reviewed_longform_sft import combine_records
 from scripts.cloud.submit_recovery_arm import load_arm
 from scripts.download_reviewed_sft import verify_package
 from scripts.promote_targeted_rewrites import promote_rewrites
@@ -34,6 +35,11 @@ def test_recovery_bank_has_150_unique_permanently_held_out_prompts():
     assert len({task.prompt.casefold() for task in tasks}) == 150
     assert sum(task.category == "Morphology and grammar" for task in tasks) == 30
     assert sum(task.category == "Sentence correction" for task in tasks) == 20
+    candidate_by_id = {candidate.id: candidate for candidate in config.candidates}
+    teacher = candidate_by_id["gemma4-31b-it"]
+    assert teacher.revision == "3548789868c5356dbf307c98e6f609007b82b3eb"
+    assert teacher.local_mlx is not None
+    assert teacher.local_mlx.model_id == "mlx-community/gemma-4-31b-it-4bit"
 
 
 def test_blind_pack_contains_native_correction_fields(tmp_path):
@@ -244,15 +250,22 @@ def test_recovery_lora_and_checkpoint_parsers_are_strict():
 
 def test_recovery_arm_config_matches_requested_matrix():
     config_path = ROOT / "configs/training/gemma4_recovery_arms.json"
-    config, first = load_arm(config_path, "qv-r8-lr2e6")
-    _, second = load_arm(config_path, "qv-r8-lr5e6")
-    _, third = load_arm(config_path, "qvo-r8-lr2e6")
+    config, first = load_arm(config_path, "qv-r8-lr2e5")
+    _, second = load_arm(config_path, "qv-r8-lr5e5")
+    _, third = load_arm(config_path, "qv-r8-lr1e4")
 
+    assert config["dataset_gate"]["profile"] == "team-reviewed-longform-v1"
+    assert config["dataset_gate"]["minimum_rows"] == 3144
+    assert config["dataset_gate"]["maximum_rows"] == 3144
+    assert config["shared"]["max_steps"] == 100
+    assert config["shared"]["full_epoch_steps"] == 780
     assert config["shared"]["checkpoint_steps"] == [25, 50, 100]
+    assert config["shared"]["max_sequence_length"] == 1536
     assert first["target_modules"] == ["q_proj", "v_proj"]
-    assert first["lora_r"] == 8 and first["learning_rate"] == 2e-6
-    assert second["learning_rate"] == 5e-6
-    assert third["target_modules"] == ["q_proj", "v_proj", "o_proj"]
+    assert first["lora_r"] == 8 and first["learning_rate"] == 2e-5
+    assert second["learning_rate"] == 5e-5
+    assert third["target_modules"] == ["q_proj", "v_proj"]
+    assert third["learning_rate"] == 1e-4
 
 
 def _sft_row(row_id, split):
@@ -309,6 +322,29 @@ def test_downloaded_reviewed_package_requires_hash_matched_human_data(tmp_path):
         "train.jsonl",
         "validation.jsonl",
     ]
+
+
+def test_team_reviewed_longform_combines_sources_into_one_split():
+    native = _sft_row("native-row-1", "train")
+    native["source"] = "native-reviewed"
+    longform = _sft_row("longform-row-1", "validation")
+    longform["source"] = "generated-candidate"
+    longform["task_family"] = "natural-conversation"
+    longform["messages"][0]["content"] = "Amakuru yawe?"
+    longform["messages"][1]["content"] = "Ni meza cyane."
+
+    records, report = combine_records(
+        [native], [longform], dataset_id="combined-v1", train_ratio=0.5
+    )
+
+    assert report["conversation_count"] == 2
+    assert report["assistant_turn_count"] == 2
+    assert report["split_counts"] == {"train": 1, "validation": 1}
+    by_id = {record["id"]: record for record in records}
+    assert {row["split"] for row in records} == {"train", "validation"}
+    assert by_id["longform-row-1"]["curation_tier"] == (
+        "team-reviewed-distillation"
+    )
 
 
 def test_publication_metadata_preserves_selected_checkpoints(tmp_path):

@@ -708,7 +708,7 @@ def main() -> int:
         return 0
 
     import torch
-    from peft import LoraConfig
+    from peft import LoraConfig, prepare_model_for_kbit_training
     from transformers import (
         AutoConfig,
         AutoModelForCausalLM,
@@ -807,6 +807,12 @@ def main() -> int:
             base_probe=base_probe,
         )
 
+    if quantize:
+        model = prepare_model_for_kbit_training(
+            model,
+            use_gradient_checkpointing=use_cuda,
+        )
+
     peft_config = LoraConfig(
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
@@ -845,10 +851,10 @@ def main() -> int:
         eval_steps=args.eval_steps,
         save_strategy=save_strategy,
         save_steps=args.save_steps,
-        save_total_limit=4,
-        load_best_model_at_end=bool(eval_records),
-        metric_for_best_model="eval_loss" if eval_records else None,
-        greater_is_better=False if eval_records else None,
+        # Preserve every scheduled adapter. Generation and native review select
+        # the winner; validation loss alone is not a conversational-quality gate.
+        save_total_limit=None,
+        load_best_model_at_end=False,
         completion_only_loss=True,
         seed=args.seed,
         report_to="none",
@@ -862,6 +868,8 @@ def main() -> int:
         eval_dataset=eval_dataset,
         peft_config=peft_config,
     )
+    if hasattr(trainer.model, "print_trainable_parameters"):
+        trainer.model.print_trainable_parameters()
     if gate_callback is not None:
         trainer.add_callback(gate_callback)
     result = trainer.train()

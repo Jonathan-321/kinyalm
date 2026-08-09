@@ -16,15 +16,31 @@ case "$DATA_PROFILE" in
   native-recovery-v1)
     PROFILE_DATA_REVISION=""
     ;;
+  team-reviewed-longform-v1)
+    PROFILE_DATA_REVISION=""
+    ;;
   *)
-    echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, or native-recovery-v1" >&2
+    echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, native-recovery-v1, or team-reviewed-longform-v1" >&2
     exit 2
     ;;
 esac
 DATA_REVISION="${DATA_REVISION:-$PROFILE_DATA_REVISION}"
-DATA_PATH_IN_REPO="${DATA_PATH_IN_REPO:-data/reviewed/native-recovery-rewrites-v1}"
-if [[ "$DATA_PROFILE" == "native-recovery-v1" && -z "$DATA_REVISION" ]]; then
-  echo "DATA_REVISION is required for native-recovery-v1" >&2
+if [[ "$DATA_PROFILE" == "team-reviewed-longform-v1" ]]; then
+  PROFILE_DATA_PATH="data/reviewed/kinyalm-team-reviewed-longform-sft3144-v1"
+  PROFILE_DATA_MINIMUM_ROWS=3144
+  PROFILE_DATA_MAXIMUM_ROWS=3144
+else
+  PROFILE_DATA_PATH="data/reviewed/native-recovery-rewrites-v1"
+  PROFILE_DATA_MINIMUM_ROWS=500
+  PROFILE_DATA_MAXIMUM_ROWS=1000
+fi
+DATA_PATH_IN_REPO="${DATA_PATH_IN_REPO:-$PROFILE_DATA_PATH}"
+DATA_MINIMUM_ROWS="${DATA_MINIMUM_ROWS:-$PROFILE_DATA_MINIMUM_ROWS}"
+DATA_MAXIMUM_ROWS="${DATA_MAXIMUM_ROWS:-$PROFILE_DATA_MAXIMUM_ROWS}"
+if [[ ( "$DATA_PROFILE" == "native-recovery-v1" \
+  || "$DATA_PROFILE" == "team-reviewed-longform-v1" ) \
+  && -z "$DATA_REVISION" ]]; then
+  echo "DATA_REVISION is required for pinned reviewed data" >&2
   exit 2
 fi
 MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
@@ -72,6 +88,11 @@ elif [[ "$DATA_PROFILE" == "native-recovery-v1" && "$MODEL_PROFILE" == "gemma4" 
   PROFILE_RUN_SLUG="gemma4-12b-native-recovery"
   PROFILE_SAVE_STEPS=25
   PROFILE_EVAL_STEPS=25
+elif [[ "$DATA_PROFILE" == "team-reviewed-longform-v1" && "$MODEL_PROFILE" == "gemma4" ]]; then
+  PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-longform-probe"
+  PROFILE_RUN_SLUG="gemma4-12b-longform-probe"
+  PROFILE_SAVE_STEPS=25
+  PROFILE_EVAL_STEPS=25
 else
   PROFILE_SAVE_STEPS=25
   PROFILE_EVAL_STEPS=25
@@ -87,6 +108,7 @@ ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
 LEARNING_RATE="${LEARNING_RATE:-5e-5}"
 EPOCHS="${EPOCHS:-1}"
+MAX_SEQ_LEN="${MAX_SEQ_LEN:-1024}"
 SAVE_STEPS="${SAVE_STEPS:-$PROFILE_SAVE_STEPS}"
 EVAL_STEPS="${EVAL_STEPS:-$PROFILE_EVAL_STEPS}"
 LORA_R="${LORA_R:-16}"
@@ -141,6 +163,8 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'data_profile=%s\n' "$DATA_PROFILE"
   printf 'data_revision=%s\n' "$DATA_REVISION"
   printf 'data_path_in_repo=%s\n' "$DATA_PATH_IN_REPO"
+  printf 'data_minimum_rows=%s\n' "$DATA_MINIMUM_ROWS"
+  printf 'data_maximum_rows=%s\n' "$DATA_MAXIMUM_ROWS"
   printf 'model_id=%s\n' "$MODEL_ID"
   printf 'model_revision=%s\n' "$MODEL_REVISION"
   printf 'output_repo=%s\n' "$OUTPUT_REPO"
@@ -149,6 +173,7 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'warmup_ratio=%s\n' "$WARMUP_RATIO"
   printf 'learning_rate=%s\n' "$LEARNING_RATE"
   printf 'epochs=%s\n' "$EPOCHS"
+  printf 'max_sequence_length=%s\n' "$MAX_SEQ_LEN"
   printf 'save_steps=%s\n' "$SAVE_STEPS"
   printf 'eval_steps=%s\n' "$EVAL_STEPS"
   printf 'lora_r=%s\n' "$LORA_R"
@@ -252,12 +277,14 @@ case "$DATA_PROFILE" in
       --output-dir "$DATA_DIR" \
       --acknowledge-experimental
     ;;
-  native-recovery-v1)
+  native-recovery-v1|team-reviewed-longform-v1)
     uv run python scripts/download_reviewed_sft.py \
       --repo-id "$DATA_REPO" \
       --revision "$DATA_REVISION" \
       --path-in-repo "$DATA_PATH_IN_REPO" \
-      --output-dir "$DATA_DIR"
+      --output-dir "$DATA_DIR" \
+      --minimum-rows "$DATA_MINIMUM_ROWS" \
+      --maximum-rows "$DATA_MAXIMUM_ROWS"
     ;;
 esac
 
@@ -272,6 +299,7 @@ training_args=(
   --warmup-ratio "$WARMUP_RATIO"
   --learning-rate "$LEARNING_RATE"
   --epochs "$EPOCHS"
+  --max-seq-len "$MAX_SEQ_LEN"
   --save-steps "$SAVE_STEPS"
   --eval-steps "$EVAL_STEPS"
   --max-steps "$MAX_STEPS"
