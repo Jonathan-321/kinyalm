@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Submit one pinned Gemma 4 team-reviewed long-form probe to Lambda."""
+"""Submit a pinned Gemma 4 long-form probe or full epoch to Lambda."""
 
 from __future__ import annotations
 
@@ -34,6 +34,11 @@ def main() -> int:
     parser.add_argument("data_revision")
     parser.add_argument("--git-ref", default="codex/longform-sft-probes")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+    parser.add_argument(
+        "--full-epoch",
+        action="store_true",
+        help="Start a fresh full-epoch run using the selected probe arm.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
     if not re.fullmatch(r"[0-9a-f]{40}", args.data_revision):
@@ -45,6 +50,21 @@ def main() -> int:
 
     shared = config["shared"]
     dataset_gate = config["dataset_gate"]
+    if args.full_epoch:
+        phase = config["full_epoch"]
+        max_steps = phase["max_steps"]
+        save_steps = phase["save_steps"]
+        eval_steps = phase["eval_steps"]
+        quality_gate_steps = phase["quality_gate_steps"]
+        preserve_checkpoint_steps = phase["preserve_checkpoint_steps"]
+        run_kind = "fullepoch"
+    else:
+        max_steps = shared["max_steps"]
+        save_steps = 25
+        eval_steps = 25
+        quality_gate_steps = shared["checkpoint_steps"]
+        preserve_checkpoint_steps = shared["checkpoint_steps"]
+        run_kind = "probe"
     env = os.environ.copy()
     env.update(
         {
@@ -54,7 +74,7 @@ def main() -> int:
             "DATA_PATH_IN_REPO": dataset_gate["path_in_repo"],
             "DATA_MINIMUM_ROWS": str(dataset_gate["minimum_rows"]),
             "DATA_MAXIMUM_ROWS": str(dataset_gate["maximum_rows"]),
-            "MAX_STEPS": str(shared["max_steps"]),
+            "MAX_STEPS": str(max_steps),
             "MAX_SEQ_LEN": str(shared["max_sequence_length"]),
             "ALLOW_EXPERIMENTAL_FULL_RUN": "1",
             "LORA_R": str(arm["lora_r"]),
@@ -62,19 +82,19 @@ def main() -> int:
             "LORA_DROPOUT": str(shared["lora_dropout"]),
             "LORA_TARGET_MODULES": ",".join(arm["target_modules"]),
             "LEARNING_RATE": str(arm["learning_rate"]),
-            "SAVE_STEPS": "25",
-            "EVAL_STEPS": "25",
+            "SAVE_STEPS": str(save_steps),
+            "EVAL_STEPS": str(eval_steps),
             "QUALITY_GATE_CONFIG": config["quality_gate"]["held_out_config"],
             "QUALITY_GATE_STEPS": ",".join(
-                str(step) for step in shared["checkpoint_steps"]
+                str(step) for step in quality_gate_steps
             ),
             "PRESERVE_CHECKPOINT_STEPS": ",".join(
-                str(step) for step in shared["checkpoint_steps"]
+                str(step) for step in preserve_checkpoint_steps
             ),
             "OUTPUT_REPO": (
-                f"kinyalm/kinyalm-gemma-4-12b-longform-probe-{args.arm_id}"
+                f"kinyalm/kinyalm-gemma-4-12b-longform-{run_kind}-{args.arm_id}"
             ),
-            "RUN_ID": f"gemma4-longform-probe-{args.arm_id}",
+            "RUN_ID": f"gemma4-longform-{run_kind}-{args.arm_id}",
         }
     )
     if args.dry_run:

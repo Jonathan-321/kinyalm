@@ -261,6 +261,13 @@ def test_recovery_arm_config_matches_requested_matrix():
     assert config["shared"]["full_epoch_steps"] == 780
     assert config["shared"]["checkpoint_steps"] == [25, 50, 100]
     assert config["shared"]["max_sequence_length"] == 1536
+    assert config["full_epoch"] == {
+        "max_steps": 780,
+        "save_steps": 100,
+        "eval_steps": 100,
+        "quality_gate_steps": [100, 300, 500, 700],
+        "preserve_checkpoint_steps": [100, 200, 300, 400, 500, 600, 700],
+    }
     assert first["target_modules"] == ["q_proj", "v_proj"]
     assert first["lora_r"] == 8 and first["learning_rate"] == 2e-5
     assert second["learning_rate"] == 5e-5

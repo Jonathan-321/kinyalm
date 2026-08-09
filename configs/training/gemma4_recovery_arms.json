@@ -30,6 +30,26 @@
     "max_sequence_length": 1536,
     "seed": 42
   },
+  "full_epoch": {
+    "max_steps": 780,
+    "save_steps": 100,
+    "eval_steps": 100,
+    "quality_gate_steps": [
+      100,
+      300,
+      500,
+      700
+    ],
+    "preserve_checkpoint_steps": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700
+    ]
+  },
   "quality_gate": {
     "held_out_config": "configs/evaluation/gemma4_recovery_bakeoff.json",
     "severe_repetition_ngram": 4,
