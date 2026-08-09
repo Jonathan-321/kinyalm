@@ -48,3 +48,25 @@ python3 scripts/generate_sft_draft_batch.py \
   --compare-jsonl ~/KinyaLMData/drafts/sft-drafts-2026-07-13-batch-001.jsonl \
   --review-shards 3
 ```
+
+## Native-review SFT 1000
+
+Promote the approved Google Sheet export without breaking multi-turn
+conversations:
+
+```bash
+python3 scripts/build_native_review_sft.py \
+  --review-csv outputs/generation/gemini-web-sft1000/kinyalm-sft-1000-native-approved.csv \
+  --output-dir outputs/datasets/kinyalm-native-review-sft1000-v1
+```
+
+The command requires exactly 1,000 rows that have a named reviewer,
+`review_status=approved` (or a populated corrected version), no active failure
+flags, and `approved_for_training=true`. It writes hash-pinned `train.jsonl`,
+`validation.jsonl`, and `dataset-manifest.json` files for `train_qlora.py`.
+
+The approved v1 package is pinned in the gated Hugging Face data lake at
+revision `8b6ec4be68f6e0a0d110334a3778eac19c614072` under
+`data/reviewed/kinyalm-native-review-sft1000-v1/`. Downloading through
+`scripts/download_reviewed_sft.py` rechecks all row counts and file hashes
+before a training process can use it.

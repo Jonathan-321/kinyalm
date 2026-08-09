@@ -131,6 +131,7 @@ def stratified_conversation_split(
     *,
     train_ratio: float,
     split_seed: str,
+    dataset_version: str = DATASET_ID,
 ) -> list[dict[str, Any]]:
     """Create an exact, task-stratified split without breaking conversations."""
 
@@ -154,7 +155,7 @@ def stratified_conversation_split(
             row["split"] = (
                 "validation" if row["id"] in validation_ids else "train"
             )
-            row["dataset_version"] = DATASET_ID
+            row["dataset_version"] = dataset_version
             output.append(row)
     return sorted(output, key=lambda row: (row["split"], row["id"]))
 

@@ -7,9 +7,15 @@ import argparse
 import hashlib
 import json
 import shutil
+import sys
 from pathlib import Path
 
-from kinyalm.data.sft import load_jsonl, validate_sft_records
+ROOT = Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from kinyalm.data.sft import load_jsonl, validate_sft_records  # noqa: E402
 
 
 def _sha256(path: Path) -> str:
