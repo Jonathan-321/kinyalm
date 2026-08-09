@@ -113,6 +113,12 @@ def test_gemma4_team_reviewed_longform_profile_uses_exact_package_gate():
     assert "max_sequence_length=1536" in result.stdout
 
 
+def test_team_reviewed_longform_profile_uses_approved_split_names():
+    script = RUN_SCRIPT.read_text(encoding="utf-8")
+
+    assert '&& "$DATA_PROFILE" != "team-reviewed-longform-v1"' in script
+
+
 def test_one_step_smoke_disables_warmup_and_samples():
     result = run_script(
         RUN_SCRIPT,

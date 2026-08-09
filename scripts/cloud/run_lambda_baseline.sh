@@ -309,7 +309,8 @@ training_args=(
   --target-modules "$LORA_TARGET_MODULES"
 )
 if [[ "$DATA_PROFILE" != "human-reviewed-432" \
-  && "$DATA_PROFILE" != "native-recovery-v1" ]]; then
+  && "$DATA_PROFILE" != "native-recovery-v1" \
+  && "$DATA_PROFILE" != "team-reviewed-longform-v1" ]]; then
   training_args+=(--experimental)
 fi
 if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
