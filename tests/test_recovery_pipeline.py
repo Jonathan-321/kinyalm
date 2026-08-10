@@ -265,7 +265,7 @@ def test_recovery_arm_config_matches_requested_matrix():
         "max_steps": 780,
         "save_steps": 100,
         "eval_steps": 100,
-        "quality_gate_steps": [100, 300, 500, 700],
+        "quality_gate_steps": [100, 200, 300, 400, 500, 600, 700],
         "preserve_checkpoint_steps": [100, 200, 300, 400, 500, 600, 700],
     }
     assert first["target_modules"] == ["q_proj", "v_proj"]

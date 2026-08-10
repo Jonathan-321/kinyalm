@@ -36,8 +36,11 @@
     "eval_steps": 100,
     "quality_gate_steps": [
       100,
+      200,
       300,
+      400,
       500,
+      600,
       700
     ],
     "preserve_checkpoint_steps": [
