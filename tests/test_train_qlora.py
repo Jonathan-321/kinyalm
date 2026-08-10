@@ -67,6 +67,10 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
             "--experimental",
             "--attn-implementation",
             "sdpa",
+            "--quality-gate-config",
+            "configs/evaluation/gemma4_recovery_bakeoff.json",
+            "--quality-gate-policy",
+            "record",
             "--dry-run",
         ],
         capture_output=True,
@@ -85,6 +89,7 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
     assert manifest["data"]["validation"]["supervised_assistant_turns"] == 1
     assert manifest["training"]["loss_scope"] == "assistant-completions-only"
     assert manifest["training"]["attention_implementation"] == "sdpa"
+    assert manifest["training"]["quality_gate"]["policy"] == "record"
 
 
 def test_prompt_completion_rows_preserve_history_and_mask_user_turns():

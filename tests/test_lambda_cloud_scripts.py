@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUN_SCRIPT = ROOT / "scripts/cloud/run_lambda_baseline.sh"
 SUBMIT_SCRIPT = ROOT / "scripts/cloud/submit_lambda_job.sh"
+RECOVERY_SUBMIT = ROOT / "scripts/cloud/submit_recovery_arm.py"
 
 
 def run_script(script, *args, env=None):
@@ -135,6 +136,21 @@ def test_one_step_smoke_disables_warmup_and_samples():
     assert "samples_enabled=0" in result.stdout
 
 
+def test_explicit_empty_sample_file_disables_final_sample_generation():
+    result = run_script(
+        RUN_SCRIPT,
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "SAMPLE_PROMPTS_FILE": "",
+            "PROFILE_ONLY": "1",
+        },
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "samples_enabled=0" in result.stdout
+    assert "sample_prompts_file=\n" in result.stdout
+
+
 def test_submit_blocks_full_gemma4_run_before_reading_credentials(tmp_path):
     result = run_script(
         SUBMIT_SCRIPT,
@@ -184,6 +200,8 @@ def test_submit_dry_run_preserves_experiment_overrides():
             "MAX_SEQ_LEN": "1536",
             "SAVE_STEPS": "50",
             "EVAL_STEPS": "50",
+            "QUALITY_GATE_POLICY": "record",
+            "SAMPLE_PROMPTS_FILE": "",
             "OUTPUT_REPO": "kinyalm/core-smoke",
             "RUN_ID": "core-smoke-v1",
             "SUBMIT_DRY_RUN": "1",
@@ -196,9 +214,36 @@ def test_submit_dry_run_preserves_experiment_overrides():
     assert "learning_rate=1e-5" in result.stdout
     assert "save_steps=50" in result.stdout
     assert "eval_steps=50" in result.stdout
+    assert "quality_gate_policy=record" in result.stdout
+    assert "sample_prompts_file=\n" in result.stdout
     assert "max_sequence_length=1536" in result.stdout
     assert "output_repo=kinyalm/core-smoke" in result.stdout
     assert "run_id=core-smoke-v1" in result.stdout
+
+
+def test_extended_recovery_probe_is_record_only_and_preserves_five_checkpoints():
+    result = subprocess.run(
+        [
+            str(ROOT / ".venv/bin/python"),
+            str(RECOVERY_SUBMIT),
+            "203.0.113.10",
+            "qv-r8-lr3e5",
+            "a" * 40,
+            "--extended-probe",
+            "--dry-run",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "max_steps=250" in result.stdout
+    assert "learning_rate=3e-05" in result.stdout
+    assert "quality_gate_steps=50,100,150,200,250" in result.stdout
+    assert "quality_gate_policy=record" in result.stdout
+    assert "preserve_checkpoint_steps=50,100,150,200,250" in result.stdout
+    assert "sample_prompts_file=\n" in result.stdout
 
 
 def test_training_publish_command_keeps_checkpoint_argument_attached():

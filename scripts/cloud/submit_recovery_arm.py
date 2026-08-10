@@ -34,10 +34,19 @@ def main() -> int:
     parser.add_argument("data_revision")
     parser.add_argument("--git-ref", default="codex/longform-sft-probes")
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-    parser.add_argument(
+    phase_group = parser.add_mutually_exclusive_group()
+    phase_group.add_argument(
         "--full-epoch",
         action="store_true",
         help="Start a fresh full-epoch run using the selected probe arm.",
+    )
+    phase_group.add_argument(
+        "--extended-probe",
+        action="store_true",
+        help=(
+            "Run a fresh 250-step probe that records, but does not stop on, "
+            "gate failures."
+        ),
     )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -57,13 +66,24 @@ def main() -> int:
         eval_steps = phase["eval_steps"]
         quality_gate_steps = phase["quality_gate_steps"]
         preserve_checkpoint_steps = phase["preserve_checkpoint_steps"]
+        quality_gate_policy = "stop"
         run_kind = "fullepoch"
+    elif args.extended_probe:
+        phase = config["extended_probe"]
+        max_steps = phase["max_steps"]
+        save_steps = phase["save_steps"]
+        eval_steps = phase["eval_steps"]
+        quality_gate_steps = phase["quality_gate_steps"]
+        preserve_checkpoint_steps = phase["preserve_checkpoint_steps"]
+        quality_gate_policy = phase["quality_gate_policy"]
+        run_kind = "probe250"
     else:
         max_steps = shared["max_steps"]
         save_steps = 25
         eval_steps = 25
         quality_gate_steps = shared["checkpoint_steps"]
         preserve_checkpoint_steps = shared["checkpoint_steps"]
+        quality_gate_policy = "stop"
         run_kind = "probe"
     env = os.environ.copy()
     env.update(
@@ -88,8 +108,12 @@ def main() -> int:
             "QUALITY_GATE_STEPS": ",".join(
                 str(step) for step in quality_gate_steps
             ),
+            "QUALITY_GATE_POLICY": quality_gate_policy,
             "PRESERVE_CHECKPOINT_STEPS": ",".join(
                 str(step) for step in preserve_checkpoint_steps
+            ),
+            "SAMPLE_PROMPTS_FILE": "" if args.extended_probe else (
+                "configs/training/track2-baseline-prompts.txt"
             ),
             "OUTPUT_REPO": (
                 f"kinyalm/kinyalm-gemma-4-12b-longform-{run_kind}-{args.arm_id}"

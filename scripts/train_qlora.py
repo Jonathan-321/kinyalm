@@ -197,6 +197,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quality-gate-ngram-size", type=int, default=4)
     parser.add_argument("--quality-gate-minimum-occurrences", type=int, default=5)
     parser.add_argument("--quality-gate-maximum-new-rows", type=int, default=0)
+    parser.add_argument(
+        "--quality-gate-policy",
+        choices=("stop", "record"),
+        default="stop",
+        help=(
+            "Stop training on the first repetition regression, or record all "
+            "scheduled gate results while training continues."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -396,7 +405,7 @@ def build_repetition_gate_callback(
     system_prompt: str,
     base_probe: Path,
 ):
-    """Create a Trainer callback that stops at the first repetition regression."""
+    """Create a Trainer callback that records checkpoint repetition regressions."""
 
     from transformers import TrainerCallback
 
@@ -406,7 +415,7 @@ def build_repetition_gate_callback(
     class RepetitionGateCallback(TrainerCallback):
         def __init__(self) -> None:
             self.reports: list[dict] = []
-            self.failed = False
+            self.failed_checkpoint_steps: list[int] = []
             self.stopped_at_step: int | None = None
 
         def on_save(self, training_args, state, control, model=None, **kwargs):
@@ -433,17 +442,29 @@ def build_repetition_gate_callback(
             report["checkpoint_step"] = step
             self.reports.append(report)
             if not report["passed"]:
-                self.failed = True
-                self.stopped_at_step = step
-                control.should_training_stop = True
-                print(f"quality gate stopped training at checkpoint {step}")
+                self.failed_checkpoint_steps.append(step)
+                if args.quality_gate_policy == "stop":
+                    self.stopped_at_step = step
+                    control.should_training_stop = True
+                    print(f"quality gate stopped training at checkpoint {step}")
+                else:
+                    print(f"quality gate recorded failure at checkpoint {step}")
             self.write_summary()
             return control
 
         def write_summary(self) -> None:
+            final_checkpoint_passed = (
+                self.reports[-1]["passed"] if self.reports else None
+            )
             summary = {
                 "schema_version": 1,
-                "passed": not self.failed,
+                "policy": args.quality_gate_policy,
+                "passed": not self.failed_checkpoint_steps,
+                "final_checkpoint_passed": final_checkpoint_passed,
+                "failed_checkpoint_steps": self.failed_checkpoint_steps,
+                "recovered_after_failure": bool(
+                    self.failed_checkpoint_steps and final_checkpoint_passed
+                ),
                 "stopped_at_step": self.stopped_at_step,
                 "required_checkpoint_steps": list(args.quality_gate_steps),
                 "completed_checkpoint_steps": [
@@ -506,6 +527,7 @@ def write_preflight_manifest(
                     "ngram_size": args.quality_gate_ngram_size,
                     "minimum_occurrences": args.quality_gate_minimum_occurrences,
                     "maximum_new_rows": args.quality_gate_maximum_new_rows,
+                    "policy": args.quality_gate_policy,
                 }
                 if args.quality_gate_config
                 else None

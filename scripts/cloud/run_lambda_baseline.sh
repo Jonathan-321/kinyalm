@@ -117,10 +117,14 @@ LORA_DROPOUT="${LORA_DROPOUT:-0.05}"
 LORA_TARGET_MODULES="${LORA_TARGET_MODULES:-q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj}"
 QUALITY_GATE_CONFIG="${QUALITY_GATE_CONFIG:-}"
 QUALITY_GATE_STEPS="${QUALITY_GATE_STEPS:-25,50,100}"
+QUALITY_GATE_POLICY="${QUALITY_GATE_POLICY:-stop}"
 PRESERVE_CHECKPOINT_STEPS="${PRESERVE_CHECKPOINT_STEPS:-25,50,100}"
 CANDIDATE_QUALITY_POLICY="${CANDIDATE_QUALITY_POLICY:-unflagged}"
-SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE:-configs/training/track2-baseline-prompts.txt}"
-SAMPLES_ENABLED=1
+SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE-configs/training/track2-baseline-prompts.txt}"
+SAMPLES_ENABLED=0
+if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
+  SAMPLES_ENABLED=1
+fi
 if [[ "$MAX_STEPS" == "1" ]]; then
   WARMUP_RATIO=0
   SAMPLE_PROMPTS_FILE=""
@@ -158,6 +162,10 @@ if [[ ! "$LORA_TARGET_MODULES" =~ ^(q_proj|k_proj|v_proj|o_proj|gate_proj|up_pro
   echo "LORA_TARGET_MODULES contains an unsupported projection list" >&2
   exit 2
 fi
+if [[ "$QUALITY_GATE_POLICY" != "stop" && "$QUALITY_GATE_POLICY" != "record" ]]; then
+  echo "QUALITY_GATE_POLICY must be stop or record" >&2
+  exit 2
+fi
 if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_profile=%s\n' "$MODEL_PROFILE"
   printf 'data_profile=%s\n' "$DATA_PROFILE"
@@ -182,9 +190,11 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'lora_target_modules=%s\n' "$LORA_TARGET_MODULES"
   printf 'quality_gate_config=%s\n' "$QUALITY_GATE_CONFIG"
   printf 'quality_gate_steps=%s\n' "$QUALITY_GATE_STEPS"
+  printf 'quality_gate_policy=%s\n' "$QUALITY_GATE_POLICY"
   printf 'preserve_checkpoint_steps=%s\n' "$PRESERVE_CHECKPOINT_STEPS"
   printf 'candidate_quality_policy=%s\n' "$CANDIDATE_QUALITY_POLICY"
   printf 'samples_enabled=%s\n' "$SAMPLES_ENABLED"
+  printf 'sample_prompts_file=%s\n' "$SAMPLE_PROMPTS_FILE"
   exit 0
 fi
 if [[ "$PREFLIGHT_ONLY" == "0" && "$MODEL_PROFILE" == "gemma4" \
@@ -320,6 +330,7 @@ if [[ -n "$QUALITY_GATE_CONFIG" ]]; then
   training_args+=(
     --quality-gate-config "$QUALITY_GATE_CONFIG"
     --quality-gate-steps "$QUALITY_GATE_STEPS"
+    --quality-gate-policy "$QUALITY_GATE_POLICY"
   )
 fi
 

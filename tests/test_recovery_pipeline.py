@@ -253,6 +253,9 @@ def test_recovery_arm_config_matches_requested_matrix():
     config, first = load_arm(config_path, "qv-r8-lr2e5")
     _, second = load_arm(config_path, "qv-r8-lr5e5")
     _, third = load_arm(config_path, "qv-r8-lr1e4")
+    _, lower = load_arm(config_path, "qv-r8-lr5e6")
+    _, middle = load_arm(config_path, "qv-r8-lr1e5")
+    _, upper_middle = load_arm(config_path, "qv-r8-lr3e5")
 
     assert config["dataset_gate"]["profile"] == "team-reviewed-longform-v1"
     assert config["dataset_gate"]["minimum_rows"] == 3144
@@ -268,9 +271,20 @@ def test_recovery_arm_config_matches_requested_matrix():
         "quality_gate_steps": [100, 200, 300, 400, 500, 600, 700],
         "preserve_checkpoint_steps": [100, 200, 300, 400, 500, 600, 700],
     }
+    assert config["extended_probe"] == {
+        "max_steps": 250,
+        "save_steps": 50,
+        "eval_steps": 50,
+        "quality_gate_steps": [50, 100, 150, 200, 250],
+        "preserve_checkpoint_steps": [50, 100, 150, 200, 250],
+        "quality_gate_policy": "record",
+    }
+    assert lower["learning_rate"] == 5e-6
+    assert middle["learning_rate"] == 1e-5
     assert first["target_modules"] == ["q_proj", "v_proj"]
     assert first["lora_r"] == 8 and first["learning_rate"] == 2e-5
     assert second["learning_rate"] == 5e-5
+    assert upper_middle["learning_rate"] == 3e-5
     assert third["target_modules"] == ["q_proj", "v_proj"]
     assert third["learning_rate"] == 1e-4
 
