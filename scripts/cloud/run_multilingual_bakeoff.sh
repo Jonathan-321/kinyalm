@@ -12,9 +12,11 @@ RUN_LOG="$RUN_ROOT/bakeoff.log"
 PUBLISH_LOG="$RUN_ROOT/publish.log"
 PUBLISH_REPO="${PUBLISH_REPO:-kinyalm/kinyalm-data-lake}"
 PUBLISH_PATH="${PUBLISH_PATH:-evaluation/model-bakeoffs/$RUN_ID}"
+PUBLISH_RESULTS="${PUBLISH_RESULTS:-1}"
 MIN_GPU_MEMORY_MIB="${MIN_GPU_MEMORY_MIB:-76000}"
 TRANSFORMERS_VERSION="${TRANSFORMERS_VERSION:-5.14.1}"
 ACCELERATE_VERSION="${ACCELERATE_VERSION:-1.14.0}"
+PEFT_VERSION="${PEFT_VERSION:-0.20.0}"
 HUGGINGFACE_HUB_VERSION="${HUGGINGFACE_HUB_VERSION:-1.24.0}"
 SAFETENSORS_VERSION="${SAFETENSORS_VERSION:-0.8.0}"
 PILLOW_VERSION="${PILLOW_VERSION:-12.0.0}"
@@ -24,15 +26,21 @@ if [[ -n "${KINYALM_HF_TOKEN_FILE:-}" ]]; then
   export HF_TOKEN
   HF_TOKEN="$(<"$KINYALM_HF_TOKEN_FILE")"
 fi
-if [[ -n "${KINYALM_HF_PUBLISH_TOKEN_FILE:-}" ]]; then
+if [[ "$PUBLISH_RESULTS" != "0" && "$PUBLISH_RESULTS" != "1" ]]; then
+  echo "PUBLISH_RESULTS must be 0 or 1." >&2
+  exit 2
+fi
+if [[ "$PUBLISH_RESULTS" == "1" && -n "${KINYALM_HF_PUBLISH_TOKEN_FILE:-}" ]]; then
   export HF_PUBLISH_TOKEN
   HF_PUBLISH_TOKEN="$(<"$KINYALM_HF_PUBLISH_TOKEN_FILE")"
-else
+elif [[ "$PUBLISH_RESULTS" == "1" ]]; then
   export HF_PUBLISH_TOKEN="${HF_PUBLISH_TOKEN:-${HF_TOKEN:-}}"
 fi
 
 : "${HF_TOKEN:?Set HF_TOKEN or KINYALM_HF_TOKEN_FILE.}"
-: "${HF_PUBLISH_TOKEN:?Set HF_PUBLISH_TOKEN or its token file.}"
+if [[ "$PUBLISH_RESULTS" == "1" ]]; then
+  : "${HF_PUBLISH_TOKEN:?Set HF_PUBLISH_TOKEN or its token file.}"
+fi
 
 mkdir -p "$RUN_ROOT" "$RUNTIME_DIR"
 printf 'RUNNING\n' >"$STATUS_FILE"
@@ -80,6 +88,7 @@ fi
 "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check --quiet \
   "transformers==$TRANSFORMERS_VERSION" \
   "accelerate==$ACCELERATE_VERSION" \
+  "peft==$PEFT_VERSION" \
   "huggingface-hub==$HUGGINGFACE_HUB_VERSION" \
   "safetensors==$SAFETENSORS_VERSION" \
   "pillow==$PILLOW_VERSION" \
@@ -95,6 +104,7 @@ fi
   printf 'config=%s\n' "$CONFIG_PATH"
   printf 'publish_repo=%s\n' "$PUBLISH_REPO"
   printf 'publish_path=%s\n' "$PUBLISH_PATH"
+  printf 'publish_results=%s\n' "$PUBLISH_RESULTS"
   uname -a
   nvidia-smi --query-gpu=name,uuid,memory.total,driver_version \
     --format=csv,noheader
@@ -114,7 +124,7 @@ run_exit="${PIPESTATUS[0]}"
 set -e
 
 publish_exit=0
-if compgen -G "$RUN_ROOT/raw/*.jsonl" >/dev/null; then
+if [[ "$PUBLISH_RESULTS" == "1" ]] && compgen -G "$RUN_ROOT/raw/*.jsonl" >/dev/null; then
   set +e
   "$VENV_DIR/bin/python" scripts/publish_bakeoff_run.py \
     --run-dir "$RUN_ROOT" \
@@ -131,4 +141,8 @@ if (( publish_exit != 0 )); then
   exit "$publish_exit"
 fi
 
-echo "Bake-off completed and published."
+if [[ "$PUBLISH_RESULTS" == "1" ]]; then
+  echo "Bake-off completed and published."
+else
+  echo "Bake-off completed; publication was intentionally deferred for blind review."
+fi

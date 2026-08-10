@@ -60,6 +60,7 @@ class RuntimeCandidate:
     quantization: str | None
     adapter_id: str | None = None
     adapter_revision: str | None = None
+    adapter_subfolder: str | None = None
     adapter_path: str | None = None
     adapter_sha256: str | None = None
 
@@ -194,6 +195,7 @@ def resolve_runtime_candidates(
     runtimes: list[RuntimeCandidate] = []
     for candidate in selected:
         if backend == "transformers":
+            adapter = candidate.adapter
             runtimes.append(
                 RuntimeCandidate(
                     id=candidate.id,
@@ -208,6 +210,13 @@ def resolve_runtime_candidates(
                     ignored_weight_prefixes=(),
                     suppress_token_ids=(),
                     quantization=None,
+                    adapter_id=adapter.repo_id if adapter is not None else None,
+                    adapter_revision=(
+                        adapter.revision if adapter is not None else None
+                    ),
+                    adapter_subfolder=(
+                        adapter.subfolder if adapter is not None else None
+                    ),
                 )
             )
             continue
@@ -338,6 +347,7 @@ class TransformersGenerator:
             device_map="auto",
             low_cpu_mem_usage=True,
         )
+        self.model = attach_transformers_adapter(self.model, candidate)
         self.model.eval()
         self.input_device = self.model.get_input_embeddings().weight.device
 
@@ -414,6 +424,30 @@ class TransformersGenerator:
         del self.processor
         gc.collect()
         self.torch.cuda.empty_cache()
+
+
+def attach_transformers_adapter(model: Any, candidate: RuntimeCandidate) -> Any:
+    """Attach one revision-pinned PEFT adapter to an already loaded base model."""
+
+    if candidate.adapter_id is None:
+        if (
+            candidate.adapter_revision is not None
+            or candidate.adapter_subfolder is not None
+        ):
+            raise ValueError("adapter metadata is incomplete")
+        return model
+    if candidate.adapter_revision is None:
+        raise ValueError("adapter revision is required")
+
+    from peft import PeftModel
+
+    options: dict[str, Any] = {
+        "revision": candidate.adapter_revision,
+        "is_trainable": False,
+    }
+    if candidate.adapter_subfolder is not None:
+        options["subfolder"] = candidate.adapter_subfolder
+    return PeftModel.from_pretrained(model, candidate.adapter_id, **options)
 
 
 class MlxGenerator:
@@ -865,6 +899,7 @@ def _base_record(
         "quantization": candidate.quantization,
         "adapter_id": candidate.adapter_id,
         "adapter_revision": candidate.adapter_revision,
+        "adapter_subfolder": candidate.adapter_subfolder,
         "adapter_sha256": candidate.adapter_sha256,
         "task_id": task.id,
         "category": task.category,

@@ -1,6 +1,7 @@
 """Evaluation helpers for KinyaLM."""
 
 from kinyalm.evaluation.bakeoff import (
+    AdapterSpec,
     BakeoffConfig,
     CandidateSpec,
     MlxRuntimeSpec,
@@ -24,6 +25,7 @@ from kinyalm.evaluation.task_bank import (
 )
 
 __all__ = [
+    "AdapterSpec",
     "BenchmarkManifestResult",
     "BenchmarkSpec",
     "BakeoffConfig",

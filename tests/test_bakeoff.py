@@ -14,6 +14,9 @@ from kinyalm.evaluation import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
+CHECKPOINT_CONFIG = (
+    ROOT / "configs" / "evaluation" / "gemma4_longform_checkpoint_bakeoff.json"
+)
 
 
 def test_project_bakeoff_config_is_pinned_and_held_out():
@@ -45,6 +48,24 @@ def test_config_rejects_training_split(tmp_path: Path):
 
     with pytest.raises(ValueError, match="must be benchmark-only"):
         load_bakeoff_config(path)
+
+
+def test_checkpoint_bakeoff_config_is_fully_pinned():
+    config = load_bakeoff_config(CHECKPOINT_CONFIG)
+
+    assert config.expected_task_count == 150
+    assert len(config.candidates) == 6
+    assert config.candidates[0].adapter is None
+    assert all(
+        candidate.revision == "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+        for candidate in config.candidates
+    )
+    assert all(
+        candidate.adapter is None
+        or candidate.adapter.revision
+        == "44f584225fb3cc215a52be69fcb107da2e743643"
+        for candidate in config.candidates
+    )
 
 
 def test_latest_results_uses_last_attempt(tmp_path: Path):

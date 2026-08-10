@@ -11,11 +11,26 @@ REPO_REF="${2:-main}"
 SSH_KEY="${LAMBDA_SSH_KEY:-$HOME/.ssh/coolify_key}"
 HF_MODEL_TOKEN_NAME="${HF_MODEL_TOKEN_NAME:-}"
 HF_PUBLISH_TOKEN_NAME="${HF_PUBLISH_TOKEN_NAME:-}"
+CONFIG_PATH="${CONFIG_PATH:-configs/evaluation/gemma4_bakeoff.json}"
+RUN_ID="${RUN_ID:-gemma4-bakeoff-$(date -u +%Y%m%dT%H%M%SZ)}"
+PUBLISH_RESULTS="${PUBLISH_RESULTS:-1}"
 REMOTE_MODEL_TOKEN_FILE=".config/kinyalm/hf-bakeoff-model-token"
 REMOTE_PUBLISH_TOKEN_FILE=".config/kinyalm/hf-bakeoff-publish-token"
 
 if [[ ! "$REPO_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
   echo "invalid git ref: $REPO_REF" >&2
+  exit 2
+fi
+if [[ ! "$CONFIG_PATH" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+  echo "invalid config path: $CONFIG_PATH" >&2
+  exit 2
+fi
+if [[ ! "$RUN_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "invalid run ID: $RUN_ID" >&2
+  exit 2
+fi
+if [[ "$PUBLISH_RESULTS" != "0" && "$PUBLISH_RESULTS" != "1" ]]; then
+  echo "PUBLISH_RESULTS must be 0 or 1." >&2
   exit 2
 fi
 if [[ ! -f "$SSH_KEY" ]]; then
@@ -42,13 +57,15 @@ printf '%s' "$model_token" | ssh -i "$SSH_KEY" \
   "umask 077; mkdir -p .config/kinyalm; cat > '$REMOTE_MODEL_TOKEN_FILE'"
 unset model_token
 
-publish_token="$(read_hf_token "$HF_PUBLISH_TOKEN_NAME")"
-printf '%s' "$publish_token" | ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "umask 077; cat > '$REMOTE_PUBLISH_TOKEN_FILE'"
-unset publish_token
+if [[ "$PUBLISH_RESULTS" == "1" ]]; then
+  publish_token="$(read_hf_token "$HF_PUBLISH_TOKEN_NAME")"
+  printf '%s' "$publish_token" | ssh -i "$SSH_KEY" "ubuntu@$HOST" \
+    "umask 077; cat > '$REMOTE_PUBLISH_TOKEN_FILE'"
+  unset publish_token
+fi
 
 ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "KINYALM_REPO_REF='$REPO_REF' bash -se" <<'REMOTE_SCRIPT'
+  "KINYALM_REPO_REF='$REPO_REF' CONFIG_PATH='$CONFIG_PATH' RUN_ID='$RUN_ID' PUBLISH_RESULTS='$PUBLISH_RESULTS' bash -se" <<'REMOTE_SCRIPT'
 if [[ ! -d "$HOME/kinyalm/.git" ]]; then
   git clone --filter=blob:none https://github.com/Jonathan-321/kinyalm.git \
     "$HOME/kinyalm"
@@ -57,6 +74,9 @@ git -C "$HOME/kinyalm" fetch origin "$KINYALM_REPO_REF"
 git -C "$HOME/kinyalm" checkout --detach FETCH_HEAD
 nohup env \
   KINYALM_REPO_REF="$KINYALM_REPO_REF" \
+  CONFIG_PATH="$CONFIG_PATH" \
+  RUN_ID="$RUN_ID" \
+  PUBLISH_RESULTS="$PUBLISH_RESULTS" \
   KINYALM_HF_TOKEN_FILE="$HOME/.config/kinyalm/hf-bakeoff-model-token" \
   KINYALM_HF_PUBLISH_TOKEN_FILE="$HOME/.config/kinyalm/hf-bakeoff-publish-token" \
   bash "$HOME/kinyalm/scripts/cloud/bootstrap_multilingual_bakeoff.sh" \
