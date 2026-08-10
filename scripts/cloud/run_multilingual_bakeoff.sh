@@ -23,6 +23,7 @@ HUGGINGFACE_HUB_VERSION="${HUGGINGFACE_HUB_VERSION:-1.24.0}"
 SAFETENSORS_VERSION="${SAFETENSORS_VERSION:-0.8.0}"
 PILLOW_VERSION="${PILLOW_VERSION:-12.0.0}"
 SENTENCEPIECE_VERSION="${SENTENCEPIECE_VERSION:-0.2.2}"
+JINJA2_VERSION="${JINJA2_VERSION:-3.1.6}"
 
 if [[ -n "${KINYALM_HF_TOKEN_FILE:-}" ]]; then
   export HF_TOKEN
@@ -98,7 +99,8 @@ fi
   "huggingface-hub==$HUGGINGFACE_HUB_VERSION" \
   "safetensors==$SAFETENSORS_VERSION" \
   "pillow==$PILLOW_VERSION" \
-  "sentencepiece==$SENTENCEPIECE_VERSION"
+  "sentencepiece==$SENTENCEPIECE_VERSION" \
+  "jinja2==$JINJA2_VERSION"
 
 "$VENV_DIR/bin/python" -c \
   'import torch; assert torch.cuda.is_available(), "PyTorch cannot see CUDA"'
