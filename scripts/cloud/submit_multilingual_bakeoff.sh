@@ -15,6 +15,8 @@ CONFIG_PATH="${CONFIG_PATH:-configs/evaluation/gemma4_bakeoff.json}"
 RUN_ID="${RUN_ID:-gemma4-bakeoff-$(date -u +%Y%m%dT%H%M%SZ)}"
 PUBLISH_RESULTS="${PUBLISH_RESULTS:-1}"
 MIN_GPU_MEMORY_MIB="${MIN_GPU_MEMORY_MIB:-76000}"
+TASK_LIMIT="${TASK_LIMIT:-}"
+CANDIDATE_ID="${CANDIDATE_ID:-}"
 REMOTE_MODEL_TOKEN_FILE=".config/kinyalm/hf-bakeoff-model-token"
 REMOTE_PUBLISH_TOKEN_FILE=".config/kinyalm/hf-bakeoff-publish-token"
 
@@ -36,6 +38,14 @@ if [[ "$PUBLISH_RESULTS" != "0" && "$PUBLISH_RESULTS" != "1" ]]; then
 fi
 if [[ ! "$MIN_GPU_MEMORY_MIB" =~ ^[0-9]+$ ]]; then
   echo "MIN_GPU_MEMORY_MIB must be a non-negative integer." >&2
+  exit 2
+fi
+if [[ -n "$TASK_LIMIT" && ! "$TASK_LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "TASK_LIMIT must be a positive integer when provided." >&2
+  exit 2
+fi
+if [[ -n "$CANDIDATE_ID" && ! "$CANDIDATE_ID" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "invalid candidate ID: $CANDIDATE_ID" >&2
   exit 2
 fi
 if [[ ! -f "$SSH_KEY" ]]; then
@@ -70,7 +80,7 @@ if [[ "$PUBLISH_RESULTS" == "1" ]]; then
 fi
 
 ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "KINYALM_REPO_REF='$REPO_REF' CONFIG_PATH='$CONFIG_PATH' RUN_ID='$RUN_ID' PUBLISH_RESULTS='$PUBLISH_RESULTS' MIN_GPU_MEMORY_MIB='$MIN_GPU_MEMORY_MIB' bash -se" <<'REMOTE_SCRIPT'
+  "KINYALM_REPO_REF='$REPO_REF' CONFIG_PATH='$CONFIG_PATH' RUN_ID='$RUN_ID' PUBLISH_RESULTS='$PUBLISH_RESULTS' MIN_GPU_MEMORY_MIB='$MIN_GPU_MEMORY_MIB' TASK_LIMIT='$TASK_LIMIT' CANDIDATE_ID='$CANDIDATE_ID' bash -se" <<'REMOTE_SCRIPT'
 if [[ ! -d "$HOME/kinyalm/.git" ]]; then
   git clone --filter=blob:none https://github.com/Jonathan-321/kinyalm.git \
     "$HOME/kinyalm"
@@ -83,6 +93,8 @@ nohup env \
   RUN_ID="$RUN_ID" \
   PUBLISH_RESULTS="$PUBLISH_RESULTS" \
   MIN_GPU_MEMORY_MIB="$MIN_GPU_MEMORY_MIB" \
+  TASK_LIMIT="$TASK_LIMIT" \
+  CANDIDATE_ID="$CANDIDATE_ID" \
   KINYALM_HF_TOKEN_FILE="$HOME/.config/kinyalm/hf-bakeoff-model-token" \
   KINYALM_HF_PUBLISH_TOKEN_FILE="$HOME/.config/kinyalm/hf-bakeoff-publish-token" \
   bash "$HOME/kinyalm/scripts/cloud/bootstrap_multilingual_bakeoff.sh" \

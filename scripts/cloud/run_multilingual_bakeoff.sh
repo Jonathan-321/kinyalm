@@ -13,6 +13,8 @@ PUBLISH_LOG="$RUN_ROOT/publish.log"
 PUBLISH_REPO="${PUBLISH_REPO:-kinyalm/kinyalm-data-lake}"
 PUBLISH_PATH="${PUBLISH_PATH:-evaluation/model-bakeoffs/$RUN_ID}"
 PUBLISH_RESULTS="${PUBLISH_RESULTS:-1}"
+TASK_LIMIT="${TASK_LIMIT:-}"
+CANDIDATE_ID="${CANDIDATE_ID:-}"
 MIN_GPU_MEMORY_MIB="${MIN_GPU_MEMORY_MIB:-76000}"
 TRANSFORMERS_VERSION="${TRANSFORMERS_VERSION:-5.14.1}"
 ACCELERATE_VERSION="${ACCELERATE_VERSION:-1.14.0}"
@@ -28,6 +30,10 @@ if [[ -n "${KINYALM_HF_TOKEN_FILE:-}" ]]; then
 fi
 if [[ "$PUBLISH_RESULTS" != "0" && "$PUBLISH_RESULTS" != "1" ]]; then
   echo "PUBLISH_RESULTS must be 0 or 1." >&2
+  exit 2
+fi
+if [[ -n "$TASK_LIMIT" && ! "$TASK_LIMIT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "TASK_LIMIT must be a positive integer when provided." >&2
   exit 2
 fi
 if [[ "$PUBLISH_RESULTS" == "1" && -n "${KINYALM_HF_PUBLISH_TOKEN_FILE:-}" ]]; then
@@ -105,6 +111,8 @@ fi
   printf 'publish_repo=%s\n' "$PUBLISH_REPO"
   printf 'publish_path=%s\n' "$PUBLISH_PATH"
   printf 'publish_results=%s\n' "$PUBLISH_RESULTS"
+  printf 'task_limit=%s\n' "$TASK_LIMIT"
+  printf 'candidate_id=%s\n' "$CANDIDATE_ID"
   uname -a
   nvidia-smi --query-gpu=name,uuid,memory.total,driver_version \
     --format=csv,noheader
@@ -116,10 +124,20 @@ export HF_HUB_DISABLE_TELEMETRY=1
 export TOKENIZERS_PARALLELISM=false
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
+runner_args=(
+  --config "$CONFIG_PATH"
+  --output-dir "$RUN_ROOT"
+)
+if [[ -n "$TASK_LIMIT" ]]; then
+  runner_args+=(--limit "$TASK_LIMIT")
+fi
+if [[ -n "$CANDIDATE_ID" ]]; then
+  runner_args+=(--candidate "$CANDIDATE_ID")
+fi
+
 set +e
 "$VENV_DIR/bin/python" scripts/run_multilingual_bakeoff.py \
-  --config "$CONFIG_PATH" \
-  --output-dir "$RUN_ROOT" 2>&1 | tee "$RUN_LOG"
+  "${runner_args[@]}" 2>&1 | tee "$RUN_LOG"
 run_exit="${PIPESTATUS[0]}"
 set -e
 
