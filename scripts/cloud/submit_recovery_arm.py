@@ -48,8 +48,14 @@ def main() -> int:
             "gate failures."
         ),
     )
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        help="Remote checkpoint path for an interrupted full-epoch run.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
+    if args.resume_from_checkpoint and not args.full_epoch:
+        raise SystemExit("--resume-from-checkpoint requires --full-epoch")
     if not re.fullmatch(r"[0-9a-f]{40}", args.data_revision):
         raise SystemExit("data_revision must be a 40-character commit SHA")
     try:
@@ -66,7 +72,7 @@ def main() -> int:
         eval_steps = phase["eval_steps"]
         quality_gate_steps = phase["quality_gate_steps"]
         preserve_checkpoint_steps = phase["preserve_checkpoint_steps"]
-        quality_gate_policy = "stop"
+        quality_gate_policy = "record" if args.resume_from_checkpoint else "stop"
         run_kind = "fullepoch"
     elif args.extended_probe:
         phase = config["extended_probe"]
@@ -112,9 +118,12 @@ def main() -> int:
             "PRESERVE_CHECKPOINT_STEPS": ",".join(
                 str(step) for step in preserve_checkpoint_steps
             ),
-            "SAMPLE_PROMPTS_FILE": "" if args.extended_probe else (
-                "configs/training/track2-baseline-prompts.txt"
+            "SAMPLE_PROMPTS_FILE": (
+                ""
+                if args.extended_probe or args.resume_from_checkpoint
+                else "configs/training/track2-baseline-prompts.txt"
             ),
+            "RESUME_FROM_CHECKPOINT": args.resume_from_checkpoint or "",
             "OUTPUT_REPO": (
                 f"kinyalm/kinyalm-gemma-4-12b-longform-{run_kind}-{args.arm_id}"
             ),

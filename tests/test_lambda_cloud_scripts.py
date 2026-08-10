@@ -246,6 +246,32 @@ def test_extended_recovery_probe_is_record_only_and_preserves_five_checkpoints()
     assert "sample_prompts_file=\n" in result.stdout
 
 
+def test_full_epoch_resume_keeps_scheduler_state_and_records_later_gates():
+    checkpoint = "/home/ubuntu/kinyalm-runs/full/adapter/checkpoint-100"
+    result = subprocess.run(
+        [
+            str(ROOT / ".venv/bin/python"),
+            str(RECOVERY_SUBMIT),
+            "203.0.113.10",
+            "qv-r8-lr2e5",
+            "a" * 40,
+            "--full-epoch",
+            "--resume-from-checkpoint",
+            checkpoint,
+            "--dry-run",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "max_steps=780" in result.stdout
+    assert f"resume_from_checkpoint={checkpoint}" in result.stdout
+    assert "quality_gate_policy=record" in result.stdout
+    assert "sample_prompts_file=\n" in result.stdout
+
+
 def test_training_publish_command_keeps_checkpoint_argument_attached():
     source = RUN_SCRIPT.read_text(encoding="utf-8")
 

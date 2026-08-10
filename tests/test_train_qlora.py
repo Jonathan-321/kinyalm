@@ -2,9 +2,11 @@ import hashlib
 import json
 import subprocess
 import sys
-from types import ModuleType
+from types import ModuleType, SimpleNamespace
 
+import scripts.train_qlora as train_qlora
 from scripts.train_qlora import (
+    build_repetition_gate_callback,
     resolve_attention_implementation,
     to_prompt_completion_rows,
     tokenize_assistant_completion_rows,
@@ -71,6 +73,8 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
             "configs/evaluation/gemma4_recovery_bakeoff.json",
             "--quality-gate-policy",
             "record",
+            "--resume-from-checkpoint",
+            "/tmp/checkpoint-100",
             "--dry-run",
         ],
         capture_output=True,
@@ -90,6 +94,53 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
     assert manifest["training"]["loss_scope"] == "assistant-completions-only"
     assert manifest["training"]["attention_implementation"] == "sdpa"
     assert manifest["training"]["quality_gate"]["policy"] == "record"
+    assert manifest["training"]["resume_from_checkpoint"] == (
+        "/tmp/checkpoint-100"
+    )
+
+
+def test_record_only_gate_reports_recovery_without_stopping(tmp_path, monkeypatch):
+    reports = iter(
+        [
+            {"passed": False, "new_severe_repetition_rows": 1},
+            {"passed": True, "new_severe_repetition_rows": 0},
+        ]
+    )
+    monkeypatch.setattr(train_qlora, "write_generation_samples", lambda *a, **k: None)
+    monkeypatch.setattr(
+        train_qlora,
+        "compare_probe_repetition",
+        lambda *a, **k: next(reports),
+    )
+    args = SimpleNamespace(
+        output_dir=str(tmp_path),
+        quality_gate_policy="record",
+        quality_gate_steps=(50, 100),
+        quality_gate_max_new_tokens=160,
+        quality_gate_ngram_size=4,
+        quality_gate_minimum_occurrences=5,
+        quality_gate_maximum_new_rows=0,
+    )
+    callback = build_repetition_gate_callback(
+        args=args,
+        tokenizer=object(),
+        prompts=["Prompt"],
+        system_prompt="System",
+        base_probe=tmp_path / "base.jsonl",
+    )
+    control = SimpleNamespace(should_training_stop=False)
+
+    callback.on_save(None, SimpleNamespace(global_step=50), control, model=object())
+    assert control.should_training_stop is False
+    callback.on_save(None, SimpleNamespace(global_step=100), control, model=object())
+
+    summary = json.loads(
+        (tmp_path / "quality-gate/summary.json").read_text(encoding="utf-8")
+    )
+    assert summary["failed_checkpoint_steps"] == [50]
+    assert summary["final_checkpoint_passed"] is True
+    assert summary["recovered_after_failure"] is True
+    assert summary["stopped_at_step"] is None
 
 
 def test_prompt_completion_rows_preserve_history_and_mask_user_turns():

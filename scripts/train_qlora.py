@@ -146,6 +146,11 @@ def parse_args() -> argparse.Namespace:
         default=-1,
         help="Override epochs with a fixed step count; use 1 for a smoke run.",
     )
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        default=None,
+        help="Resume optimizer, scheduler, and adapter state from a saved checkpoint.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--attn-implementation",
@@ -417,6 +422,17 @@ def build_repetition_gate_callback(
             self.reports: list[dict] = []
             self.failed_checkpoint_steps: list[int] = []
             self.stopped_at_step: int | None = None
+            self.prior_stopped_at_step: int | None = None
+            summary_path = output_dir / "summary.json"
+            if args.quality_gate_policy == "record" and summary_path.exists():
+                prior = json.loads(summary_path.read_text(encoding="utf-8"))
+                self.reports = list(prior.get("reports", []))
+                self.failed_checkpoint_steps = [
+                    int(report["checkpoint_step"])
+                    for report in self.reports
+                    if not report.get("passed", False)
+                ]
+                self.prior_stopped_at_step = prior.get("stopped_at_step")
 
         def on_save(self, training_args, state, control, model=None, **kwargs):
             del training_args, kwargs
@@ -466,6 +482,7 @@ def build_repetition_gate_callback(
                     self.failed_checkpoint_steps and final_checkpoint_passed
                 ),
                 "stopped_at_step": self.stopped_at_step,
+                "prior_stopped_at_step": self.prior_stopped_at_step,
                 "required_checkpoint_steps": list(args.quality_gate_steps),
                 "completed_checkpoint_steps": [
                     report["checkpoint_step"] for report in self.reports
@@ -510,6 +527,7 @@ def write_preflight_manifest(
             "max_sequence_length": args.max_seq_len,
             "epochs": args.epochs,
             "max_steps": args.max_steps,
+            "resume_from_checkpoint": args.resume_from_checkpoint,
             "save_steps": args.save_steps,
             "eval_steps": args.eval_steps,
             "loss_scope": "assistant-completions-only",
@@ -894,7 +912,7 @@ def main() -> int:
         trainer.model.print_trainable_parameters()
     if gate_callback is not None:
         trainer.add_callback(gate_callback)
-    result = trainer.train()
+    result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     trainer.save_model(args.output_dir)
     if gate_callback is not None:
         gate_callback.write_summary()

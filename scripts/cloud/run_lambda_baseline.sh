@@ -111,6 +111,7 @@ EPOCHS="${EPOCHS:-1}"
 MAX_SEQ_LEN="${MAX_SEQ_LEN:-1024}"
 SAVE_STEPS="${SAVE_STEPS:-$PROFILE_SAVE_STEPS}"
 EVAL_STEPS="${EVAL_STEPS:-$PROFILE_EVAL_STEPS}"
+RESUME_FROM_CHECKPOINT="${RESUME_FROM_CHECKPOINT:-}"
 LORA_R="${LORA_R:-16}"
 LORA_ALPHA="${LORA_ALPHA:-32}"
 LORA_DROPOUT="${LORA_DROPOUT:-0.05}"
@@ -166,6 +167,10 @@ if [[ "$QUALITY_GATE_POLICY" != "stop" && "$QUALITY_GATE_POLICY" != "record" ]];
   echo "QUALITY_GATE_POLICY must be stop or record" >&2
   exit 2
 fi
+if [[ -n "$RESUME_FROM_CHECKPOINT" && ! "$RESUME_FROM_CHECKPOINT" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "RESUME_FROM_CHECKPOINT must be an absolute checkpoint path" >&2
+  exit 2
+fi
 if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_profile=%s\n' "$MODEL_PROFILE"
   printf 'data_profile=%s\n' "$DATA_PROFILE"
@@ -184,6 +189,7 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'max_sequence_length=%s\n' "$MAX_SEQ_LEN"
   printf 'save_steps=%s\n' "$SAVE_STEPS"
   printf 'eval_steps=%s\n' "$EVAL_STEPS"
+  printf 'resume_from_checkpoint=%s\n' "$RESUME_FROM_CHECKPOINT"
   printf 'lora_r=%s\n' "$LORA_R"
   printf 'lora_alpha=%s\n' "$LORA_ALPHA"
   printf 'lora_dropout=%s\n' "$LORA_DROPOUT"
@@ -318,6 +324,9 @@ training_args=(
   --lora-dropout "$LORA_DROPOUT"
   --target-modules "$LORA_TARGET_MODULES"
 )
+if [[ -n "$RESUME_FROM_CHECKPOINT" ]]; then
+  training_args+=(--resume-from-checkpoint "$RESUME_FROM_CHECKPOINT")
+fi
 if [[ "$DATA_PROFILE" != "human-reviewed-432" \
   && "$DATA_PROFILE" != "native-recovery-v1" \
   && "$DATA_PROFILE" != "team-reviewed-longform-v1" ]]; then
