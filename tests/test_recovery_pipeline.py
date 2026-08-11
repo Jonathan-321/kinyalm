@@ -200,6 +200,27 @@ def test_native_review_reports_normalized_paired_improvement(tmp_path):
     assert "+25.00 pp" in render_native_review_markdown(summary)
 
 
+def test_review_report_can_be_labeled_as_model_assisted(tmp_path):
+    rows = [
+        _scored_row("B001", "base", passed=True),
+        _scored_row("B002", "adapter", passed=True),
+    ]
+    review_path, key_path = _write_review_fixture(
+        tmp_path, rows, {"B001": "base", "B002": "adapter"}
+    )
+    summary = summarize_native_review(
+        review_path,
+        key_path,
+        baseline_candidate_id="base",
+        report_title="Normalized Model-Assisted Evaluation Results",
+        scope="Preliminary blinded model-judge scores.",
+    )
+
+    report = render_native_review_markdown(summary)
+    assert report.startswith("# Normalized Model-Assisted Evaluation Results")
+    assert "Scope: Preliminary blinded model-judge scores." in report
+
+
 def test_rewrite_queue_is_blank_and_does_not_copy_held_out_text():
     review = _scored_row("B001", "base", passed=False)
     review["prompt"] = "Secret held-out prompt"

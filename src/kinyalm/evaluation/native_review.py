@@ -32,6 +32,8 @@ def summarize_native_review(
     morphology_pass_rate: float = 0.7,
     morphology_correctness: float = 4.0,
     minimum_candidates_for_cpt: int = 2,
+    report_title: str = "Normalized Native-Review Results",
+    scope: str = "Native-speaker scores only; no model-generated quality grades.",
 ) -> dict[str, Any]:
     """Aggregate only complete human scores and compare them with the base."""
 
@@ -41,6 +43,8 @@ def summarize_native_review(
         raise ValueError("morphology_correctness must be between 1 and 5")
     if minimum_candidates_for_cpt < 2:
         raise ValueError("minimum_candidates_for_cpt must be at least 2")
+    if not report_title.strip() or not scope.strip():
+        raise ValueError("report_title and scope must not be blank")
 
     key = json.loads(Path(key_path).read_text(encoding="utf-8"))
     key_rows = key.get("rows") if isinstance(key, dict) else None
@@ -182,7 +186,8 @@ def summarize_native_review(
     )
     return {
         "schema_version": 2,
-        "scope": "Native-speaker scores only; no model-generated quality grades.",
+        "report_title": report_title,
+        "scope": scope,
         "complete": complete,
         "expected_rows": len(key_rows),
         "completed_rows": len(key_rows) - len(incomplete),
@@ -201,10 +206,12 @@ def render_native_review_markdown(summary: dict[str, Any]) -> str:
     completed = int(summary["completed_rows"])
     expected = int(summary["expected_rows"])
     lines = [
-        "# Normalized Native-Review Results",
+        f"# {summary.get('report_title', 'Normalized Native-Review Results')}",
         "",
         f"Review progress: **{completed}/{expected} rows** "
         f"({'complete' if summary['complete'] else 'incomplete'}).",
+        "",
+        f"Scope: {summary['scope']}",
         "",
         (
             "Pass percentages use valid reviewed prompts. Model improvements use "
