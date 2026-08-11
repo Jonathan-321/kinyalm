@@ -23,6 +23,24 @@ def test_chat_request_applies_mode_budget_and_kinyalm_identity():
     assert "coherent multi-turn conversations" in request.system_prompt
     assert "English-first bilingual assistant" in request.system_prompt
     assert "English meaning:" in request.system_prompt
+    assert request.runtime_variant == "default"
+
+
+def test_chat_request_accepts_a_pinned_runtime_variant():
+    request_payload = payload([{"role": "user", "content": "Muraho"}])
+    request_payload["runtime_variant"] = "targeted"
+
+    request = parse_chat_request(request_payload)
+
+    assert request.runtime_variant == "targeted"
+
+
+def test_chat_request_rejects_unknown_runtime_variant():
+    request_payload = payload([{"role": "user", "content": "Muraho"}])
+    request_payload["runtime_variant"] = "winner"
+
+    with pytest.raises(ValueError, match="runtime_variant"):
+        parse_chat_request(request_payload)
 
 
 def test_chat_request_keeps_only_ten_previous_turns():

@@ -102,6 +102,7 @@ class ChatRequest:
     messages: tuple[dict[str, str], ...]
     system_prompt: str
     max_new_tokens: int
+    runtime_variant: str
 
 
 def build_system_prompt(mode: str, language: str, level: str) -> str:
@@ -206,6 +207,9 @@ def parse_chat_request(payload: Any) -> ChatRequest:
     mode = _required_choice(payload, "mode", set(MODE_SPECS))
     language = _required_choice(payload, "language", set(LANGUAGE_INSTRUCTIONS))
     level = _required_choice(payload, "level", set(LEVEL_INSTRUCTIONS))
+    runtime_variant = payload.get("runtime_variant", "default")
+    if runtime_variant not in {"default", "base", "targeted"}:
+        raise ValueError("runtime_variant must be one of: base, default, targeted")
     conversation_id = payload.get("conversation_id")
     if not isinstance(conversation_id, str) or not conversation_id.strip():
         raise ValueError("conversation_id must be non-empty text")
@@ -222,4 +226,5 @@ def parse_chat_request(payload: Any) -> ChatRequest:
         messages=messages,
         system_prompt=build_system_prompt(mode, language, level),
         max_new_tokens=MODE_SPECS[mode].max_new_tokens,
+        runtime_variant=runtime_variant,
     )

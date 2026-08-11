@@ -13,6 +13,13 @@ def test_demo_frontend_has_local_assets_and_core_controls():
     assert 'data-mode="converse"' in html
     assert 'data-mode="translate"' in html
     assert 'data-mode="learn"' in html
+    assert 'data-runtime="targeted"' in html
+    assert 'data-runtime="base"' in html
+    assert 'data-runtime="compare"' in html
+    assert 'id="demo-prompt-select"' in html
+    assert javascript.count("label: \"") == 10
+    assert "sendComparisonMessage" in javascript
+    assert "runtime_variant" in javascript
     assert "/api/chat" in javascript
     assert "/api/feedback" in javascript
     assert "http://" not in html

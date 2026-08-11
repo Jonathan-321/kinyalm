@@ -107,12 +107,28 @@ class RuntimeState:
                         {"role": "system", "content": job.request.system_prompt},
                         *job.request.messages,
                     ]
-                    job.result = runtime.generate_messages(
-                        messages=messages,
-                        max_new_tokens=job.request.max_new_tokens,
-                        enable_thinking=False,
-                        on_text=job.on_text,
-                    )
+                    if job.request.runtime_variant == "default":
+                        job.result = runtime.generate_messages(
+                            messages=messages,
+                            max_new_tokens=job.request.max_new_tokens,
+                            enable_thinking=False,
+                            on_text=job.on_text,
+                        )
+                    else:
+                        generate_variant = getattr(
+                            runtime, "generate_variant_messages", None
+                        )
+                        if generate_variant is None:
+                            raise ValueError(
+                                "this runtime does not support base/adapter comparison"
+                            )
+                        job.result = generate_variant(
+                            variant=job.request.runtime_variant,
+                            messages=messages,
+                            max_new_tokens=job.request.max_new_tokens,
+                            enable_thinking=False,
+                            on_text=job.on_text,
+                        )
                 except BaseException as exc:
                     job.error = exc
                 finally:
@@ -262,6 +278,7 @@ class ChatApplication:
                 "type": "start",
                 "request_id": request_id,
                 "max_new_tokens": request.max_new_tokens,
+                "runtime_variant": request.runtime_variant,
             }
         )
         result = self.runtime.generate(

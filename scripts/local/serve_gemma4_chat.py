@@ -17,6 +17,7 @@ for path in (ROOT, SRC):
         sys.path.insert(0, str(path))
 
 from kinyalm.demo import (  # noqa: E402
+    AdapterComparisonRuntime,
     ChatApplication,
     FeedbackStore,
     RuntimeState,
@@ -101,17 +102,18 @@ def load_real_runtime(
     adapter_repo: str | None = None,
     adapter_revision: str | None = None,
     prompt_profile: str = "English-first bilingual tutor",
-) -> tuple[MlxGenerator, dict[str, Any]]:
+) -> tuple[MlxGenerator | AdapterComparisonRuntime, dict[str, Any]]:
     config = load_bakeoff_config(config_path.resolve())
     candidate = resolve_runtime_candidates(config, ["gemma4-12b-it"], "mlx")[0]
     runtime = MlxGenerator(candidate, config.seed, adapter_path=adapter_path)
     adapter_label = "None (base model)"
     if adapter_path is not None:
+        runtime = AdapterComparisonRuntime(runtime)
         adapter_label = adapter_repo or str(adapter_path.expanduser().resolve())
         if adapter_revision:
             adapter_label = f"{adapter_label}@{adapter_revision[:12]}"
     return runtime, {
-        "name": "KinyaLM experimental adapter" if adapter_path else "KinyaLM",
+        "name": "KinyaLM targeted SFT" if adapter_path else "KinyaLM",
         "base_model": candidate.source_model_id,
         "checkpoint": candidate.model_id,
         "backend": f"MLX-LM {candidate.backend_version}",
@@ -121,6 +123,15 @@ def load_real_runtime(
         "decoding": "Greedy (temperature 0)",
         "history": f"{MAX_HISTORY_TURNS} prior user-assistant turns",
         "location": "On this Mac",
+        "comparison": (
+            {
+                "available": True,
+                "variants": ["targeted", "base", "compare"],
+                "lora_layers": runtime.lora_layer_count,
+            }
+            if isinstance(runtime, AdapterComparisonRuntime)
+            else {"available": False, "variants": ["default"]}
+        ),
     }
 
 

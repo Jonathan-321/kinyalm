@@ -1,6 +1,6 @@
 # KinyaLM Experiment Ledger
 
-Snapshot date: 2026-08-03
+Snapshot date: 2026-08-11
 
 This ledger records the question, setup, result, decision, and evidence status
 for every major project experiment. "Passed" always names the gate that passed;
@@ -18,6 +18,7 @@ it never implies overall model quality.
 | B4 | Gemma 2 2B local LoRA | Can a small model fit the reviewed slice locally and improve? | Training pass; generation regressed | Do not use for final model |
 | B5 | Gemma 4 12B A100 QLoRA smoke | Does the new CUDA/tokenizer/model path complete a real update and save artifacts? | Infrastructure pass | Full reviewed-data run still required |
 | B6 | Gemma 4 12B experimental QLoRA | Does the complete two-epoch recipe optimize and publish on the frozen critic-filtered split? | Full optimization pass; language quality unscored | Compare blindly before making a quality claim |
+| B7 | Gemma 4 12B continuation comparison | Can targeted continuation preserve adapter gains and beat the unchanged base on the 150-prompt development screen? | Best adapter; base still wins overall | Keep targeted candidate, repair regressions, require hidden native review |
 | D1 | Gemma 4 MLX browser demo | Can the base be tested interactively with streaming and feedback? | Prototype pass | Use for research/demo, not as final adapter evidence |
 
 ## A0: KILM 5.07M approved-MT sandbox
@@ -366,6 +367,25 @@ answers only. The next run must use assistant-completion-only loss, a lower
 `5e-5` learning rate, one epoch, checkpointed evaluation, and a separately
 frozen fluent-human-approved split.
 
+## B7: Gemma 4 12B targeted continuation comparison
+
+### Question
+
+Does targeted continuation recover known Kinyarwanda failures while preserving
+the stronger behavior of the unchanged Gemma base?
+
+### Result and decision
+
+The blinded model-assisted development screen covered 150 identical prompts per
+arm. The targeted continuation passed 28 prompts, ahead of the source and
+control adapters at 24 each, but behind the unchanged base at 33. It improved
+morphology and grammar, sentence correction, and Kinyarwanda-to-English
+translation, while regressing most sharply on uncertainty handling, greetings,
+multi-turn consistency, and repetition. Keep it as the best adapter candidate,
+not as the final model. The full table, paired statistics, revision pins, and
+live-smoke evidence are recorded in
+[`2026-08-11-continuation-screening.md`](../model/experiments/2026-08-11-continuation-screening.md).
+
 ## D1: Local MLX browser demo
 
 ### Question
@@ -378,28 +398,29 @@ experience before and after fine-tuning?
 - Streamed browser chat on `127.0.0.1`.
 - One resident model worker to avoid MLX thread/stream errors.
 - Converse, Translate/Correct, and Learn modes.
-- Response budgets of 160, 192, and 256 tokens.
-- Six-turn bounded history and a four-entry, 512 MB prompt cache.
+- Response budgets of 256, 192, and 320 tokens.
+- Ten-turn bounded history and a four-entry, 512 MB prompt cache.
+- Targeted, Base, and side-by-side Compare modes from one resident model.
+- Ten curated demo prompts covering both likely gains and known regressions.
 - Feedback is written to a private local JSONL file for later review.
 - Measured short-chat generation ranged from about 2.8 to 6.8 tokens/second.
 
 ### Decision
 
-The interface is a working research and demo surface. It currently serves the
-unchanged base checkpoint, so it must not be shown as evidence of a completed
-fine-tuned KinyaLM adapter.
+The interface is a working research and demo surface. It serves the unchanged
+base and the targeted continuation under identical prompt settings, but neither
+arm should be shown as the final KinyaLM.
 
-## Remaining controlled evaluation
+## Remaining promotion evaluation
 
-The experimental adapter is now ready. The comparison should change only the
-adapter, not the evaluation conditions:
+The current 150-prompt comparison is development evidence because its failures
+helped shape later training. Promotion now requires a new final set:
 
-1. Preserve the current base revision, tokenizer, chat template, system prompt,
-   seed, and decoding settings.
-2. Generate all held-out prompts with the unchanged base and the B6 adapter.
-3. Blind model labels and randomize answer order.
-4. Collect two native-speaker reviews per response and report agreement.
-5. Report wins, ties, losses, regressions, latency, and external benchmarks.
-6. Consolidate and freeze the human-approved data revision.
-7. Retrain the final adapter on that human-approved split only.
-8. Publish the final adapter after confirming the data and model license chain.
+1. Use the local 10-prompt comparison to collect immediate native feedback.
+2. Build and freeze new prompts that were never used for training decisions.
+3. Preserve the base revision, prompt, chat template, and decoding settings.
+4. Blind model labels and randomize answer order.
+5. Collect two native-speaker reviews per response and report agreement.
+6. Report wins, ties, losses, regressions, repetition, and hallucination.
+7. Retrain only after exact corrections and licenses are approved.
+8. Publish a final adapter only if it clearly beats the unchanged base.

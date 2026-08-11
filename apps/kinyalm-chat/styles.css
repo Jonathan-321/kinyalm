@@ -342,15 +342,35 @@ svg {
   min-width: 0;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
   padding: 10px 22px;
   border-bottom: 1px solid var(--line);
   background: #fafbfa;
 }
 
+.segmented-controls {
+  display: flex;
+  min-width: min(590px, 100%);
+  flex: 1 1 590px;
+  align-items: center;
+  gap: 8px;
+}
+
 .mode-control {
   display: grid;
   width: min(340px, 100%);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--surface-muted);
+}
+
+.runtime-control {
+  display: grid;
+  width: 280px;
+  flex: 0 0 280px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 3px;
   border: 1px solid var(--line);
@@ -373,16 +393,44 @@ svg {
   white-space: nowrap;
 }
 
+.runtime-button {
+  min-width: 0;
+  min-height: 31px;
+  padding: 0 9px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mode-button.active {
   background: var(--surface);
   box-shadow: 0 1px 3px rgb(25 34 29 / 10%);
   color: var(--ink);
 }
 
+.runtime-button.active {
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(25 34 29 / 10%);
+  color: var(--ink);
+}
+
+.runtime-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
 .select-controls {
   display: flex;
   min-width: 0;
+  flex: 1 1 460px;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -394,6 +442,10 @@ svg {
   border-radius: 6px;
   background: var(--surface);
   font-size: 12px;
+}
+
+.demo-prompt-control select {
+  max-width: 150px;
 }
 
 .conversation {
@@ -481,6 +533,76 @@ svg {
   display: flex;
   flex-direction: column;
   gap: 30px;
+}
+
+.comparison-message {
+  min-width: 0;
+}
+
+.comparison-grid {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.comparison-panel {
+  min-width: 0;
+  padding: 0 14px 14px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--line-strong);
+  border-radius: 7px;
+  background: #fcfdfc;
+}
+
+.comparison-panel.targeted {
+  border-top-color: var(--brand);
+}
+
+.comparison-panel > header {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.comparison-panel > header strong {
+  font-size: 12px;
+}
+
+.comparison-panel > header span,
+.comparison-metrics {
+  color: var(--faint);
+  font-size: 10px;
+}
+
+.comparison-content {
+  min-height: 150px;
+  padding: 14px 0;
+  color: #263029;
+  font-size: 14px;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.comparison-panel.streaming .comparison-content::after {
+  display: inline-block;
+  width: 5px;
+  height: 14px;
+  margin-left: 3px;
+  animation: blink 0.9s steps(2, start) infinite;
+  background: var(--brand);
+  content: "";
+  vertical-align: -2px;
+}
+
+.comparison-metrics {
+  min-height: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
 }
 
 .message {
@@ -898,6 +1020,15 @@ svg {
     width: 100%;
   }
 
+  .segmented-controls {
+    width: 100%;
+  }
+
+  .mode-control,
+  .runtime-control {
+    flex: 1 1 0;
+  }
+
   .select-controls {
     width: 100%;
     justify-content: stretch;
@@ -929,6 +1060,49 @@ svg {
 
   .mode-control {
     min-width: 0;
+  }
+
+  .segmented-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .runtime-control {
+    width: 100%;
+  }
+
+  .mode-button,
+  .runtime-button {
+    padding: 0 4px;
+    font-size: 11px;
+  }
+
+  .select-controls {
+    flex-wrap: wrap;
+  }
+
+  .select-controls .demo-prompt-control {
+    flex: 1 1 100%;
+  }
+
+  .select-controls .language-control {
+    flex: 0.85 1 0;
+  }
+
+  .select-controls .level-control {
+    flex: 1.15 1 0;
+  }
+
+  .demo-prompt-control select {
+    max-width: none;
+  }
+
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-content {
+    min-height: 100px;
   }
 
   .empty-state {

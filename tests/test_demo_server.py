@@ -42,6 +42,10 @@ class FakeRuntime:
             "finish_reason": "stop",
         }
 
+    def generate_variant_messages(self, *, variant, **kwargs):
+        result = self.generate_messages(**kwargs)
+        return {**result, "runtime_variant": variant}
+
     def close(self):
         self.closed = True
         self.closed_thread_id = threading.get_ident()
@@ -112,6 +116,22 @@ def test_stream_chat_can_use_fixed_benchmark_system_prompt(tmp_path):
 
     messages, _, _ = runtime.calls[0]
     assert messages[0] == {"role": "system", "content": "Fixed benchmark prompt"}
+
+
+def test_stream_chat_selects_requested_runtime_variant(tmp_path):
+    application, state, runtime = ready_application(tmp_path)
+    request_payload = chat_payload()
+    request_payload["runtime_variant"] = "base"
+    events = []
+
+    try:
+        application.stream_chat(request_payload, events.append)
+    finally:
+        state.close()
+
+    assert events[0]["runtime_variant"] == "base"
+    assert events[-1]["response"] == "Muraho neza."
+    assert len(runtime.calls) == 1
 
 
 def test_feedback_is_private_jsonl(tmp_path):
