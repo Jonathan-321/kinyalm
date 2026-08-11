@@ -112,6 +112,9 @@ MAX_SEQ_LEN="${MAX_SEQ_LEN:-1024}"
 SAVE_STEPS="${SAVE_STEPS:-$PROFILE_SAVE_STEPS}"
 EVAL_STEPS="${EVAL_STEPS:-$PROFILE_EVAL_STEPS}"
 RESUME_FROM_CHECKPOINT="${RESUME_FROM_CHECKPOINT:-}"
+INIT_ADAPTER="${INIT_ADAPTER:-}"
+INIT_ADAPTER_REVISION="${INIT_ADAPTER_REVISION:-}"
+INIT_ADAPTER_SUBFOLDER="${INIT_ADAPTER_SUBFOLDER:-}"
 LORA_R="${LORA_R:-16}"
 LORA_ALPHA="${LORA_ALPHA:-32}"
 LORA_DROPOUT="${LORA_DROPOUT:-0.05}"
@@ -171,6 +174,30 @@ if [[ -n "$RESUME_FROM_CHECKPOINT" && ! "$RESUME_FROM_CHECKPOINT" =~ ^/[A-Za-z0-
   echo "RESUME_FROM_CHECKPOINT must be an absolute checkpoint path" >&2
   exit 2
 fi
+if [[ -n "$INIT_ADAPTER" \
+  && ! "$INIT_ADAPTER" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ \
+  && ! "$INIT_ADAPTER" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "INIT_ADAPTER must be a Hugging Face repository ID or absolute path" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER_REVISION" && ! "$INIT_ADAPTER_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "INIT_ADAPTER_REVISION must be a 40-character commit SHA" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER_SUBFOLDER" \
+  && ! "$INIT_ADAPTER_SUBFOLDER" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]]; then
+  echo "INIT_ADAPTER_SUBFOLDER must be a safe relative path" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER" && -n "$RESUME_FROM_CHECKPOINT" ]]; then
+  echo "INIT_ADAPTER and RESUME_FROM_CHECKPOINT are mutually exclusive" >&2
+  exit 2
+fi
+if [[ -z "$INIT_ADAPTER" \
+  && ( -n "$INIT_ADAPTER_REVISION" || -n "$INIT_ADAPTER_SUBFOLDER" ) ]]; then
+  echo "INIT_ADAPTER_REVISION and INIT_ADAPTER_SUBFOLDER require INIT_ADAPTER" >&2
+  exit 2
+fi
 if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_profile=%s\n' "$MODEL_PROFILE"
   printf 'data_profile=%s\n' "$DATA_PROFILE"
@@ -190,6 +217,9 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'save_steps=%s\n' "$SAVE_STEPS"
   printf 'eval_steps=%s\n' "$EVAL_STEPS"
   printf 'resume_from_checkpoint=%s\n' "$RESUME_FROM_CHECKPOINT"
+  printf 'init_adapter=%s\n' "$INIT_ADAPTER"
+  printf 'init_adapter_revision=%s\n' "$INIT_ADAPTER_REVISION"
+  printf 'init_adapter_subfolder=%s\n' "$INIT_ADAPTER_SUBFOLDER"
   printf 'lora_r=%s\n' "$LORA_R"
   printf 'lora_alpha=%s\n' "$LORA_ALPHA"
   printf 'lora_dropout=%s\n' "$LORA_DROPOUT"
@@ -326,6 +356,15 @@ training_args=(
 )
 if [[ -n "$RESUME_FROM_CHECKPOINT" ]]; then
   training_args+=(--resume-from-checkpoint "$RESUME_FROM_CHECKPOINT")
+fi
+if [[ -n "$INIT_ADAPTER" ]]; then
+  training_args+=(--init-adapter "$INIT_ADAPTER")
+fi
+if [[ -n "$INIT_ADAPTER_REVISION" ]]; then
+  training_args+=(--init-adapter-revision "$INIT_ADAPTER_REVISION")
+fi
+if [[ -n "$INIT_ADAPTER_SUBFOLDER" ]]; then
+  training_args+=(--init-adapter-subfolder "$INIT_ADAPTER_SUBFOLDER")
 fi
 if [[ "$DATA_PROFILE" != "human-reviewed-432" \
   && "$DATA_PROFILE" != "native-recovery-v1" \

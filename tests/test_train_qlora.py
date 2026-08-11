@@ -4,12 +4,15 @@ import subprocess
 import sys
 from types import ModuleType, SimpleNamespace
 
+import pytest
+
 import scripts.train_qlora as train_qlora
 from scripts.train_qlora import (
     build_repetition_gate_callback,
     resolve_attention_implementation,
     to_prompt_completion_rows,
     tokenize_assistant_completion_rows,
+    validate_adapter_config,
     verify_model_metadata,
     write_generation_samples,
 )
@@ -97,6 +100,70 @@ def test_train_qlora_experimental_dry_run_writes_preflight(tmp_path):
     assert manifest["training"]["resume_from_checkpoint"] == (
         "/tmp/checkpoint-100"
     )
+    assert manifest["training"]["initialization_mode"] == (
+        "resume-optimizer-and-scheduler"
+    )
+
+
+def test_initialization_adapter_config_must_match_requested_lora_shape():
+    config = SimpleNamespace(
+        base_model_name_or_path="google/gemma-4-12B-it",
+        r=8,
+        lora_alpha=8,
+        lora_dropout=0.05,
+        target_modules={"q_proj", "v_proj"},
+    )
+
+    metadata = validate_adapter_config(
+        config,
+        model="google/gemma-4-12B-it",
+        lora_r=8,
+        lora_alpha=8,
+        lora_dropout=0.05,
+        target_modules=("q_proj", "v_proj"),
+    )
+
+    assert metadata["r"] == 8
+    with pytest.raises(ValueError, match="lora_alpha"):
+        validate_adapter_config(
+            config,
+            model="google/gemma-4-12B-it",
+            lora_r=8,
+            lora_alpha=16,
+            lora_dropout=0.05,
+            target_modules=("q_proj", "v_proj"),
+        )
+
+
+def test_init_adapter_and_optimizer_resume_are_mutually_exclusive(tmp_path):
+    train_path = tmp_path / "train.jsonl"
+    output_dir = tmp_path / "run"
+    write_jsonl(
+        train_path,
+        [experimental_record("row-001", "experimental-train")],
+    )
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "scripts/train_qlora.py",
+            "--train-file",
+            str(train_path),
+            "--output-dir",
+            str(output_dir),
+            "--experimental",
+            "--init-adapter",
+            "kinyalm/adapter",
+            "--resume-from-checkpoint",
+            "/tmp/checkpoint-100",
+            "--dry-run",
+        ],
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode != 0
+    assert "mutually exclusive" in result.stderr
 
 
 def test_record_only_gate_reports_recovery_without_stopping(tmp_path, monkeypatch):

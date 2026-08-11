@@ -151,6 +151,24 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Resume optimizer, scheduler, and adapter state from a saved checkpoint.",
     )
+    parser.add_argument(
+        "--init-adapter",
+        default=None,
+        help=(
+            "Initialize LoRA weights from a local or Hugging Face adapter while "
+            "starting a fresh optimizer and learning-rate schedule."
+        ),
+    )
+    parser.add_argument(
+        "--init-adapter-revision",
+        default=None,
+        help="Optional pinned adapter commit. Use a commit for reproducible runs.",
+    )
+    parser.add_argument(
+        "--init-adapter-subfolder",
+        default=None,
+        help="Optional adapter subfolder, such as checkpoints/checkpoint-500.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--attn-implementation",
@@ -212,6 +230,97 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     return parser.parse_args()
+
+
+def validate_adapter_config(
+    adapter_config,
+    *,
+    model: str,
+    lora_r: int,
+    lora_alpha: int,
+    lora_dropout: float,
+    target_modules: tuple[str, ...],
+) -> dict:
+    """Fail before training when an initialization adapter is incompatible."""
+
+    observed = {
+        "base_model_name_or_path": str(adapter_config.base_model_name_or_path),
+        "r": int(adapter_config.r),
+        "lora_alpha": int(adapter_config.lora_alpha),
+        "lora_dropout": float(adapter_config.lora_dropout),
+        "target_modules": sorted(str(item) for item in adapter_config.target_modules),
+    }
+    expected = {
+        "base_model_name_or_path": model,
+        "r": lora_r,
+        "lora_alpha": lora_alpha,
+        "lora_dropout": lora_dropout,
+        "target_modules": sorted(target_modules),
+    }
+    mismatches = [
+        f"{key}: expected {expected[key]!r}, observed {observed[key]!r}"
+        for key in expected
+        if observed[key] != expected[key]
+    ]
+    if mismatches:
+        raise ValueError(
+            "incompatible initialization adapter; " + "; ".join(mismatches)
+        )
+    return observed
+
+
+def verify_adapter_metadata(args: argparse.Namespace) -> dict | None:
+    """Resolve and validate adapter configuration without loading model weights."""
+
+    if args.init_adapter is None:
+        if args.init_adapter_revision or args.init_adapter_subfolder:
+            raise SystemExit(
+                "--init-adapter-revision and --init-adapter-subfolder require "
+                "--init-adapter"
+            )
+        return None
+    if args.resume_from_checkpoint:
+        raise SystemExit(
+            "--init-adapter and --resume-from-checkpoint are mutually exclusive"
+        )
+
+    from peft import PeftConfig
+
+    load_kwargs = {}
+    if args.init_adapter_revision:
+        load_kwargs["revision"] = args.init_adapter_revision
+    if args.init_adapter_subfolder:
+        load_kwargs["subfolder"] = args.init_adapter_subfolder
+    try:
+        adapter_config = PeftConfig.from_pretrained(
+            args.init_adapter,
+            **load_kwargs,
+        )
+        metadata = validate_adapter_config(
+            adapter_config,
+            model=args.model,
+            lora_r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+            target_modules=args.target_modules,
+        )
+    except Exception as exc:
+        raise SystemExit(
+            f"adapter metadata check failed for {args.init_adapter}: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    metadata.update(
+        repo_id=args.init_adapter,
+        revision=args.init_adapter_revision,
+        subfolder=args.init_adapter_subfolder,
+        optimizer_state="fresh",
+        scheduler_state="fresh",
+    )
+    print(
+        "adapter metadata verified: "
+        f"{args.init_adapter}@{args.init_adapter_revision or 'default'}"
+    )
+    return metadata
 
 
 def load_split(path: str, allowed_splits: set[str]) -> list[dict]:
@@ -503,6 +612,7 @@ def write_preflight_manifest(
     train_records: list[dict],
     eval_records: list[dict] | None,
     model_metadata: dict | None = None,
+    adapter_metadata: dict | None = None,
 ) -> Path:
     """Record exact local inputs before model loading or training starts."""
 
@@ -528,6 +638,16 @@ def write_preflight_manifest(
             "epochs": args.epochs,
             "max_steps": args.max_steps,
             "resume_from_checkpoint": args.resume_from_checkpoint,
+            "initialization_mode": (
+                "fresh-optimizer-from-adapter"
+                if args.init_adapter
+                else (
+                    "resume-optimizer-and-scheduler"
+                    if args.resume_from_checkpoint
+                    else "new-adapter"
+                )
+            ),
+            "initialization_adapter": adapter_metadata,
             "save_steps": args.save_steps,
             "eval_steps": args.eval_steps,
             "loss_scope": "assistant-completions-only",
@@ -718,6 +838,7 @@ def verify_model_metadata(model: str, revision: str | None = None) -> dict:
 
 def main() -> int:
     args = parse_args()
+    adapter_metadata = verify_adapter_metadata(args)
     gate_inputs = quality_gate_inputs(args)
 
     train_splits = {"experimental-train"} if args.experimental else {"train"}
@@ -741,6 +862,7 @@ def main() -> int:
         train_records,
         eval_records,
         model_metadata,
+        adapter_metadata,
     )
     print(f"preflight manifest: {preflight_path}")
     if args.dry_run:
@@ -748,7 +870,7 @@ def main() -> int:
         return 0
 
     import torch
-    from peft import LoraConfig, prepare_model_for_kbit_training
+    from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
     from transformers import (
         AutoConfig,
         AutoModelForCausalLM,
@@ -853,14 +975,28 @@ def main() -> int:
             use_gradient_checkpointing=use_cuda,
         )
 
-    peft_config = LoraConfig(
-        r=args.lora_r,
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=list(args.target_modules),
-    )
+    if args.init_adapter:
+        adapter_load_kwargs = {"is_trainable": True}
+        if args.init_adapter_revision:
+            adapter_load_kwargs["revision"] = args.init_adapter_revision
+        if args.init_adapter_subfolder:
+            adapter_load_kwargs["subfolder"] = args.init_adapter_subfolder
+        model = PeftModel.from_pretrained(
+            model,
+            args.init_adapter,
+            **adapter_load_kwargs,
+        )
+        peft_config = None
+        print("loaded initialization adapter with a fresh optimizer and scheduler")
+    else:
+        peft_config = LoraConfig(
+            r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules=list(args.target_modules),
+        )
 
     use_step_checkpoints = args.max_steps < 0 or args.max_steps > 1
     eval_strategy = (

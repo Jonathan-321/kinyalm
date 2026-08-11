@@ -1,0 +1,77 @@
+{
+  "schema_version": 1,
+  "experiment_id": "gemma4-step780-continuation-v1",
+  "base_model": {
+    "repo_id": "google/gemma-4-12B-it",
+    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+  },
+  "initial_adapter": {
+    "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+    "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+    "subfolder": "",
+    "source_optimizer_step": 780,
+    "optimizer_state": "fresh",
+    "scheduler_state": "fresh"
+  },
+  "shared": {
+    "learning_rate": 0.000002,
+    "max_steps": 780,
+    "save_steps": 130,
+    "eval_steps": 130,
+    "checkpoint_steps": [
+      130,
+      260,
+      390,
+      520,
+      650,
+      780
+    ],
+    "cumulative_checkpoint_steps": [
+      910,
+      1040,
+      1170,
+      1300,
+      1430,
+      1560
+    ],
+    "lora_r": 8,
+    "lora_alpha": 8,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "v_proj"
+    ],
+    "warmup_ratio": 0.03,
+    "batch_size": 1,
+    "gradient_accumulation_steps": 8,
+    "max_sequence_length": 1536,
+    "seed": 42,
+    "quality_gate_policy": "record"
+  },
+  "quality_gate": {
+    "held_out_config": "configs/evaluation/gemma4_recovery_bakeoff.json",
+    "native_review_required_before_promotion": true,
+    "existing_150_prompt_set_role": "development-screening-only",
+    "new_hidden_final_set_required": true
+  },
+  "variants": {
+    "control": {
+      "data_profile": "team-reviewed-longform-v1",
+      "revision": "1e44922ebea410ffac2423d348be285c288be1db",
+      "path_in_repo": "data/reviewed/kinyalm-team-reviewed-longform-sft3144-v1",
+      "minimum_rows": 3144,
+      "maximum_rows": 3144,
+      "output_repo": "kinyalm/kinyalm-gemma-4-12b-continuation-control-lr2e6",
+      "run_id": "gemma4-continuation-control-lr2e6"
+    },
+    "targeted": {
+      "data_profile": "team-reviewed-longform-v1",
+      "revision": "55e8704731fdcbf589da91768bc8739c0ae741b5",
+      "path_in_repo": "data/reviewed/kinyalm-team-reviewed-longform-curriculum-v1",
+      "minimum_rows": 3858,
+      "maximum_rows": 3858,
+      "output_repo": "kinyalm/kinyalm-gemma-4-12b-continuation-targeted-lr2e6",
+      "run_id": "gemma4-continuation-targeted-lr2e6"
+    }
+  }
+}

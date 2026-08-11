@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUN_SCRIPT = ROOT / "scripts/cloud/run_lambda_baseline.sh"
 SUBMIT_SCRIPT = ROOT / "scripts/cloud/submit_lambda_job.sh"
 RECOVERY_SUBMIT = ROOT / "scripts/cloud/submit_recovery_arm.py"
+CONTINUATION_SUBMIT = ROOT / "scripts/cloud/submit_continuation_arm.py"
 
 
 def run_script(script, *args, env=None):
@@ -219,6 +220,86 @@ def test_submit_dry_run_preserves_experiment_overrides():
     assert "max_sequence_length=1536" in result.stdout
     assert "output_repo=kinyalm/core-smoke" in result.stdout
     assert "run_id=core-smoke-v1" in result.stdout
+
+
+def test_continuation_arm_uses_fresh_optimizer_from_pinned_adapter():
+    result = subprocess.run(
+        [
+            str(ROOT / ".venv/bin/python"),
+            str(CONTINUATION_SUBMIT),
+            "203.0.113.10",
+            "control",
+            "--dry-run",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "max_steps=780" in result.stdout
+    assert "learning_rate=2e-06" in result.stdout
+    assert "quality_gate_steps=130,260,390,520,650,780" in result.stdout
+    assert "quality_gate_policy=record" in result.stdout
+    assert "resume_from_checkpoint=\n" in result.stdout
+    assert (
+        "init_adapter=kinyalm/"
+        "kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5"
+    ) in result.stdout
+    assert (
+        "init_adapter_revision="
+        "44f584225fb3cc215a52be69fcb107da2e743643"
+    ) in result.stdout
+    assert "data_minimum_rows=3144" in result.stdout
+    assert "data_maximum_rows=3144" in result.stdout
+    assert (
+        "data_revision=1e44922ebea410ffac2423d348be285c288be1db"
+        in result.stdout
+    )
+
+
+def test_targeted_continuation_uses_curriculum_package_gate():
+    result = subprocess.run(
+        [
+            str(ROOT / ".venv/bin/python"),
+            str(CONTINUATION_SUBMIT),
+            "203.0.113.10",
+            "targeted",
+            "--dry-run",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "data_minimum_rows=3858" in result.stdout
+    assert "data_maximum_rows=3858" in result.stdout
+    assert "kinyalm-team-reviewed-longform-curriculum-v1" in result.stdout
+    assert "continuation-targeted-lr2e6" in result.stdout
+    assert (
+        "data_revision=55e8704731fdcbf589da91768bc8739c0ae741b5"
+        in result.stdout
+    )
+
+
+def test_submit_rejects_init_adapter_with_optimizer_resume():
+    result = run_script(
+        SUBMIT_SCRIPT,
+        "203.0.113.10",
+        env={
+            "MODEL_PROFILE": "gemma4",
+            "MAX_STEPS": "100",
+            "ALLOW_EXPERIMENTAL_FULL_RUN": "1",
+            "INIT_ADAPTER": "kinyalm/adapter",
+            "INIT_ADAPTER_REVISION": "a" * 40,
+            "RESUME_FROM_CHECKPOINT": "/tmp/checkpoint-100",
+            "SUBMIT_DRY_RUN": "1",
+        },
+    )
+
+    assert result.returncode == 2
+    assert "mutually exclusive" in result.stderr
 
 
 def test_extended_recovery_probe_is_record_only_and_preserves_five_checkpoints():
