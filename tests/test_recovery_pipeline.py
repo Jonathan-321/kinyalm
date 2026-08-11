@@ -10,6 +10,7 @@ from kinyalm.evaluation import (
     compare_probe_repetition,
     load_bakeoff_config,
     load_task_bank,
+    render_native_review_markdown,
     summarize_native_review,
     write_blind_review_pack,
 )
@@ -153,6 +154,50 @@ def test_native_review_rejects_adapter_below_base_and_recommends_cpt(tmp_path):
     assert summary["complete"] is True
     assert summary["candidate_decisions"]["adapter"]["decision"] == "reject"
     assert summary["continued_pretraining"]["decision"] == "consider-cpt"
+
+
+def test_native_review_reports_normalized_paired_improvement(tmp_path):
+    outcomes = [
+        ("T1", True, True),
+        ("T2", False, True),
+        ("T3", True, False),
+        ("T4", False, True),
+    ]
+    rows = []
+    candidate_by_id = {}
+    for index, (task_id, base_pass, adapter_pass) in enumerate(outcomes, start=1):
+        for offset, (candidate, passed) in enumerate(
+            (("base", base_pass), ("adapter", adapter_pass))
+        ):
+            blind_id = f"B{index * 2 - 1 + offset:03d}"
+            row = _scored_row(blind_id, candidate, passed=passed)
+            row["task_id"] = task_id
+            rows.append(row)
+            candidate_by_id[blind_id] = candidate
+    review_path, key_path = _write_review_fixture(
+        tmp_path, rows, candidate_by_id
+    )
+
+    summary = summarize_native_review(
+        review_path,
+        key_path,
+        baseline_candidate_id="base",
+    )
+
+    assert summary["candidates"]["base"]["pass_rate_percent"] == 50.0
+    assert summary["candidates"]["adapter"]["pass_rate_percent"] == 75.0
+    comparison = summary["comparisons_to_baseline"]["adapter"]
+    assert comparison["paired_valid_prompt_count"] == 4
+    assert comparison["absolute_improvement_percentage_points"] == 25.0
+    assert comparison["relative_error_reduction_percent"] == 50.0
+    assert comparison["recovered_baseline_failures"] == 2
+    assert comparison["new_regressions"] == 1
+    assert comparison["net_improved_prompts"] == 1
+    assert (
+        comparison["bootstrap_95_ci_percentage_points"]["bootstrap_samples"]
+        == 10_000
+    )
+    assert "+25.00 pp" in render_native_review_markdown(summary)
 
 
 def test_rewrite_queue_is_blank_and_does_not_copy_held_out_text():

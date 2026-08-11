@@ -7,7 +7,10 @@ import argparse
 import json
 from pathlib import Path
 
-from kinyalm.evaluation.native_review import summarize_native_review
+from kinyalm.evaluation.native_review import (
+    render_native_review_markdown,
+    summarize_native_review,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -16,6 +19,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--blind-key", type=Path, required=True)
     parser.add_argument("--baseline-candidate-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--markdown-output", type=Path)
     parser.add_argument("--morphology-pass-rate", type=float, default=0.7)
     parser.add_argument("--morphology-correctness", type=float, default=4.0)
     parser.add_argument("--minimum-candidates-for-cpt", type=int, default=2)
@@ -43,6 +47,12 @@ def main() -> int:
         encoding="utf-8",
     )
     print(f"Wrote {args.output}")
+    if args.markdown_output:
+        args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
+        args.markdown_output.write_text(
+            render_native_review_markdown(summary), encoding="utf-8"
+        )
+        print(f"Wrote {args.markdown_output}")
     if args.require_complete and not summary["complete"]:
         print("Native review is incomplete.")
         return 2

@@ -22,6 +22,7 @@ from kinyalm.demo import (  # noqa: E402
     RuntimeState,
     create_server,
 )
+from kinyalm.demo.chat import MAX_HISTORY_TURNS  # noqa: E402
 from kinyalm.evaluation import load_bakeoff_config  # noqa: E402
 from scripts.run_multilingual_bakeoff import (  # noqa: E402
     DEFAULT_CONFIG,
@@ -84,6 +85,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--adapter-path", type=Path)
     parser.add_argument("--adapter-repo")
     parser.add_argument("--adapter-revision")
+    parser.add_argument(
+        "--use-config-system-prompt",
+        action="store_true",
+        help="Use the evaluation config's fixed system prompt for every request",
+    )
     parser.add_argument("--mock", action="store_true")
     parser.add_argument("--open", action="store_true", dest="open_browser")
     return parser.parse_args()
@@ -94,6 +100,7 @@ def load_real_runtime(
     adapter_path: Path | None = None,
     adapter_repo: str | None = None,
     adapter_revision: str | None = None,
+    prompt_profile: str = "English-first bilingual tutor",
 ) -> tuple[MlxGenerator, dict[str, Any]]:
     config = load_bakeoff_config(config_path.resolve())
     candidate = resolve_runtime_candidates(config, ["gemma4-12b-it"], "mlx")[0]
@@ -110,6 +117,9 @@ def load_real_runtime(
         "backend": f"MLX-LM {candidate.backend_version}",
         "quantization": candidate.quantization,
         "adapter": adapter_label,
+        "prompt_profile": prompt_profile,
+        "decoding": "Greedy (temperature 0)",
+        "history": f"{MAX_HISTORY_TURNS} prior user-assistant turns",
         "location": "On this Mac",
     }
 
@@ -122,6 +132,14 @@ def main() -> int:
     feedback_dir = args.feedback_dir or (
         Path.home() / ".cache" / "kinyalm" / "gemma4-12b-chat" / "feedback"
     )
+    system_prompt_override = None
+    prompt_profile = "English-first bilingual tutor"
+    if args.use_config_system_prompt:
+        system_prompt_override = load_bakeoff_config(
+            args.config.resolve()
+        ).system_prompt
+        prompt_profile = "Fixed evaluation prompt"
+
     state = RuntimeState()
     if args.mock:
         state.set_ready(
@@ -131,6 +149,9 @@ def main() -> int:
                 "base_model": "Mock streaming runtime",
                 "backend": "Development mode",
                 "quantization": "None",
+                "prompt_profile": prompt_profile,
+                "decoding": "Mock streaming output",
+                "history": f"{MAX_HISTORY_TURNS} prior user-assistant turns",
                 "location": "On this Mac",
             },
         )
@@ -141,6 +162,7 @@ def main() -> int:
                 adapter_path=args.adapter_path,
                 adapter_repo=args.adapter_repo,
                 adapter_revision=args.adapter_revision,
+                prompt_profile=prompt_profile,
             )
         )
 
@@ -148,6 +170,7 @@ def main() -> int:
         runtime=state,
         feedback=FeedbackStore(feedback_dir),
         static_dir=ROOT / "apps" / "kinyalm-chat",
+        system_prompt_override=system_prompt_override,
     )
     server = create_server(application, args.host, args.port)
     actual_port = server.server_address[1]

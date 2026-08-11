@@ -9,7 +9,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -232,10 +232,12 @@ class ChatApplication:
         runtime: RuntimeState,
         feedback: FeedbackStore,
         static_dir: Path,
+        system_prompt_override: str | None = None,
     ) -> None:
         self.runtime = runtime
         self.feedback = feedback
         self.static_dir = static_dir.resolve()
+        self.system_prompt_override = system_prompt_override
 
     def static_file(self, request_path: str) -> Path | None:
         relative = "index.html" if request_path == "/" else request_path.lstrip("/")
@@ -252,6 +254,8 @@ class ChatApplication:
         send: Callable[[dict[str, Any]], None],
     ) -> None:
         request = parse_chat_request(payload)
+        if self.system_prompt_override is not None:
+            request = replace(request, system_prompt=self.system_prompt_override)
         request_id = str(uuid.uuid4())
         send(
             {

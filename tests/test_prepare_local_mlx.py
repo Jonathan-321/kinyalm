@@ -1,6 +1,10 @@
 import pytest
 
-from scripts.prepare_local_mlx import build_mlx_config, convert_peft_key
+from scripts.prepare_local_mlx import (
+    build_mlx_config,
+    convert_peft_key,
+    normalize_adapter_subfolder,
+)
 
 
 def peft_config():
@@ -41,6 +45,16 @@ def test_convert_gemma_peft_key_to_nested_mlx_layout():
         5,
         "self_attn.q_proj",
     )
+
+
+def test_adapter_subfolder_accepts_checkpoint_path_and_rejects_traversal():
+    assert (
+        normalize_adapter_subfolder("checkpoints/checkpoint-500")
+        == "checkpoints/checkpoint-500"
+    )
+    assert normalize_adapter_subfolder(None) is None
+    with pytest.raises(ValueError, match="safe relative path"):
+        normalize_adapter_subfolder("checkpoints/../private")
 
 
 def test_build_mlx_config_uses_peft_scaling_and_all_layers():

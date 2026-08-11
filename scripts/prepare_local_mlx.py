@@ -36,6 +36,22 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def normalize_adapter_subfolder(value: str | None) -> str | None:
+    """Return a safe Hugging Face checkpoint subfolder, if one was requested."""
+
+    if value is None:
+        return None
+    subfolder = value.strip()
+    if (
+        not subfolder
+        or subfolder.startswith("/")
+        or subfolder.endswith("/")
+        or any(part in {"", ".", ".."} for part in subfolder.split("/"))
+    ):
+        raise ValueError("adapter subfolder must be a safe relative path")
+    return subfolder
+
+
 def convert_peft_key(key: str) -> tuple[str, int, str]:
     """Return the MLX key, layer index, and layer-relative module name."""
     match = PEFT_LORA_KEY.fullmatch(key)
@@ -179,6 +195,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     adapter_dir = runtime_dir / "adapter-mlx"
     manifest_path = runtime_dir / "runtime.json"
     runtime_dir.mkdir(parents=True, exist_ok=True)
+    adapter_subfolder = normalize_adapter_subfolder(args.adapter_subfolder)
 
     base_path = Path(
         snapshot_download(
@@ -187,14 +204,27 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             local_files_only=args.offline,
         )
     ).resolve()
-    source_path = Path(
+    adapter_patterns = ["adapter_config.json", "adapter_model.safetensors"]
+    if adapter_subfolder is not None:
+        adapter_patterns = [
+            f"{adapter_subfolder}/{filename}" for filename in adapter_patterns
+        ]
+    snapshot_path = Path(
         snapshot_download(
             repo_id=args.adapter_repo,
             revision=args.adapter_revision,
-            allow_patterns=["adapter_config.json", "adapter_model.safetensors"],
+            allow_patterns=adapter_patterns,
             local_files_only=args.offline,
         )
     ).resolve()
+    source_path = (
+        snapshot_path / adapter_subfolder
+        if adapter_subfolder is not None
+        else snapshot_path
+    )
+    for filename in ("adapter_config.json", "adapter_model.safetensors"):
+        if not (source_path / filename).is_file():
+            raise FileNotFoundError(f"adapter checkpoint is missing {filename}")
 
     previous_manifest: dict[str, Any] = {}
     if manifest_path.is_file():
@@ -208,6 +238,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     matching_source = (
         previous_adapter.get("repo_id") == args.adapter_repo
         and previous_adapter.get("revision") == args.adapter_revision
+        and previous_adapter.get("subfolder") == adapter_subfolder
         and previous_conversion.get("source_sha256") == source_sha256
     )
     needs_conversion = args.force or not matching_source or not (
@@ -239,6 +270,7 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
         "adapter": {
             "repo_id": args.adapter_repo,
             "revision": args.adapter_revision,
+            "subfolder": adapter_subfolder,
             "source_path": str(source_path),
             "path": str(adapter_dir),
             "conversion": conversion,
@@ -264,6 +296,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-revision", default=DEFAULT_BASE_REVISION)
     parser.add_argument("--adapter-repo", default=DEFAULT_ADAPTER_REPO)
     parser.add_argument("--adapter-revision", default=DEFAULT_ADAPTER_REVISION)
+    parser.add_argument("--adapter-subfolder")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--offline", action="store_true")
     return parser.parse_args()

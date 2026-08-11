@@ -384,6 +384,9 @@ function updateHealth(health) {
     ["Adapter", runtime.adapter || "None (base model)"],
     ["Backend", runtime.backend || "—"],
     ["Quantization", runtime.quantization || "—"],
+    ["Prompt profile", runtime.prompt_profile || "—"],
+    ["Decoding", runtime.decoding || "—"],
+    ["History", runtime.history || "—"],
     ["Location", runtime.location || "On this Mac"],
   ];
   elements.detailsList.replaceChildren();
