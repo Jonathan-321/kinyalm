@@ -584,6 +584,9 @@ function updateHealth(health) {
 
   const runtime = health.runtime || {};
   const comparisonAvailable = Boolean(runtime.comparison?.available);
+  const checkpointMatch = String(runtime.adapter || "").match(/checkpoint-(\d+)/);
+  const adapterButton = $('.runtime-button[data-runtime="targeted"]');
+  adapterButton.textContent = checkpointMatch ? `Step ${checkpointMatch[1]}` : "Targeted";
   $$(".runtime-button").forEach((button) => {
     button.disabled = !comparisonAvailable;
   });

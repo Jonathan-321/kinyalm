@@ -87,6 +87,12 @@ resident model:
 bash scripts/local/chat_gemma4_targeted_web.sh --port 8091 --open
 ```
 
+To reproduce the earlier step-500 checkpoint instead:
+
+```bash
+bash scripts/local/chat_gemma4_step500_web.sh --port 8091 --open
+```
+
 Use the `Targeted`, `Base`, and `Compare` controls above the conversation. The
 demo-prompt menu contains ten fixed prompts covering grammar, correction,
 translation, conversation, vocabulary, ambiguity, register, and context. In
