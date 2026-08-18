@@ -6,15 +6,53 @@
 
 ## Result in One Paragraph
 
-The targeted continuation is the strongest KinyaLM adapter we have trained so
-far. On the same 150 prompts, it passed 28 model-assisted reviews, compared with
-24 for both the source step-780 adapter and the control continuation. It also
-beat the unchanged Gemma base in the areas we explicitly targeted: morphology
-and grammar, sentence correction, and Kinyarwanda-to-English translation.
-However, it did not beat Gemma overall: the base passed 33 prompts, five more
-than the targeted adapter, and repeated much less often. The next goal is
-therefore to preserve the targeted gains without damaging conversation,
-uncertainty handling, greetings, or context retention.
+The 1,560 cumulative-step targeted continuation is the strongest KinyaLM
+adapter we have trained so far. It began from the source step-780 adapter and
+received 780 additional updates on the targeted curriculum with a fresh
+optimizer and learning-rate schedule. On the same 150 prompts, it passed 28
+model-assisted reviews, compared with 24 for both the source step-780 adapter
+and the control continuation. It also beat the unchanged Gemma base in the
+areas we explicitly targeted: morphology and grammar, sentence correction, and
+Kinyarwanda-to-English translation. However, it did not beat Gemma overall:
+the base passed 33 prompts, five more than the targeted adapter, and repeated
+much less often. The next goal is therefore to preserve the targeted gains
+without damaging conversation, uncertainty handling, greetings, or context
+retention.
+
+## How the Experiment Reached This Point
+
+The project first tested several open multilingual and Kinyarwanda-focused
+models through direct conversation, translation, correction, and tutoring
+prompts. Gemma 4 12B was slower locally, but it was the first baseline that
+regularly produced coherent Kinyarwanda and useful bilingual explanations. It
+therefore became the model worth adapting rather than replacing.
+
+The first adapters did not improve the user experience. Some repeated one
+sentence or phrase and ignored the conversation even when training loss looked
+acceptable. That failure changed the method: loss could monitor training, but
+checkpoint selection would require fixed prompts, preserved generations,
+side-by-side comparison with the base, and native-speaker inspection.
+
+The team then froze a reviewed long-form dataset, made the QLoRA scripts
+reproducible, tested multiple learning rates, and preserved intermediate
+checkpoints. The strongest full-epoch branch reached 780 updates but still
+trailed the base overall. A 3,858-row targeted curriculum was then built around
+the observed weaknesses, and the step-780 adapter received another 780 updates
+at a lower learning rate. That produced the current 1,560 cumulative-step
+candidate: the first continuation to improve clearly over both earlier adapter
+branches, while still exposing the conversational regressions that must be
+fixed next.
+
+## Training Lineage
+
+The label **1,560 cumulative steps** describes the adapter's complete training
+history: 780 updates in the original full-epoch run followed by 780 updates in
+the targeted continuation. The second stage was not a seamless resume of one
+1,560-step optimizer schedule. It loaded the step-780 adapter weights, started
+a fresh optimizer and learning-rate schedule at `2e-6`, and trained on the
+3,858-row targeted curriculum. This distinction should remain visible in any
+technical report even when the shorter cumulative-step label is used in a
+presentation.
 
 ## Comparable Results
 
