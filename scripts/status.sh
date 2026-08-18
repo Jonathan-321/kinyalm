@@ -14,9 +14,10 @@ echo
 echo "Project docs:"
 echo "  $ROOT/README.md"
 echo "  $ROOT/TASKS.md"
-echo "  $ROOT/docs/project/start-plan.md"
+echo "  $ROOT/docs/roadmap.md"
 echo "  $ROOT/docs/project/constraints-and-risks.md"
+echo "  $ROOT/docs/project/multimodal-expansion-roadmap.md"
 echo "  $ROOT/docs/team/roles.md"
 echo
-echo "First implementation target:"
-echo "  Kinyarwanda tokenizer analysis on a small, documented corpus"
+echo "Current target:"
+echo "  Hidden native evaluation, adapter recovery, and a reproducible release"

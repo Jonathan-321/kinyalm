@@ -1,233 +1,172 @@
-# Kinyarwanda Language Learning LM
+# KinyaLM
 
-This repo is for a class project: build the core language-modeling pipeline from
-scratch while also delivering a small, useful Kinyarwanda learning tutor demo.
+KinyaLM is a bilingual Kinyarwanda-English tutor and an open research project
+on adapting language models for a lower-resource language. It can converse,
+translate, correct learner writing, and explain vocabulary or grammar in a
+local streaming chat interface.
 
-The working plan is:
+The repository keeps two connected tracks:
 
-```text
-Track A: from-scratch LM learning pipeline
-Track B: practical Kinyarwanda tutor MVP
-```
+- **Track A - KILM:** learn the mechanics of tokenization, pretraining,
+  checkpointing, and next-token evaluation with a small model built from
+  scratch.
+- **Track B - KinyaLM:** adapt a stronger multilingual model with reviewed
+  tutoring data, QLoRA, blinded evaluation, and local MLX inference.
 
-Track A follows the spirit of Stanford CS336: tokenizer, decoder-only
-Transformer, loss, optimizer, training loop, checkpointing, sampling, and
-evaluation. Track B uses retrieval over approved Kinyarwanda learning material
-first, with supervised fine-tuning only after source approval, seed examples,
-and evaluation prompts are ready.
+[![KinyaLM local base-versus-adapter comparison](docs/assets/demo/kinyalm-compare-poster.jpg)](docs/assets/demo/kinyalm-local-demo.mp4)
 
-## Start Here
+**[Watch the 4:54 local demo](docs/assets/demo/kinyalm-local-demo.mp4)** |
+**[View the presentation](https://docs.google.com/presentation/d/17VHFH5NHdb6pKn_OuXZrz6wXQfmwqdrSuaEoFmZCyOU/edit?usp=sharing)** |
+**[Open the shared data lake](https://huggingface.co/datasets/kinyalm/kinyalm-data-lake)**
 
-The current project push is controlled model evaluation: consolidate the
-human-approved split, compare the unchanged Gemma 4 base with the experimental
-adapter on identical held-out prompts, and use native-speaker findings to drive
-the final training run.
+## Current Result
 
-1. Read [project-charter.md](docs/project/project-charter.md).
-2. Read the full [master-plan.md](docs/project/master-plan.md).
-3. Follow the [team-execution-plan.md](docs/project/team-execution-plan.md).
-4. Use the [two-week SFT execution plan](docs/team/two-week-sft-execution-plan.md).
-5. Check team ownership in [roles.md](docs/team/roles.md).
-6. Record every data source in [source-log.md](docs/data/source-log.md).
-7. Follow the SFT schema in [sft-data-schema.md](docs/data/sft-data-schema.md).
-8. Keep benchmark sources separate with
-   [open-kinyarwanda-benchmarks.md](docs/evaluation/open-kinyarwanda-benchmarks.md).
-9. Use [data-overhaul-plan.md](docs/data/data-overhaul-plan.md) to scale from
-   the seed dataset toward a useful SFT pack.
-10. Use the public-gated HF datalake guide in
-    [huggingface-datalake.md](docs/data/huggingface-datalake.md).
-11. Give reviewers the onboarding guide in
-    [hf-datalake-reviewer-onboarding.md](docs/team/hf-datalake-reviewer-onboarding.md).
-12. Track access and impact in
-    [access-and-impact-plan.md](docs/project/access-and-impact-plan.md).
-13. Add teammate HF data through
-    [hf-data-contribution-workflow.md](docs/team/hf-data-contribution-workflow.md).
-14. Keep risks visible in [constraints-and-risks.md](docs/project/constraints-and-risks.md).
-15. Use [hf-baseline-run.md](docs/model/hf-baseline-run.md) for the HF-only
-    Track 2 experimental fine-tuning path.
-16. Launch the pinned cloud run with
-    [lambda-baseline-run.md](docs/model/lambda-baseline-run.md).
-17. Inspect the experimental adapter on an Apple-silicon Mac with
-    [local-mlx-run.md](docs/model/local-mlx-run.md).
-18. Read the first complete training result and next-base decision in the
-    [Track 2 baseline experiment report](docs/model/experiments/2026-07-20-track2-baseline-report.md).
-19. Use the
-    [multilingual adaptation strategy](docs/model/multilingual-adaptation-strategy.md)
-    to decide between continued pretraining, SFT, and preference learning.
-20. Run the unchanged Gemma 4 base-model comparison with the
-    [multilingual bake-off runbook](docs/model/multilingual-bakeoff-run.md).
-21. Read the completed local 12B result in the
-    [Gemma 4 local screening report](docs/model/experiments/2026-07-21-gemma4-12b-local-screen.md).
-22. Test the selected local checkpoint through the
-    [KinyaLM browser chat demo](docs/model/local-kinyalm-chat-demo.md).
-23. Read the current project truth in the
-    [presentation evidence packet](docs/project/presentation-evidence-packet.md).
-24. Inspect every major run in the
-    [experiment ledger](docs/project/appendix-experiment-ledger.md).
-25. Trace methodological claims to primary sources in the
-    [paper decision matrix](docs/project/appendix-paper-matrix.md).
-26. Review the completed two-epoch result in the
-    [Gemma 4 experimental QLoRA report](docs/model/experiments/2026-08-03-gemma4-12b-experimental-qlora.md).
+The strongest KinyaLM adapter is the targeted continuation trained for 780
+updates after the source 780-step adapter, or **1,560 cumulative training
+steps**. The second stage used a fresh optimizer and a 3,858-row targeted
+curriculum; it was not one uninterrupted 1,560-step schedule.
 
-## Local KinyaLM Chat
+On the same 150-prompt blinded development screen:
 
-On an Apple-silicon Mac, launch the streamed Gemma 4 12B chat with:
+| Candidate | Passes | Pass rate | Repetition |
+| --- | ---: | ---: | ---: |
+| Unchanged Gemma 4 12B | **33/150** | **22.00%** | **4.67%** |
+| Targeted continuation | 28/150 | 18.67% | 18.67% |
+| Control continuation | 24/150 | 16.00% | 20.67% |
+| Source step-780 adapter | 24/150 | 16.00% | 20.67% |
 
-```bash
-bash scripts/local/chat_gemma4_web.sh --open
-```
+The targeted adapter is the best adapter, but it does **not** yet beat the base
+overall. It improved the intended categories over the base: morphology and
+grammar by 10 percentage points, sentence correction by 15 points, and
+Kinyarwanda-to-English translation by 20 points. It also regressed on
+conversation, uncertainty handling, context retention, and repetition.
 
-The browser opens at `http://127.0.0.1:8090`. The model stays local, while
-ratings and reviewer corrections are saved privately for later review. See the
-[demo runbook](docs/model/local-kinyalm-chat-demo.md) for performance numbers,
-screenshots, mock mode, and the boundary between a usable prototype and a
-quality-approved model.
+These are model-assisted development results, not final product claims. A new
+hidden benchmark and native-speaker review are required before promotion. See
+the [complete continuation report](docs/model/experiments/2026-08-11-continuation-screening.md)
+for the paired comparison, limitations, and pinned artifact revisions.
 
-To test the pinned corrected-objective Gemma 4 QLoRA adapter instead,
-authenticate to Hugging Face and launch the adapter-specific entry point:
+## Run The Local Demo
+
+The full comparison requires an Apple-silicon Mac. The measured base runtime
+peaked near 11.4 GB of unified memory, so at least 16 GB is recommended.
 
 ```bash
 hf auth login
-bash scripts/local/chat_gemma4_adapter_web.sh --port 8091 --open
+bash scripts/local/chat_gemma4_targeted_web.sh --port 8091 --open
 ```
 
-The Runtime panel must show
-`kinyalm/kinyalm-gemma-4-12b-corrected-control@fb911c9b842c`. This checkpoint
-is a review candidate, not a quality-approved release.
+The browser opens at `http://127.0.0.1:8091`. The interface provides:
 
-## Contributors
+- `Targeted`, `Base`, and side-by-side `Compare` modes;
+- conversation, translation, and learning modes;
+- English or Kinyarwanda response control and learner levels;
+- streaming generation, timing, memory, and reviewer feedback;
+- one resident MLX model, with the LoRA contribution disabled for the base arm.
+
+Run only the unchanged base with:
+
+```bash
+bash scripts/local/chat_gemma4_web.sh --port 8090 --open
+```
+
+The first launch downloads pinned model artifacts. Exact runtime details and
+troubleshooting are in the [local demo runbook](docs/model/local-kinyalm-chat-demo.md).
+
+## How The Project Works
+
+```mermaid
+flowchart LR
+    A[Candidate Kinyarwanda data] --> B[Team review and corrections]
+    B --> C[Frozen train and validation revision]
+    C --> D[Gemma 4 QLoRA on cloud GPU]
+    D --> E[Preserved adapter checkpoints]
+    E --> F[MLX conversion for Apple silicon]
+    F --> G[Identical base versus adapter prompts]
+    G --> H[Blinded scoring and native review]
+    H --> B
+```
+
+The repository treats training loss as an optimization signal, not a language
+quality score. Checkpoints are preserved and compared on identical prompts,
+system instructions, decoding settings, and runtime conditions. Reviewer
+corrections then become the next targeted data batch.
+
+## Project Evidence
+
+| Area | What is available |
+| --- | --- |
+| Data | Review schemas, immutable generation batches, deduplication, manifests, and a gated team data lake |
+| Training | Reproducible Gemma 4 QLoRA profiles, checkpoint preservation, cloud launch scripts, and publication manifests |
+| Evaluation | 150-prompt recovery bank, blinded review packs, repetition checks, base-versus-adapter parity, and experiment reports |
+| Serving | Local MLX inference, streaming browser chat, feedback capture, and side-by-side comparison |
+| Research | Track A learning runs, Track B adaptation experiments, paper matrix, cost records, and failure analyses |
+
+Start with the [experiment ledger](docs/project/appendix-experiment-ledger.md),
+[paper decision matrix](docs/project/appendix-paper-matrix.md), and
+[project constraints](docs/project/constraints-and-risks.md). The separate
+[KILM repository](https://github.com/Jonathan-321/kilm) contains the Track A
+from-scratch experiments.
+
+## Multimodal Direction
+
+The next version should remain modular before attempting one end-to-end
+multimodal model:
+
+1. Add Kinyarwanda speech recognition and spoken responses.
+2. Add a pronunciation coach with word-level feedback.
+3. Add image and document lessons through OCR, captioning, and visual Q&A.
+4. Evaluate every component separately before measuring end-to-end tutoring.
+
+The [multimodal expansion roadmap](docs/project/multimodal-expansion-roadmap.md)
+defines candidate open models and datasets, licenses, architecture, metrics,
+and staged release gates.
+
+## Repository Map
+
+```text
+apps/kinyalm-chat/       local streaming chat interface
+configs/                 frozen data, training, and evaluation profiles
+data/                    small shareable samples and artifact manifests
+docs/data/               sourcing, review, schema, and data-lake guidance
+docs/evaluation/         benchmark plans, task banks, and review rules
+docs/model/              training, inference, and experiment reports
+docs/project/            charter, evidence, papers, risks, and roadmaps
+docs/team/               ownership and contribution workflows
+prompts/                 versioned generation and tutoring instructions
+scripts/                 data, training, evaluation, cloud, and local tools
+src/kinyalm/             reusable project package
+tests/                   reproducibility and regression checks
+```
+
+Large datasets and model weights belong in the Hugging Face organization, not
+Git history. Only small, licensed, reviewable evidence should be committed.
+
+## Development
+
+```bash
+uv sync --extra dev
+uv run pytest -q
+python3 scripts/check_project.py
+```
+
+Training dependencies are isolated behind `uv sync --extra train`; Gemini data
+generation dependencies use `uv sync --extra distill`.
+
+## Team
 
 - Jonathan Muhire ([@Jonathan-321](https://github.com/Jonathan-321))
 - Tessy Mugisha ([@TessyMugisha](https://github.com/TessyMugisha))
 - Bonheur Byiringiro ([@BonheurByiringiro](https://github.com/BonheurByiringiro))
 
-## Repository Layout
+Team reports, review artifacts, commits, and experiment history are retained so
+individual contributions remain traceable.
 
-```text
-configs/                  # training/eval config files
-coursework/cs336/         # official CS336 assignment repos as submodules
-apps/kinyalm-chat/         # local browser chat interface
-data/
-  raw/                    # original downloaded or received data, not committed
-  interim/                # intermediate cleaned data, not committed by default
-  processed/              # final small shareable samples and manifests
-  external/               # third-party references, tracked by source log
-  sft/                    # small reviewed SFT JSONL files only
-docs/
-  data/                   # source log, data card template
-  evaluation/             # evaluation rubric and test prompt plan
-  project/                # charter, roadmap, constraints
-  team/                   # roles, weekly operating plan
-experiments/              # local experiment outputs
-logs/                     # local training/eval logs
-notebooks/                # analysis notebooks
-scripts/                  # project helper scripts
-src/kinyalm/              # project package code
-tests/                    # project tests
-```
+## Research Boundary
 
-Large datasets, checkpoints, and logs should not be committed unless we
-explicitly decide they are small, licensed, and useful to share.
+KinyaLM is a research prototype. It can produce incorrect Kinyarwanda,
+translations, explanations, and factual claims. Do not treat current outputs as
+authoritative language instruction without fluent-speaker review.
 
-## First Technical Milestone
-
-The first technical milestone is:
-
-```text
-Train and evaluate a Kinyarwanda-aware BPE tokenizer on a small, documented
-sample corpus.
-```
-
-That includes:
-
-- a source log for the corpus,
-- a Hugging Face source review,
-- a cleaning note,
-- tokenizer train/encode/decode/save/load behavior,
-- tokens-per-word and fragmentation analysis,
-- examples involving prefixes, noun classes, apostrophes, hyphens, and common
-  Kinyarwanda words.
-
-## First Runnable Check
-
-Run the project health check:
-
-```bash
-python3 scripts/check_project.py
-```
-
-Run the starter tokenizer metric tests:
-
-```bash
-PYTHONPATH=src python3 -m pytest tests/test_tokenizer_metrics.py -q
-```
-
-These checks do not train a tokenizer or use unapproved data. They only verify
-that the starter example set, tutor benchmark, SFT schema, and tokenizer-analysis
-helpers are wired correctly.
-
-Validate a future SFT seed file:
-
-```bash
-python3 scripts/validate_sft_jsonl.py data/sft/seed_conversations.jsonl
-```
-
-Review Hugging Face candidate metadata:
-
-```bash
-python3 scripts/review_hf_sources.py --out docs/data/huggingface-source-review.md
-```
-
-External benchmark metadata lives in:
-
-```text
-configs/evaluation/kinyarwanda_benchmarks.json
-```
-
-## Team Execution
-
-The team-facing next steps live here:
-
-```text
-docs/project/team-execution-plan.md
-```
-
-The immediate focus is:
-
-```text
-source approval + tokenizer analysis + benchmark separation + SFT data scale-up
-```
-
-## Data And Evaluation Direction
-
-The repo now treats data as the main project bottleneck.
-
-Current SFT status:
-
-- 50 tutor evaluation prompts exist, with 26 held out for benchmarking.
-- A JSONL schema and validator exist for future SFT examples.
-- Batch 001 has 286 draft SFT examples in the public-gated HF datalake.
-- Tessy's reviewed contribution adds 288 approved, intact conversations:
-  258 train and 30 validation.
-- Another 38 critic-disputed conversations remain outside training pending
-  explicit adjudication.
-- The first 100-example human-review seed gate is now passed.
-- The first serious tutor SFT target is about 1,000 reviewed examples.
-
-External benchmark candidates are tracked in
-[open-kinyarwanda-benchmarks.md](docs/evaluation/open-kinyarwanda-benchmarks.md)
-and logged in [source-log.md](docs/data/source-log.md). These rows are
-evaluation-only unless the team explicitly approves a training split. Do not
-copy benchmark prompts or benchmark test rows into `data/sft/`.
-
-## CS336 Boundary
-
-The CS336 assignment repos include their own AI-assistance policy. We will use
-them for learning and reference, but we will not turn this repo into a solution
-dump for course assignments.
-
-Useful links:
-
-- CS336 course page: https://cs336.stanford.edu/
-- Assignment 1: https://github.com/stanford-cs336/assignment1-basics
-- KinyaBERT paper: https://arxiv.org/abs/2203.08459
+The Stanford CS336 repositories are included for learning and reference only;
+this project does not publish assignment solutions.
