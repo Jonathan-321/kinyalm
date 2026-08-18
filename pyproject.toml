@@ -34,6 +34,9 @@ train = [
   # package owns the training loop and its API changes affect every profile.
   "trl>=1.3.0,<2",
 ]
+distill = [
+  "google-genai>=1.0.0,<2",
+]
 
 [build-system]
 requires = ["hatchling"]
