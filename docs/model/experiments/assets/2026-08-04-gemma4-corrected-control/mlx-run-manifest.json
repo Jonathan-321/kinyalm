@@ -1,0 +1,60 @@
+{
+  "backend": "mlx",
+  "candidates": [
+    {
+      "adapter_id": "/Users/jonathanmuhire/.cache/kinyalm/gemma4-12b-corrected-control-adapter/adapter-mlx",
+      "adapter_revision": "fb911c9b842c2e49cfb1705cde28be0637bf8d68",
+      "backend": "mlx",
+      "backend_version": "0.31.3",
+      "id": "corrected-mlx",
+      "ignored_weight_prefixes": [
+        "vision_embedder."
+      ],
+      "model_id": "mlx-community/gemma-4-12B-it-qat-4bit",
+      "model_type_override": "gemma4",
+      "quantization": "QAT-derived mixed 4/8-bit affine MLX conversion",
+      "revision": "e70c6b3ba0979b3357dcd2f223ad8bde7787a6b6",
+      "source_id": "gemma4-12b-it",
+      "source_model_id": "google/gemma-4-12B-it",
+      "source_revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "suppress_token_ids": [
+        258882,
+        258883
+      ]
+    }
+  ],
+  "config_path": "configs/evaluation/gemma4_bakeoff.json",
+  "config_sha256": "f988ac250cf9124d0be32fcbcd691963aef5ebc6f3e516bae7cf0e3e64531139",
+  "created_at_utc": "2026-08-04T22:46:56.708078+00:00",
+  "enable_thinking": false,
+  "git_commit": "03d5a8457c6fba2a26ef05d22d1a8037d6a42342",
+  "max_new_tokens": 768,
+  "packages": {
+    "accelerate": null,
+    "huggingface-hub": "1.24.0",
+    "mlx": "0.32.0",
+    "mlx-lm": "0.31.3",
+    "torch": null,
+    "transformers": "5.14.1"
+  },
+  "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+  "python": "3.13.0 (v3.13.0:60403a5409f, Oct  7 2024, 00:37:40) [Clang 15.0.0 (clang-1500.3.9.4)]",
+  "run_kind": "quantized-local-screen",
+  "run_name": "gemma4-zero-shot-bakeoff-v1",
+  "schema_version": 1,
+  "task_bank_path": "docs/evaluation/learning-task-bank.md",
+  "task_bank_sha256": "c3602c292093ba376aa73318036b7824248b9d37d099aa4e95adf9ae0dfe3929",
+  "task_count": 10,
+  "task_ids": [
+    "T001",
+    "T003",
+    "T005",
+    "T008",
+    "T010",
+    "T011",
+    "T013",
+    "T015",
+    "T016",
+    "T018"
+  ]
+}

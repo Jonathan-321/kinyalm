@@ -169,6 +169,58 @@ A first preference set of 1,000–3,000 carefully reviewed comparisons can targe
 the failure modes that remain after SFT. Do not generate preference labels from
 the same model being trained without human calibration.
 
+## Three-Layer Quality Control
+
+The project must optimize the real tutoring goal at all three adaptation
+layers, not the easiest proxy metric available at each layer.
+
+| Layer | Useful optimization signal | How the signal can mislead us | Required counter-checks |
+| --- | --- | --- | --- |
+| Language adaptation (CPT) | Held-out next-token loss on approved Kinyarwanda text | A model can lower loss by memorizing duplicated sources or forget English while specializing | Deduplication audit, held-out Kinyarwanda perplexity, English-retention set, contamination check, and generation review |
+| Tutor behavior (SFT) | Assistant-only loss on reviewed demonstrations | Lower loss can coexist with repetition, copied phrasing, wrong meaning, or register drift | Base-versus-adapter task results, semantic correctness, register, response-length distribution, repetition rate, and native-speaker review |
+| Preference or RL optimization | Human preferences, model judges, and programmatic checks | A single reward can be hacked; the model may become short, casual, or formulaic while scoring well | Multi-objective reward records, hard correctness floors, adversarial prompts, held-out judges, and blinded native-speaker evaluation |
+
+A Castform practitioner experiment shared with the team gives a concrete
+warning. Its first rule-based style reward produced very short answers that
+dropped source content. Adding semantic-preservation and tone-preservation
+judges fixed specific failures, but optimizing a collection of open detectors
+still did not generalize to unseen closed detectors; increasing the model size
+did not solve the objective problem. This is engineering evidence, not a
+Kinyarwanda result or a peer-reviewed paper, but it matches the reward-hacking
+and proxy-overoptimization risks documented in the research literature.
+
+For KinyaLM, a later preference or RL environment must record separate reward
+components rather than hiding them in one unexplained score:
+
+- Kinyarwanda correctness and naturalness;
+- task completion and preservation of the user's meaning;
+- requested language, formality, and cultural register;
+- tutoring clarity and useful correction;
+- concision without missing required information;
+- repetition and control-token failures;
+- calibrated uncertainty instead of invented rules or facts.
+
+Correctness, meaning preservation, and catastrophic-repetition checks are hard
+gates: a fluent-looking answer cannot compensate for failing them. LLM judges
+may scale triage, but reward prompts and weights must be varied during stress
+tests, tested on held-out task families, and calibrated against native-speaker
+decisions. The immediate project step remains reviewed SFT and blind
+base-versus-adapter evaluation; this section defines the conditions for a later
+DPO or RL experiment.
+
+Research basis:
+
+- [Concrete Problems in AI Safety](https://arxiv.org/abs/1606.06565) identifies
+  reward hacking as a failure caused by optimizing an imperfect objective.
+- [Deep Reinforcement Learning from Human Preferences](https://arxiv.org/abs/1706.03741)
+  establishes preference feedback as a way to communicate complex goals.
+- [Scaling Laws for Reward Model Overoptimization](https://arxiv.org/abs/2210.10760)
+  shows that stronger optimization of a proxy reward can reduce performance on
+  the underlying target.
+- [Castform RL fine-tuning workflow](https://castform.com/docs/getting-started/how-it-works/)
+  and the team's shared August 3 practitioner note motivate the concrete
+  multi-reward monitoring checklist above.
+
 ## Evaluation Matrix
 
 Every candidate and training stage must cover all four directions:

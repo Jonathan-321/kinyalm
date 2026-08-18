@@ -16,7 +16,7 @@ import sys
 import time
 import traceback
 from collections.abc import Callable
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,6 +40,8 @@ from kinyalm.evaluation import (  # noqa: E402
 )
 
 DEFAULT_CONFIG = ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
+ADAPTER_REVISION_PATTERN = re.compile(r"^[0-9a-f]{40}$")
+VARIANT_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 
 
 @dataclass(frozen=True)
@@ -109,6 +111,21 @@ def parse_args() -> argparse.Namespace:
             "Prepared MLX runtime.json; adds a base-plus-adapter candidate "
             "beside the unchanged base"
         ),
+    )
+    parser.add_argument(
+        "--adapter",
+        help=(
+            "Optional PEFT adapter repository/path for Transformers or converted "
+            "MLX adapter directory for MLX"
+        ),
+    )
+    parser.add_argument(
+        "--adapter-revision",
+        help="Pinned adapter revision recorded with the run",
+    )
+    parser.add_argument(
+        "--run-as",
+        help="Unique candidate ID for an adapter run (required with --adapter)",
     )
     return parser.parse_args()
 
@@ -247,6 +264,8 @@ def _mlx_runtime_candidate(
         ignored_weight_prefixes=local.ignored_weight_prefixes,
         suppress_token_ids=local.suppress_token_ids,
         quantization=local.quantization,
+        adapter_id=None,
+        adapter_revision=None,
     )
 
 
@@ -320,6 +339,44 @@ def add_mlx_adapter_candidate(
     return [*candidates, adapter_candidate]
 
 
+def apply_adapter_variant(
+    candidates: list[RuntimeCandidate],
+    *,
+    adapter_id: str | None,
+    adapter_revision: str | None,
+    run_as: str | None,
+) -> list[RuntimeCandidate]:
+    """Attach one adapter to one runtime without obscuring base identity."""
+
+    if adapter_id is None:
+        if adapter_revision is not None or run_as is not None:
+            raise ValueError("--adapter-revision and --run-as require --adapter")
+        return candidates
+    if len(candidates) != 1:
+        raise ValueError("adapter runs require exactly one selected candidate")
+    if adapter_revision is None or not ADAPTER_REVISION_PATTERN.fullmatch(
+        adapter_revision
+    ):
+        raise ValueError("adapter runs require a 40-character --adapter-revision SHA")
+    if not run_as or not run_as.strip():
+        raise ValueError("adapter runs require a unique --run-as candidate ID")
+    if not VARIANT_ID_PATTERN.fullmatch(run_as.strip()):
+        raise ValueError(
+            "--run-as may contain only letters, numbers, dots, underscores, and dashes"
+        )
+    if run_as == candidates[0].id:
+        raise ValueError("--run-as must differ from the unchanged base candidate ID")
+    base = candidates[0]
+    updates: dict[str, Any] = {
+        "id": run_as.strip(),
+        "adapter_id": adapter_id.strip(),
+        "adapter_revision": adapter_revision,
+    }
+    if base.backend == "mlx":
+        updates["adapter_path"] = str(Path(adapter_id).expanduser().resolve())
+    return [replace(base, **updates)]
+
+
 class TransformersGenerator:
     """One loaded Gemma candidate and its text-generation processor."""
 
@@ -327,7 +384,7 @@ class TransformersGenerator:
         import torch
         from transformers import (
             AutoModelForMultimodalLM,
-            AutoProcessor,
+            AutoTokenizer,
             set_seed,
         )
 
@@ -336,7 +393,7 @@ class TransformersGenerator:
 
         set_seed(seed)
         self.torch = torch
-        self.processor = AutoProcessor.from_pretrained(
+        self.processor = AutoTokenizer.from_pretrained(
             candidate.model_id,
             revision=candidate.revision,
         )
@@ -372,7 +429,6 @@ class TransformersGenerator:
             enable_thinking=enable_thinking,
         )
         input_tokens = int(inputs["input_ids"].shape[-1])
-        prefix_ids = inputs["input_ids"][0].detach().cpu()
         inputs = inputs.to(self.input_device)
 
         for device_index in range(self.torch.cuda.device_count()):
@@ -391,14 +447,7 @@ class TransformersGenerator:
             generated_ids,
             skip_special_tokens=False,
         )
-        parsed_response = self.processor.parse_response(
-            generated_ids,
-            prefix=prefix_ids,
-        )
-        if not isinstance(parsed_response, dict):
-            raise RuntimeError("Gemma response parser did not return one message")
-        response = str(parsed_response.get("content", "")).strip()
-        thinking = str(parsed_response.get("thinking", "")).strip()
+        response, thinking = parse_gemma4_response(raw_response)
         if not response:
             raise RuntimeError("Gemma generated no visible response content")
         peak_memory = max(
@@ -824,7 +873,15 @@ def main() -> int:
     if args.adapter_runtime is not None:
         if args.backend != "mlx":
             raise ValueError("--adapter-runtime requires --backend mlx")
+        if args.adapter is not None:
+            raise ValueError("--adapter-runtime and --adapter are mutually exclusive")
         candidates = add_mlx_adapter_candidate(candidates, args.adapter_runtime)
+    candidates = apply_adapter_variant(
+        candidates,
+        adapter_id=args.adapter,
+        adapter_revision=args.adapter_revision,
+        run_as=args.run_as,
+    )
 
     summary = {
         "run_name": config.run_name,
