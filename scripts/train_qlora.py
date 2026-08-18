@@ -184,7 +184,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--experimental",
         action="store_true",
-        help="Allow only explicitly labeled experimental-train/validation rows.",
+        help="Include experimental-train/validation rows, plus any "
+        "human-approved train/validation rows, so a retrain can mix tiers.",
     )
     parser.add_argument(
         "--dataset-manifest",
@@ -841,9 +842,17 @@ def main() -> int:
     adapter_metadata = verify_adapter_metadata(args)
     gate_inputs = quality_gate_inputs(args)
 
-    train_splits = {"experimental-train"} if args.experimental else {"train"}
+    # --experimental includes the critic-filtered tier AND any human-approved
+    # (train/validation) rows, so a retrain can mix the experimental baseline
+    # with fluent-speaker corrections. Each row is still validated against its
+    # own tier's rules, so the labeling stays honest.
+    train_splits = (
+        {"experimental-train", "train"} if args.experimental else {"train"}
+    )
     validation_splits = (
-        {"experimental-validation"} if args.experimental else {"validation"}
+        {"experimental-validation", "validation"}
+        if args.experimental
+        else {"validation"}
     )
     train_records = load_split(args.train_file, train_splits)
     eval_records = (
@@ -1015,7 +1024,7 @@ def main() -> int:
         lr_scheduler_type="cosine",
         # Transformers 5 accepts ratios below 1 through warmup_steps and
         # deprecates the separate warmup_ratio argument.
-        warmup_steps=args.warmup_ratio,
+        warmup_ratio=args.warmup_ratio,
         max_length=args.max_seq_len,
         gradient_checkpointing=use_cuda,
         optim="paged_adamw_8bit" if quantize else "adamw_torch",
