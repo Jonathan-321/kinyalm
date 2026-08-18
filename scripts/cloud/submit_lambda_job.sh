@@ -13,13 +13,20 @@ REMOTE_MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
 REMOTE_DATA_PROFILE="${DATA_PROFILE:-legacy-critic-1k}"
 REMOTE_DATA_REVISION="${DATA_REVISION:-}"
 REMOTE_DATA_PATH_IN_REPO="${DATA_PATH_IN_REPO:-data/reviewed/native-recovery-rewrites-v1}"
+REMOTE_DATA_MINIMUM_ROWS="${DATA_MINIMUM_ROWS:-500}"
+REMOTE_DATA_MAXIMUM_ROWS="${DATA_MAXIMUM_ROWS:-1000}"
 REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 REMOTE_CANDIDATE_QUALITY_POLICY="${CANDIDATE_QUALITY_POLICY:-unflagged}"
 REMOTE_LEARNING_RATE="${LEARNING_RATE:-5e-5}"
 REMOTE_WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
 REMOTE_EPOCHS="${EPOCHS:-1}"
+REMOTE_MAX_SEQ_LEN="${MAX_SEQ_LEN:-1024}"
 REMOTE_SAVE_STEPS="${SAVE_STEPS:-}"
 REMOTE_EVAL_STEPS="${EVAL_STEPS:-}"
+REMOTE_RESUME_FROM_CHECKPOINT="${RESUME_FROM_CHECKPOINT:-}"
+REMOTE_INIT_ADAPTER="${INIT_ADAPTER:-}"
+REMOTE_INIT_ADAPTER_REVISION="${INIT_ADAPTER_REVISION:-}"
+REMOTE_INIT_ADAPTER_SUBFOLDER="${INIT_ADAPTER_SUBFOLDER:-}"
 REMOTE_OUTPUT_REPO="${OUTPUT_REPO:-}"
 REMOTE_RUN_ID="${RUN_ID:-}"
 REMOTE_LORA_R="${LORA_R:-16}"
@@ -28,7 +35,9 @@ REMOTE_LORA_DROPOUT="${LORA_DROPOUT:-0.05}"
 REMOTE_LORA_TARGET_MODULES="${LORA_TARGET_MODULES:-q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj}"
 REMOTE_QUALITY_GATE_CONFIG="${QUALITY_GATE_CONFIG:-}"
 REMOTE_QUALITY_GATE_STEPS="${QUALITY_GATE_STEPS:-25,50,100}"
+REMOTE_QUALITY_GATE_POLICY="${QUALITY_GATE_POLICY:-stop}"
 REMOTE_PRESERVE_CHECKPOINT_STEPS="${PRESERVE_CHECKPOINT_STEPS:-25,50,100}"
+REMOTE_SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE-configs/training/track2-baseline-prompts.txt}"
 SUBMIT_DRY_RUN="${SUBMIT_DRY_RUN:-0}"
 SSH_KEY="${LAMBDA_SSH_KEY:-$HOME/.ssh/coolify_key}"
 HF_MODEL_TOKEN_NAME="${HF_MODEL_TOKEN_NAME:-}"
@@ -52,13 +61,25 @@ fi
 if [[ "$REMOTE_DATA_PROFILE" != "legacy-critic-1k" \
   && "$REMOTE_DATA_PROFILE" != "sft10k-v4" \
   && "$REMOTE_DATA_PROFILE" != "human-reviewed-432" \
-  && "$REMOTE_DATA_PROFILE" != "native-recovery-v1" ]]; then
-  echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, or native-recovery-v1" >&2
+  && "$REMOTE_DATA_PROFILE" != "native-recovery-v1" \
+  && "$REMOTE_DATA_PROFILE" != "team-reviewed-longform-v1" ]]; then
+  echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, native-recovery-v1, or team-reviewed-longform-v1" >&2
   exit 2
 fi
-if [[ "$REMOTE_DATA_PROFILE" == "native-recovery-v1" \
+if [[ ( "$REMOTE_DATA_PROFILE" == "native-recovery-v1" \
+  || "$REMOTE_DATA_PROFILE" == "team-reviewed-longform-v1" ) \
   && ! "$REMOTE_DATA_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
-  echo "DATA_REVISION must be a 40-character commit for native-recovery-v1" >&2
+  echo "DATA_REVISION must be a 40-character commit for pinned reviewed data" >&2
+  exit 2
+fi
+for row_limit in "$REMOTE_DATA_MINIMUM_ROWS" "$REMOTE_DATA_MAXIMUM_ROWS"; do
+  if [[ ! "$row_limit" =~ ^[1-9][0-9]*$ ]]; then
+    echo "DATA_MINIMUM_ROWS and DATA_MAXIMUM_ROWS must be positive integers" >&2
+    exit 2
+  fi
+done
+if (( REMOTE_DATA_MINIMUM_ROWS > REMOTE_DATA_MAXIMUM_ROWS )); then
+  echo "DATA_MINIMUM_ROWS cannot exceed DATA_MAXIMUM_ROWS" >&2
   exit 2
 fi
 if [[ "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "0" && "$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN" != "1" ]]; then
@@ -81,6 +102,10 @@ if [[ ! "$REMOTE_WARMUP_RATIO" =~ ^[0-9]+([.][0-9]+)?([eE][-+]?[0-9]+)?$ ]]; the
 fi
 if [[ ! "$REMOTE_EPOCHS" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
   echo "EPOCHS must be a non-negative number" >&2
+  exit 2
+fi
+if [[ ! "$REMOTE_MAX_SEQ_LEN" =~ ^[1-9][0-9]*$ ]]; then
+  echo "MAX_SEQ_LEN must be a positive integer" >&2
   exit 2
 fi
 for step_value in "$REMOTE_SAVE_STEPS" "$REMOTE_EVAL_STEPS"; do
@@ -110,6 +135,39 @@ if [[ ! "$REMOTE_LORA_TARGET_MODULES" =~ ^(q_proj|k_proj|v_proj|o_proj|gate_proj
   echo "LORA_TARGET_MODULES contains an unsupported projection list" >&2
   exit 2
 fi
+if [[ -n "$REMOTE_RESUME_FROM_CHECKPOINT" && ! "$REMOTE_RESUME_FROM_CHECKPOINT" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "RESUME_FROM_CHECKPOINT must be an absolute checkpoint path" >&2
+  exit 2
+fi
+if [[ -n "$REMOTE_INIT_ADAPTER" \
+  && ! "$REMOTE_INIT_ADAPTER" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ \
+  && ! "$REMOTE_INIT_ADAPTER" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "INIT_ADAPTER must be a Hugging Face repository ID or absolute path" >&2
+  exit 2
+fi
+if [[ -n "$REMOTE_INIT_ADAPTER_REVISION" \
+  && ! "$REMOTE_INIT_ADAPTER_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "INIT_ADAPTER_REVISION must be a 40-character commit SHA" >&2
+  exit 2
+fi
+if [[ -n "$REMOTE_INIT_ADAPTER_SUBFOLDER" \
+  && ! "$REMOTE_INIT_ADAPTER_SUBFOLDER" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]]; then
+  echo "INIT_ADAPTER_SUBFOLDER must be a safe relative path" >&2
+  exit 2
+fi
+if [[ -n "$REMOTE_INIT_ADAPTER" && -n "$REMOTE_RESUME_FROM_CHECKPOINT" ]]; then
+  echo "INIT_ADAPTER and RESUME_FROM_CHECKPOINT are mutually exclusive" >&2
+  exit 2
+fi
+if [[ -z "$REMOTE_INIT_ADAPTER" \
+  && ( -n "$REMOTE_INIT_ADAPTER_REVISION" || -n "$REMOTE_INIT_ADAPTER_SUBFOLDER" ) ]]; then
+  echo "INIT_ADAPTER_REVISION and INIT_ADAPTER_SUBFOLDER require INIT_ADAPTER" >&2
+  exit 2
+fi
+if [[ "$REMOTE_QUALITY_GATE_POLICY" != "stop" && "$REMOTE_QUALITY_GATE_POLICY" != "record" ]]; then
+  echo "QUALITY_GATE_POLICY must be stop or record" >&2
+  exit 2
+fi
 if [[ "$SUBMIT_DRY_RUN" != "0" && "$SUBMIT_DRY_RUN" != "1" ]]; then
   echo "SUBMIT_DRY_RUN must be 0 or 1" >&2
   exit 2
@@ -128,13 +186,20 @@ if [[ "$SUBMIT_DRY_RUN" == "1" ]]; then
   printf 'data_profile=%s\n' "$REMOTE_DATA_PROFILE"
   printf 'data_revision=%s\n' "$REMOTE_DATA_REVISION"
   printf 'data_path_in_repo=%s\n' "$REMOTE_DATA_PATH_IN_REPO"
+  printf 'data_minimum_rows=%s\n' "$REMOTE_DATA_MINIMUM_ROWS"
+  printf 'data_maximum_rows=%s\n' "$REMOTE_DATA_MAXIMUM_ROWS"
   printf 'max_steps=%s\n' "$REMOTE_MAX_STEPS"
   printf 'candidate_quality_policy=%s\n' "$REMOTE_CANDIDATE_QUALITY_POLICY"
   printf 'learning_rate=%s\n' "$REMOTE_LEARNING_RATE"
   printf 'warmup_ratio=%s\n' "$REMOTE_WARMUP_RATIO"
   printf 'epochs=%s\n' "$REMOTE_EPOCHS"
+  printf 'max_sequence_length=%s\n' "$REMOTE_MAX_SEQ_LEN"
   printf 'save_steps=%s\n' "$REMOTE_SAVE_STEPS"
   printf 'eval_steps=%s\n' "$REMOTE_EVAL_STEPS"
+  printf 'resume_from_checkpoint=%s\n' "$REMOTE_RESUME_FROM_CHECKPOINT"
+  printf 'init_adapter=%s\n' "$REMOTE_INIT_ADAPTER"
+  printf 'init_adapter_revision=%s\n' "$REMOTE_INIT_ADAPTER_REVISION"
+  printf 'init_adapter_subfolder=%s\n' "$REMOTE_INIT_ADAPTER_SUBFOLDER"
   printf 'output_repo=%s\n' "$REMOTE_OUTPUT_REPO"
   printf 'run_id=%s\n' "$REMOTE_RUN_ID"
   printf 'lora_r=%s\n' "$REMOTE_LORA_R"
@@ -143,7 +208,9 @@ if [[ "$SUBMIT_DRY_RUN" == "1" ]]; then
   printf 'lora_target_modules=%s\n' "$REMOTE_LORA_TARGET_MODULES"
   printf 'quality_gate_config=%s\n' "$REMOTE_QUALITY_GATE_CONFIG"
   printf 'quality_gate_steps=%s\n' "$REMOTE_QUALITY_GATE_STEPS"
+  printf 'quality_gate_policy=%s\n' "$REMOTE_QUALITY_GATE_POLICY"
   printf 'preserve_checkpoint_steps=%s\n' "$REMOTE_PRESERVE_CHECKPOINT_STEPS"
+  printf 'sample_prompts_file=%s\n' "$REMOTE_SAMPLE_PROMPTS_FILE"
   exit 0
 fi
 
@@ -178,7 +245,7 @@ printf '%s' "$HF_PUBLISH_TOKEN_VALUE" | ssh -i "$SSH_KEY" "ubuntu@$HOST" \
 unset HF_PUBLISH_TOKEN_VALUE
 
 ssh -i "$SSH_KEY" "ubuntu@$HOST" \
-  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' DATA_PROFILE='$REMOTE_DATA_PROFILE' DATA_REVISION='$REMOTE_DATA_REVISION' DATA_PATH_IN_REPO='$REMOTE_DATA_PATH_IN_REPO' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' CANDIDATE_QUALITY_POLICY='$REMOTE_CANDIDATE_QUALITY_POLICY' LEARNING_RATE='$REMOTE_LEARNING_RATE' WARMUP_RATIO='$REMOTE_WARMUP_RATIO' EPOCHS='$REMOTE_EPOCHS' SAVE_STEPS='$REMOTE_SAVE_STEPS' EVAL_STEPS='$REMOTE_EVAL_STEPS' OUTPUT_REPO='$REMOTE_OUTPUT_REPO' RUN_ID='$REMOTE_RUN_ID' LORA_R='$REMOTE_LORA_R' LORA_ALPHA='$REMOTE_LORA_ALPHA' LORA_DROPOUT='$REMOTE_LORA_DROPOUT' LORA_TARGET_MODULES='$REMOTE_LORA_TARGET_MODULES' QUALITY_GATE_CONFIG='$REMOTE_QUALITY_GATE_CONFIG' QUALITY_GATE_STEPS='$REMOTE_QUALITY_GATE_STEPS' PRESERVE_CHECKPOINT_STEPS='$REMOTE_PRESERVE_CHECKPOINT_STEPS' bash -se" <<'REMOTE_SCRIPT'
+  "KINYALM_REPO_REF='$REPO_REF' MAX_STEPS='$REMOTE_MAX_STEPS' MODEL_PROFILE='$REMOTE_MODEL_PROFILE' DATA_PROFILE='$REMOTE_DATA_PROFILE' DATA_REVISION='$REMOTE_DATA_REVISION' DATA_PATH_IN_REPO='$REMOTE_DATA_PATH_IN_REPO' DATA_MINIMUM_ROWS='$REMOTE_DATA_MINIMUM_ROWS' DATA_MAXIMUM_ROWS='$REMOTE_DATA_MAXIMUM_ROWS' ALLOW_EXPERIMENTAL_FULL_RUN='$REMOTE_ALLOW_EXPERIMENTAL_FULL_RUN' CANDIDATE_QUALITY_POLICY='$REMOTE_CANDIDATE_QUALITY_POLICY' LEARNING_RATE='$REMOTE_LEARNING_RATE' WARMUP_RATIO='$REMOTE_WARMUP_RATIO' EPOCHS='$REMOTE_EPOCHS' MAX_SEQ_LEN='$REMOTE_MAX_SEQ_LEN' SAVE_STEPS='$REMOTE_SAVE_STEPS' EVAL_STEPS='$REMOTE_EVAL_STEPS' RESUME_FROM_CHECKPOINT='$REMOTE_RESUME_FROM_CHECKPOINT' INIT_ADAPTER='$REMOTE_INIT_ADAPTER' INIT_ADAPTER_REVISION='$REMOTE_INIT_ADAPTER_REVISION' INIT_ADAPTER_SUBFOLDER='$REMOTE_INIT_ADAPTER_SUBFOLDER' OUTPUT_REPO='$REMOTE_OUTPUT_REPO' RUN_ID='$REMOTE_RUN_ID' LORA_R='$REMOTE_LORA_R' LORA_ALPHA='$REMOTE_LORA_ALPHA' LORA_DROPOUT='$REMOTE_LORA_DROPOUT' LORA_TARGET_MODULES='$REMOTE_LORA_TARGET_MODULES' QUALITY_GATE_CONFIG='$REMOTE_QUALITY_GATE_CONFIG' QUALITY_GATE_STEPS='$REMOTE_QUALITY_GATE_STEPS' QUALITY_GATE_POLICY='$REMOTE_QUALITY_GATE_POLICY' PRESERVE_CHECKPOINT_STEPS='$REMOTE_PRESERVE_CHECKPOINT_STEPS' SAMPLE_PROMPTS_FILE='$REMOTE_SAMPLE_PROMPTS_FILE' bash -se" <<'REMOTE_SCRIPT'
 if [[ ! -d "$HOME/kinyalm/.git" ]]; then
   git clone --filter=blob:none https://github.com/Jonathan-321/kinyalm.git \
     "$HOME/kinyalm"
@@ -194,13 +261,20 @@ nohup env \
   DATA_PROFILE="$DATA_PROFILE" \
   DATA_REVISION="$DATA_REVISION" \
   DATA_PATH_IN_REPO="$DATA_PATH_IN_REPO" \
+  DATA_MINIMUM_ROWS="$DATA_MINIMUM_ROWS" \
+  DATA_MAXIMUM_ROWS="$DATA_MAXIMUM_ROWS" \
   ALLOW_EXPERIMENTAL_FULL_RUN="$ALLOW_EXPERIMENTAL_FULL_RUN" \
   CANDIDATE_QUALITY_POLICY="$CANDIDATE_QUALITY_POLICY" \
   LEARNING_RATE="$LEARNING_RATE" \
   WARMUP_RATIO="$WARMUP_RATIO" \
   EPOCHS="$EPOCHS" \
+  MAX_SEQ_LEN="$MAX_SEQ_LEN" \
   SAVE_STEPS="$SAVE_STEPS" \
   EVAL_STEPS="$EVAL_STEPS" \
+  RESUME_FROM_CHECKPOINT="$RESUME_FROM_CHECKPOINT" \
+  INIT_ADAPTER="$INIT_ADAPTER" \
+  INIT_ADAPTER_REVISION="$INIT_ADAPTER_REVISION" \
+  INIT_ADAPTER_SUBFOLDER="$INIT_ADAPTER_SUBFOLDER" \
   OUTPUT_REPO="$OUTPUT_REPO" \
   RUN_ID="$RUN_ID" \
   LORA_R="$LORA_R" \
@@ -209,7 +283,9 @@ nohup env \
   LORA_TARGET_MODULES="$LORA_TARGET_MODULES" \
   QUALITY_GATE_CONFIG="$QUALITY_GATE_CONFIG" \
   QUALITY_GATE_STEPS="$QUALITY_GATE_STEPS" \
+  QUALITY_GATE_POLICY="$QUALITY_GATE_POLICY" \
   PRESERVE_CHECKPOINT_STEPS="$PRESERVE_CHECKPOINT_STEPS" \
+  SAMPLE_PROMPTS_FILE="$SAMPLE_PROMPTS_FILE" \
   bash "$HOME/kinyalm/scripts/cloud/bootstrap_lambda_instance.sh" \
   > "$HOME/kinyalm-bootstrap.log" 2>&1 < /dev/null &
 echo "$!"

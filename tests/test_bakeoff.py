@@ -14,6 +14,9 @@ from kinyalm.evaluation import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
+CHECKPOINT_CONFIG = (
+    ROOT / "configs" / "evaluation" / "gemma4_longform_checkpoint_bakeoff.json"
+)
 
 
 def test_project_bakeoff_config_is_pinned_and_held_out():
@@ -47,6 +50,24 @@ def test_config_rejects_training_split(tmp_path: Path):
         load_bakeoff_config(path)
 
 
+def test_checkpoint_bakeoff_config_is_fully_pinned():
+    config = load_bakeoff_config(CHECKPOINT_CONFIG)
+
+    assert config.expected_task_count == 150
+    assert len(config.candidates) == 6
+    assert config.candidates[0].adapter is None
+    assert all(
+        candidate.revision == "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+        for candidate in config.candidates
+    )
+    assert all(
+        candidate.adapter is None
+        or candidate.adapter.revision
+        == "44f584225fb3cc215a52be69fcb107da2e743643"
+        for candidate in config.candidates
+    )
+
+
 def test_latest_results_uses_last_attempt(tmp_path: Path):
     path = tmp_path / "results.jsonl"
     append_result(path, {"task_id": "T001", "status": "error"})
@@ -72,6 +93,10 @@ def test_blind_pack_excludes_model_identity(tmp_path: Path):
                 "response": "Small answer",
                 "model_id": "organization/secret-small-model",
                 "model_revision": "a" * 40,
+                "adapter_id": "organization/secret-adapter",
+                "adapter_revision": "c" * 40,
+                "inference_backend": "transformers",
+                "quantization": "",
             }
         },
         "large": {
@@ -102,7 +127,13 @@ def test_blind_pack_excludes_model_identity(tmp_path: Path):
     assert {row["model_label"] for row in rows} == {"Model A", "Model B"}
     assert "secret-small-model" not in review_text
     assert "secret-large-model" not in review_text
+    assert "secret-adapter" not in review_text
     assert key["labels"] == labels
+    keyed_small = next(
+        row for row in key["rows"] if row["candidate_id"] == "small"
+    )
+    assert keyed_small["adapter_id"] == "organization/secret-adapter"
+    assert keyed_small["adapter_revision"] == "c" * 40
 
 
 def test_single_candidate_review_pack_is_still_identity_blind(tmp_path: Path):
@@ -136,3 +167,6 @@ def test_single_candidate_review_pack_is_still_identity_blind(tmp_path: Path):
     assert count == 1
     assert labels == {"local": "Model A"}
     assert "organization/model" not in csv_path.read_text(encoding="utf-8")
+    key = json.loads(key_path.read_text(encoding="utf-8"))
+    assert key["rows"][0]["adapter_id"] == ""
+    assert key["rows"][0]["adapter_revision"] == ""

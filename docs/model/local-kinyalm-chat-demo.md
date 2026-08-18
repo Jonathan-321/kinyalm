@@ -14,12 +14,12 @@ as it is generated. It provides three deliberately different behaviors:
 
 | Mode | Intended behavior | Output limit |
 | --- | --- | ---: |
-| Converse | Focused conversation, usually 4-7 short sentences | 160 tokens |
+| Converse | Natural bilingual conversation with concise learner support | 256 tokens |
 | Translate | Translation or correction with up to three brief notes | 192 tokens |
-| Learn | Fuller explanation, two examples, and a practice question | 256 tokens |
+| Learn | Fuller explanation, two examples, and a practice question | 320 tokens |
 
 Language and learner-level controls change the model instruction without
-reloading the checkpoint. Conversation context is limited to the latest six
+reloading the checkpoint. Conversation context is limited to the latest ten
 turns so that long sessions do not become progressively slower.
 
 ![KinyaLM local chat with a streamed Kinyarwanda response](experiments/assets/kinyalm-local-chat-conversation.png)
@@ -57,10 +57,10 @@ port can be selected with `--port`, for example:
 bash scripts/local/chat_gemma4_web.sh --port 8091 --open
 ```
 
-## Experimental Adapter Review
+## Corrected SFT Adapter Review
 
 Reviewers with access to the private Hugging Face adapter can run the exact
-Gemma 4 QLoRA checkpoint locally:
+Gemma 4 corrected-objective QLoRA checkpoint locally:
 
 ```bash
 hf auth login
@@ -73,12 +73,34 @@ missing. Before scoring responses, open **Runtime details** and confirm that the
 Adapter row reads:
 
 ```text
-kinyalm/kinyalm-gemma-4-12b-experimental@feefb1e7ac35
+kinyalm/kinyalm-gemma-4-12b-corrected-control@fb911c9b842c
 ```
 
 Use a fresh conversation for each held-out prompt and save a rating plus a
-correction when the answer is unnatural or wrong. The adapter remains
-experimental until the native-speaker comparison is complete.
+correction when the answer is unnatural or wrong. This control has already
+shown one repetition failure in CUDA evaluation and remains experimental until
+the native-speaker comparison is complete. The current MLX composition also
+failed exact output parity with CUDA, so use it for local failure analysis, not
+as a substitute for scoring the source PEFT checkpoint.
+
+The current targeted continuation and unchanged base can be tested from one
+resident model:
+
+```bash
+bash scripts/local/chat_gemma4_targeted_web.sh --port 8091 --open
+```
+
+To reproduce the earlier step-500 checkpoint instead:
+
+```bash
+bash scripts/local/chat_gemma4_step500_web.sh --port 8091 --open
+```
+
+Use the `Targeted`, `Base`, and `Compare` controls above the conversation. The
+demo-prompt menu contains ten fixed prompts covering grammar, correction,
+translation, conversation, vocabulary, ambiguity, register, and context. In
+`Compare` mode, both arms receive the same system prompt and settings. They run
+sequentially to keep local peak memory near one model rather than two.
 
 Frontend work can be tested without loading the 12B model:
 

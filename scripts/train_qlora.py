@@ -146,6 +146,29 @@ def parse_args() -> argparse.Namespace:
         default=-1,
         help="Override epochs with a fixed step count; use 1 for a smoke run.",
     )
+    parser.add_argument(
+        "--resume-from-checkpoint",
+        default=None,
+        help="Resume optimizer, scheduler, and adapter state from a saved checkpoint.",
+    )
+    parser.add_argument(
+        "--init-adapter",
+        default=None,
+        help=(
+            "Initialize LoRA weights from a local or Hugging Face adapter while "
+            "starting a fresh optimizer and learning-rate schedule."
+        ),
+    )
+    parser.add_argument(
+        "--init-adapter-revision",
+        default=None,
+        help="Optional pinned adapter commit. Use a commit for reproducible runs.",
+    )
+    parser.add_argument(
+        "--init-adapter-subfolder",
+        default=None,
+        help="Optional adapter subfolder, such as checkpoints/checkpoint-500.",
+    )
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--attn-implementation",
@@ -198,7 +221,107 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--quality-gate-ngram-size", type=int, default=4)
     parser.add_argument("--quality-gate-minimum-occurrences", type=int, default=5)
     parser.add_argument("--quality-gate-maximum-new-rows", type=int, default=0)
+    parser.add_argument(
+        "--quality-gate-policy",
+        choices=("stop", "record"),
+        default="stop",
+        help=(
+            "Stop training on the first repetition regression, or record all "
+            "scheduled gate results while training continues."
+        ),
+    )
     return parser.parse_args()
+
+
+def validate_adapter_config(
+    adapter_config,
+    *,
+    model: str,
+    lora_r: int,
+    lora_alpha: int,
+    lora_dropout: float,
+    target_modules: tuple[str, ...],
+) -> dict:
+    """Fail before training when an initialization adapter is incompatible."""
+
+    observed = {
+        "base_model_name_or_path": str(adapter_config.base_model_name_or_path),
+        "r": int(adapter_config.r),
+        "lora_alpha": int(adapter_config.lora_alpha),
+        "lora_dropout": float(adapter_config.lora_dropout),
+        "target_modules": sorted(str(item) for item in adapter_config.target_modules),
+    }
+    expected = {
+        "base_model_name_or_path": model,
+        "r": lora_r,
+        "lora_alpha": lora_alpha,
+        "lora_dropout": lora_dropout,
+        "target_modules": sorted(target_modules),
+    }
+    mismatches = [
+        f"{key}: expected {expected[key]!r}, observed {observed[key]!r}"
+        for key in expected
+        if observed[key] != expected[key]
+    ]
+    if mismatches:
+        raise ValueError(
+            "incompatible initialization adapter; " + "; ".join(mismatches)
+        )
+    return observed
+
+
+def verify_adapter_metadata(args: argparse.Namespace) -> dict | None:
+    """Resolve and validate adapter configuration without loading model weights."""
+
+    if args.init_adapter is None:
+        if args.init_adapter_revision or args.init_adapter_subfolder:
+            raise SystemExit(
+                "--init-adapter-revision and --init-adapter-subfolder require "
+                "--init-adapter"
+            )
+        return None
+    if args.resume_from_checkpoint:
+        raise SystemExit(
+            "--init-adapter and --resume-from-checkpoint are mutually exclusive"
+        )
+
+    from peft import PeftConfig
+
+    load_kwargs = {}
+    if args.init_adapter_revision:
+        load_kwargs["revision"] = args.init_adapter_revision
+    if args.init_adapter_subfolder:
+        load_kwargs["subfolder"] = args.init_adapter_subfolder
+    try:
+        adapter_config = PeftConfig.from_pretrained(
+            args.init_adapter,
+            **load_kwargs,
+        )
+        metadata = validate_adapter_config(
+            adapter_config,
+            model=args.model,
+            lora_r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+            target_modules=args.target_modules,
+        )
+    except Exception as exc:
+        raise SystemExit(
+            f"adapter metadata check failed for {args.init_adapter}: "
+            f"{type(exc).__name__}: {exc}"
+        ) from exc
+    metadata.update(
+        repo_id=args.init_adapter,
+        revision=args.init_adapter_revision,
+        subfolder=args.init_adapter_subfolder,
+        optimizer_state="fresh",
+        scheduler_state="fresh",
+    )
+    print(
+        "adapter metadata verified: "
+        f"{args.init_adapter}@{args.init_adapter_revision or 'default'}"
+    )
+    return metadata
 
 
 def load_split(path: str, allowed_splits: set[str]) -> list[dict]:
@@ -397,7 +520,7 @@ def build_repetition_gate_callback(
     system_prompt: str,
     base_probe: Path,
 ):
-    """Create a Trainer callback that stops at the first repetition regression."""
+    """Create a Trainer callback that records checkpoint repetition regressions."""
 
     from transformers import TrainerCallback
 
@@ -407,8 +530,19 @@ def build_repetition_gate_callback(
     class RepetitionGateCallback(TrainerCallback):
         def __init__(self) -> None:
             self.reports: list[dict] = []
-            self.failed = False
+            self.failed_checkpoint_steps: list[int] = []
             self.stopped_at_step: int | None = None
+            self.prior_stopped_at_step: int | None = None
+            summary_path = output_dir / "summary.json"
+            if args.quality_gate_policy == "record" and summary_path.exists():
+                prior = json.loads(summary_path.read_text(encoding="utf-8"))
+                self.reports = list(prior.get("reports", []))
+                self.failed_checkpoint_steps = [
+                    int(report["checkpoint_step"])
+                    for report in self.reports
+                    if not report.get("passed", False)
+                ]
+                self.prior_stopped_at_step = prior.get("stopped_at_step")
 
         def on_save(self, training_args, state, control, model=None, **kwargs):
             del training_args, kwargs
@@ -434,18 +568,31 @@ def build_repetition_gate_callback(
             report["checkpoint_step"] = step
             self.reports.append(report)
             if not report["passed"]:
-                self.failed = True
-                self.stopped_at_step = step
-                control.should_training_stop = True
-                print(f"quality gate stopped training at checkpoint {step}")
+                self.failed_checkpoint_steps.append(step)
+                if args.quality_gate_policy == "stop":
+                    self.stopped_at_step = step
+                    control.should_training_stop = True
+                    print(f"quality gate stopped training at checkpoint {step}")
+                else:
+                    print(f"quality gate recorded failure at checkpoint {step}")
             self.write_summary()
             return control
 
         def write_summary(self) -> None:
+            final_checkpoint_passed = (
+                self.reports[-1]["passed"] if self.reports else None
+            )
             summary = {
                 "schema_version": 1,
-                "passed": not self.failed,
+                "policy": args.quality_gate_policy,
+                "passed": not self.failed_checkpoint_steps,
+                "final_checkpoint_passed": final_checkpoint_passed,
+                "failed_checkpoint_steps": self.failed_checkpoint_steps,
+                "recovered_after_failure": bool(
+                    self.failed_checkpoint_steps and final_checkpoint_passed
+                ),
                 "stopped_at_step": self.stopped_at_step,
+                "prior_stopped_at_step": self.prior_stopped_at_step,
                 "required_checkpoint_steps": list(args.quality_gate_steps),
                 "completed_checkpoint_steps": [
                     report["checkpoint_step"] for report in self.reports
@@ -466,6 +613,7 @@ def write_preflight_manifest(
     train_records: list[dict],
     eval_records: list[dict] | None,
     model_metadata: dict | None = None,
+    adapter_metadata: dict | None = None,
 ) -> Path:
     """Record exact local inputs before model loading or training starts."""
 
@@ -490,6 +638,17 @@ def write_preflight_manifest(
             "max_sequence_length": args.max_seq_len,
             "epochs": args.epochs,
             "max_steps": args.max_steps,
+            "resume_from_checkpoint": args.resume_from_checkpoint,
+            "initialization_mode": (
+                "fresh-optimizer-from-adapter"
+                if args.init_adapter
+                else (
+                    "resume-optimizer-and-scheduler"
+                    if args.resume_from_checkpoint
+                    else "new-adapter"
+                )
+            ),
+            "initialization_adapter": adapter_metadata,
             "save_steps": args.save_steps,
             "eval_steps": args.eval_steps,
             "loss_scope": "assistant-completions-only",
@@ -507,6 +666,7 @@ def write_preflight_manifest(
                     "ngram_size": args.quality_gate_ngram_size,
                     "minimum_occurrences": args.quality_gate_minimum_occurrences,
                     "maximum_new_rows": args.quality_gate_maximum_new_rows,
+                    "policy": args.quality_gate_policy,
                 }
                 if args.quality_gate_config
                 else None
@@ -679,6 +839,7 @@ def verify_model_metadata(model: str, revision: str | None = None) -> dict:
 
 def main() -> int:
     args = parse_args()
+    adapter_metadata = verify_adapter_metadata(args)
     gate_inputs = quality_gate_inputs(args)
 
     # --experimental includes the critic-filtered tier AND any human-approved
@@ -710,6 +871,7 @@ def main() -> int:
         train_records,
         eval_records,
         model_metadata,
+        adapter_metadata,
     )
     print(f"preflight manifest: {preflight_path}")
     if args.dry_run:
@@ -717,7 +879,7 @@ def main() -> int:
         return 0
 
     import torch
-    from peft import LoraConfig
+    from peft import LoraConfig, PeftModel, prepare_model_for_kbit_training
     from transformers import (
         AutoConfig,
         AutoModelForCausalLM,
@@ -816,14 +978,34 @@ def main() -> int:
             base_probe=base_probe,
         )
 
-    peft_config = LoraConfig(
-        r=args.lora_r,
-        lora_alpha=args.lora_alpha,
-        lora_dropout=args.lora_dropout,
-        bias="none",
-        task_type="CAUSAL_LM",
-        target_modules=list(args.target_modules),
-    )
+    if quantize:
+        model = prepare_model_for_kbit_training(
+            model,
+            use_gradient_checkpointing=use_cuda,
+        )
+
+    if args.init_adapter:
+        adapter_load_kwargs = {"is_trainable": True}
+        if args.init_adapter_revision:
+            adapter_load_kwargs["revision"] = args.init_adapter_revision
+        if args.init_adapter_subfolder:
+            adapter_load_kwargs["subfolder"] = args.init_adapter_subfolder
+        model = PeftModel.from_pretrained(
+            model,
+            args.init_adapter,
+            **adapter_load_kwargs,
+        )
+        peft_config = None
+        print("loaded initialization adapter with a fresh optimizer and scheduler")
+    else:
+        peft_config = LoraConfig(
+            r=args.lora_r,
+            lora_alpha=args.lora_alpha,
+            lora_dropout=args.lora_dropout,
+            bias="none",
+            task_type="CAUSAL_LM",
+            target_modules=list(args.target_modules),
+        )
 
     use_step_checkpoints = args.max_steps < 0 or args.max_steps > 1
     eval_strategy = (
@@ -854,10 +1036,10 @@ def main() -> int:
         eval_steps=args.eval_steps,
         save_strategy=save_strategy,
         save_steps=args.save_steps,
-        save_total_limit=4,
-        load_best_model_at_end=bool(eval_records),
-        metric_for_best_model="eval_loss" if eval_records else None,
-        greater_is_better=False if eval_records else None,
+        # Preserve every scheduled adapter. Generation and native review select
+        # the winner; validation loss alone is not a conversational-quality gate.
+        save_total_limit=None,
+        load_best_model_at_end=False,
         completion_only_loss=True,
         seed=args.seed,
         report_to="none",
@@ -871,9 +1053,11 @@ def main() -> int:
         eval_dataset=eval_dataset,
         peft_config=peft_config,
     )
+    if hasattr(trainer.model, "print_trainable_parameters"):
+        trainer.model.print_trainable_parameters()
     if gate_callback is not None:
         trainer.add_callback(gate_callback)
-    result = trainer.train()
+    result = trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     trainer.save_model(args.output_dir)
     if gate_callback is not None:
         gate_callback.write_summary()

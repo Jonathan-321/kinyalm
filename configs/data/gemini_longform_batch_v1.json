@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "generation_id": "kinyalm-gemini-longform-1m-v1",
+  "curriculum": "configs/data/kinyalm_longform_curriculum_v1.json",
+  "prompt_template": "prompts/gemini_longform_api_batch_v1.txt",
+  "provider": "Google Gemini Developer API",
+  "model": "gemini-3.1-pro-preview",
+  "mode": "batch-file",
+  "seed": 336,
+  "first_conversation_number": 1,
+  "generation_config": {
+    "temperature": 0.8,
+    "topP": 0.95,
+    "maxOutputTokens": 8192,
+    "responseMimeType": "application/json"
+  },
+  "pricing_snapshot": {
+    "as_of": "2026-08-09",
+    "currency": "USD",
+    "batch_input_per_million_tokens": 1.0,
+    "batch_output_per_million_tokens_including_thinking": 6.0,
+    "expected_total_cost_range": [10, 25],
+    "submission_requires_explicit_paid_batch_acknowledgement": true
+  }
+}

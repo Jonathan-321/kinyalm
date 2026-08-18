@@ -1,5 +1,7 @@
 import hashlib
 import json
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -7,6 +9,8 @@ import pytest
 from kinyalm.evaluation import load_bakeoff_config
 from scripts.run_multilingual_bakeoff import (
     add_mlx_adapter_candidate,
+    apply_adapter_variant,
+    attach_transformers_adapter,
     filter_ignored_weights,
     load_held_out_tasks,
     parse_gemma4_response,
@@ -17,6 +21,9 @@ from scripts.run_multilingual_bakeoff import (
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG = ROOT / "configs" / "evaluation" / "gemma4_bakeoff.json"
+CHECKPOINT_CONFIG = (
+    ROOT / "configs" / "evaluation" / "gemma4_longform_checkpoint_bakeoff.json"
+)
 
 
 def test_runner_loads_only_held_out_tasks():
@@ -59,6 +66,51 @@ def test_runner_resolves_pinned_local_mlx_checkpoint():
     assert candidate.model_type_override == "gemma4"
     assert candidate.ignored_weight_prefixes == ("vision_embedder.",)
     assert candidate.suppress_token_ids == (258882, 258883)
+
+
+def test_runner_resolves_pinned_transformers_adapter_checkpoints():
+    config = load_bakeoff_config(CHECKPOINT_CONFIG)
+
+    candidates = resolve_runtime_candidates(config, None, "transformers")
+
+    assert len(candidates) == 6
+    assert candidates[0].adapter_id is None
+    assert candidates[1].adapter_subfolder == "checkpoints/checkpoint-400"
+    assert candidates[-1].adapter_subfolder is None
+    assert candidates[-1].adapter_revision == "44f584225fb3cc215a52be69fcb107da2e743643"
+
+
+def test_transformers_adapter_loader_pins_revision_and_subfolder(monkeypatch):
+    config = load_bakeoff_config(CHECKPOINT_CONFIG)
+    candidate = resolve_runtime_candidates(
+        config, ["kinyalm-longform-step-400"], "transformers"
+    )[0]
+    calls = []
+
+    class FakePeftModel:
+        @staticmethod
+        def from_pretrained(model, repo_id, **options):
+            calls.append((model, repo_id, options))
+            return "adapted-model"
+
+    monkeypatch.setitem(
+        sys.modules, "peft", types.SimpleNamespace(PeftModel=FakePeftModel)
+    )
+
+    result = attach_transformers_adapter("base-model", candidate)
+
+    assert result == "adapted-model"
+    assert calls == [
+        (
+            "base-model",
+            "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+            {
+                "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+                "is_trainable": False,
+                "subfolder": "checkpoints/checkpoint-400",
+            },
+        )
+    ]
 
 
 def test_runner_rejects_candidate_without_local_mlx_runtime():
@@ -134,6 +186,64 @@ def test_runner_rejects_changed_mlx_adapter_weights(tmp_path: Path):
 
     with pytest.raises(ValueError, match="hash does not match"):
         add_mlx_adapter_candidate(candidates, manifest_path)
+
+
+def test_runner_attaches_adapter_without_losing_base_identity():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    adapted = apply_adapter_variant(
+        base,
+        adapter_id="kinyalm/adapter",
+        adapter_revision="d" * 40,
+        run_as="original-peft",
+    )
+
+    assert adapted[0].id == "original-peft"
+    assert adapted[0].model_id == "google/gemma-4-12B-it"
+    assert adapted[0].revision == config.candidates[0].revision
+    assert adapted[0].adapter_id == "kinyalm/adapter"
+    assert adapted[0].adapter_revision == "d" * 40
+    assert base[0].adapter_id is None
+
+
+def test_runner_requires_unique_adapter_variant_id():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="unique --run-as"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision="d" * 40,
+            run_as=None,
+        )
+
+
+def test_runner_requires_pinned_adapter_revision():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="40-character"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision=None,
+            run_as="original-peft",
+        )
+
+
+def test_runner_rejects_unsafe_adapter_variant_id():
+    config = load_bakeoff_config(CONFIG)
+    base = resolve_runtime_candidates(config, ["gemma4-12b-it"], "transformers")
+
+    with pytest.raises(ValueError, match="may contain only"):
+        apply_adapter_variant(
+            base,
+            adapter_id="kinyalm/adapter",
+            adapter_revision="d" * 40,
+            run_as="../outside",
+        )
 
 
 def test_select_tasks_preserves_bank_order_and_validates_limit():

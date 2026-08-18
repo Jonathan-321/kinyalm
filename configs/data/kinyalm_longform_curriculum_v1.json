@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "curriculum_id": "kinyalm-longform-v1",
+  "tokenizer": {
+    "repo_id": "google/gemma-4-12B-it",
+    "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+  },
+  "token_budget": {
+    "existing_assistant_tokens": 82403,
+    "target_total_assistant_tokens_min": 1000000,
+    "target_total_assistant_tokens_max": 1200000,
+    "planned_new_conversations": 2800,
+    "planned_new_assistant_responses": 6450,
+    "planning_mean_tokens_per_new_response": 145,
+    "calibration_observed_mean_tokens_per_response": 146.79,
+    "projected_new_assistant_tokens": 935250,
+    "projected_total_assistant_tokens": 1017653
+  },
+  "conversation_shape": {
+    "2_messages": 600,
+    "4_messages": 1100,
+    "6_messages": 750,
+    "8_messages": 350
+  },
+  "task_family_targets": {
+    "natural-conversation": 420,
+    "beginner-tutoring": 360,
+    "morphology": 340,
+    "sentence-correction": 340,
+    "en-to-rw": 260,
+    "rw-to-en": 260,
+    "uncertainty-clarification": 260,
+    "reading-comprehension": 240,
+    "code-switching": 180,
+    "formal-informal": 140
+  },
+  "language_mix_targets": {
+    "kinyarwanda": 0.65,
+    "kinyarwanda+english": 0.3,
+    "english": 0.05
+  },
+  "assistant_response_tokens": {
+    "minimum": 100,
+    "target_median_min": 150,
+    "target_median_max": 200,
+    "maximum": 300
+  },
+  "batch_policy": {
+    "conversations_per_generation_batch": 4,
+    "planned_generation_jobs": 700,
+    "batches_per_review_release": 20,
+    "review_release_conversations": 80,
+    "stop_on_structural_failure": true,
+    "stop_on_benchmark_overlap": true,
+    "human_approval_required_per_conversation": true
+  },
+  "repair_policy": {
+    "raw_teacher_output_is_immutable": true,
+    "prefer_exact_span_corrections": true,
+    "whole_conversation_regeneration_requires_structural_failure": true,
+    "machine_or_teacher_self_review_cannot_approve_training": true,
+    "native_reapproval_required_after_any_correction": true
+  }
+}

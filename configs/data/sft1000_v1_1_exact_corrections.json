@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "source_dataset_id": "kinyalm-native-review-sft1000-v1",
+  "target_dataset_id": "kinyalm-native-review-sft1000-v1.1",
+  "authorized_by": "Jonathan Muhire",
+  "authorized_on": "2026-08-09",
+  "policy": "Apply only exact, independently justified text replacements.",
+  "corrections": [
+    {
+      "conversation_id": "KINYA-SFT-0001",
+      "message_index": 1,
+      "expected_text": "Ni byiza cyane! Nmeze neza. Wowe se amakuru yawe?",
+      "replacement_text": "Ni byiza cyane! Meze neza. Wowe se amakuru yawe?",
+      "reason": "Correct the isolated typo Nmeze to Meze without rewriting the response."
+    }
+  ]
+}

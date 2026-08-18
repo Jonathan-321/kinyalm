@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "model": "gemini-3.1-pro-preview",
+  "generation_config": {
+    "maxOutputTokens": 8192,
+    "responseMimeType": "application/json",
+    "thinkingConfig": {
+      "thinkingLevel": "low"
+    }
+  },
+  "conversations_per_request": 1,
+  "immutable_raw_outputs": true,
+  "teacher_self_repair_allowed": false
+}

@@ -12,6 +12,7 @@ const elements = {
   modeLabel: $("#topbar-mode"),
   language: $("#language-select"),
   level: $("#level-select"),
+  demoPrompt: $("#demo-prompt-select"),
   notice: $("#connection-notice"),
   status: $("#runtime-status"),
   location: $("#runtime-location"),
@@ -32,6 +33,8 @@ const state = {
   conversationId: crypto.randomUUID(),
   messages: [],
   mode: "converse",
+  runtimeMode: "targeted",
+  compareHistories: { base: [], targeted: [] },
   busy: false,
   controller: null,
   health: null,
@@ -40,8 +43,65 @@ const state = {
   activeRequest: null,
 };
 
+const demoPrompts = [
+  {
+    label: "1. Ndi vs ni",
+    prompt: "Explain in English the difference between 'ndi' and 'ni', then give three natural Kinyarwanda examples.",
+    mode: "learn", language: "en", level: "beginner",
+  },
+  {
+    label: "2. Correct Nmeze",
+    prompt: "Kosora iyi nteruro kandi usobanure mu Cyongereza: Nmeze neza, wowe umeze gute?",
+    mode: "translate", language: "en", level: "beginner",
+  },
+  {
+    label: "3. Translate to English",
+    prompt: "Translate into natural English and explain the key phrase: Nubwo imvura yagwaga, twakomeje urugendo.",
+    mode: "translate", language: "en", level: "intermediate",
+  },
+  {
+    label: "4. Translate to Kinyarwanda",
+    prompt: "Translate naturally into Kinyarwanda: I have been learning Kinyarwanda for three months, but I still make mistakes.",
+    mode: "translate", language: "en", level: "intermediate",
+  },
+  {
+    label: "5. Start a conversation",
+    prompt: "Nitwa Jonathan kandi ndimo kwiga Ikinyarwanda. Reka tuganire; mbaza ikibazo kimwe gisanzwe.",
+    mode: "converse", language: "rw", level: "beginner",
+  },
+  {
+    label: "6. Thank-you nuance",
+    prompt: "What is the difference between 'urakoze', 'murakoze', and 'ndagushimiye'? Explain when each sounds natural.",
+    mode: "learn", language: "en", level: "intermediate",
+  },
+  {
+    label: "7. Handle ambiguity",
+    prompt: "Someone texts me only the word 'Genda'. What could it mean, and what context would you need before translating it confidently?",
+    mode: "learn", language: "en", level: "advanced",
+  },
+  {
+    label: "8. Remember the learner",
+    prompt: "My name is Aline, I live in Kigali, and I am a beginner. Greet me in Kinyarwanda and ask one easy question I can answer.",
+    mode: "converse", language: "en", level: "beginner",
+  },
+  {
+    label: "9. Polite greeting",
+    prompt: "How should I politely greet an older person in Rwanda in the morning? Give the Kinyarwanda first and explain the level of formality.",
+    mode: "learn", language: "en", level: "intermediate",
+  },
+  {
+    label: "10. Correct a learner",
+    prompt: "Correct this learner sentence without changing its meaning, then explain the correction in English: Ndi umunyeshuri ni Amerika.",
+    mode: "translate", language: "en", level: "beginner",
+  },
+];
+
 function runtimeReady() {
   return state.health?.status === "ready";
+}
+
+function requestRuntimeVariant() {
+  return state.health?.runtime?.comparison?.available ? state.runtimeMode : "default";
 }
 
 function icon(paths) {
@@ -84,6 +144,17 @@ function setMode(mode) {
   });
   const active = $(`.mode-button[data-mode="${mode}"]`);
   elements.modeLabel.textContent = active?.textContent || "Converse";
+}
+
+function setRuntimeMode(mode, reset = true) {
+  if (!["targeted", "base", "compare"].includes(mode)) return;
+  if (reset && state.runtimeMode !== mode && state.messages.length) resetConversation();
+  state.runtimeMode = mode;
+  $$(".runtime-button").forEach((button) => {
+    const active = button.dataset.runtime === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
 }
 
 function autoResize() {
@@ -174,7 +245,7 @@ function renderMessage(message, streaming = false) {
   body.className = "message-body";
   const author = document.createElement("div");
   author.className = "message-author";
-  author.textContent = "KinyaLM";
+  author.textContent = message.variant === "base" ? "Gemma base" : "KinyaLM targeted";
   const content = document.createElement("div");
   content.className = "message-content";
   content.textContent = message.content;
@@ -204,6 +275,7 @@ function resetConversation() {
   state.activeRequest = null;
   state.conversationId = crypto.randomUUID();
   state.messages = [];
+  state.compareHistories = { base: [], targeted: [] };
   state.pendingFeedback = null;
   elements.messages.replaceChildren();
   elements.empty.classList.remove("hidden");
@@ -216,6 +288,134 @@ function resetConversation() {
   setBusy(false);
   autoResize();
   elements.input.focus();
+}
+
+function metricSummary(metrics) {
+  if (!metrics) return "";
+  const speed = Number(metrics.tokens_per_second || 0).toFixed(1);
+  const first = Number(metrics.first_token_seconds || 0).toFixed(1);
+  return `${speed} tok/s · ${first}s first token · ${metrics.output_tokens || 0} tokens`;
+}
+
+function createComparisonNode() {
+  const article = document.createElement("article");
+  article.className = "comparison-message";
+  const grid = document.createElement("div");
+  grid.className = "comparison-grid";
+  const panels = {};
+  [["base", "Unchanged Gemma base"], ["targeted", "KinyaLM targeted SFT"]].forEach(([variant, label]) => {
+    const panel = document.createElement("section");
+    panel.className = `comparison-panel ${variant}`;
+    const header = document.createElement("header");
+    const title = document.createElement("strong");
+    title.textContent = label;
+    const status = document.createElement("span");
+    status.textContent = variant === "base" ? "Generating" : "Waiting";
+    header.append(title, status);
+    const content = document.createElement("div");
+    content.className = "comparison-content";
+    const metrics = document.createElement("div");
+    metrics.className = "comparison-metrics";
+    panel.append(header, content, metrics);
+    grid.append(panel);
+    panels[variant] = { panel, status, content, metrics };
+  });
+  article.append(grid);
+  elements.messages.append(article);
+  scrollToBottom();
+  return panels;
+}
+
+async function streamVariant({ variant, messages, settings, signal, onEvent }) {
+  const response = await fetch("/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      conversation_id: state.conversationId,
+      ...settings,
+      runtime_variant: variant,
+      messages,
+    }),
+    signal,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `Request failed (${response.status})`);
+  }
+  let result = null;
+  await readNdjson(response, (event) => {
+    onEvent(event);
+    if (event.type === "done") result = event;
+    if (event.type === "error") throw new Error(event.error || "Generation failed");
+  });
+  if (!result) throw new Error("Generation ended without a result");
+  return result;
+}
+
+async function sendComparisonMessage(content) {
+  const prompt = content.trim();
+  const userMessage = { id: crypto.randomUUID(), role: "user", content: prompt };
+  state.messages.push(userMessage);
+  appendMessage(userMessage);
+  updateConversationTitle(prompt);
+  elements.input.value = "";
+  autoResize();
+  const panels = createComparisonNode();
+  const settings = {
+    mode: state.mode,
+    language: elements.language.value,
+    level: elements.level.value,
+  };
+  state.controller = new AbortController();
+  setBusy(true);
+  elements.notice.classList.add("hidden");
+
+  try {
+    for (const variant of ["base", "targeted"]) {
+      const panel = panels[variant];
+      panel.status.textContent = "Generating";
+      panel.panel.classList.add("streaming");
+      let streamed = "";
+      const history = [
+        ...state.compareHistories[variant],
+        { role: "user", content: prompt },
+      ];
+      const result = await streamVariant({
+        variant,
+        messages: history,
+        settings,
+        signal: state.controller.signal,
+        onEvent: (event) => {
+          if (event.type === "delta") {
+            streamed += event.text;
+            panel.content.textContent = streamed;
+            scrollToBottom();
+          }
+        },
+      });
+      panel.content.textContent = result.response;
+      panel.metrics.textContent = metricSummary(result.metrics);
+      panel.status.textContent = "Complete";
+      panel.panel.classList.remove("streaming");
+      state.compareHistories[variant].push(
+        { role: "user", content: prompt },
+        { role: "assistant", content: result.response },
+      );
+    }
+  } catch (error) {
+    if (error.name === "AbortError") {
+      showToast("Comparison stopped");
+    } else {
+      elements.notice.textContent = error.message;
+      elements.notice.dataset.source = "request";
+      elements.notice.classList.remove("hidden");
+    }
+  } finally {
+    state.controller = null;
+    setBusy(false);
+    elements.input.focus();
+    scrollToBottom();
+  }
 }
 
 async function readNdjson(response, onEvent) {
@@ -244,6 +444,10 @@ async function sendMessage(content) {
     elements.notice.classList.remove("hidden");
     return;
   }
+  if (state.runtimeMode === "compare") {
+    await sendComparisonMessage(content);
+    return;
+  }
   const requestKey = crypto.randomUUID();
   const conversationId = state.conversationId;
   const requestSettings = {
@@ -269,6 +473,7 @@ async function sendMessage(content) {
     content: "",
     metrics: null,
     settings: requestSettings,
+    variant: state.runtimeMode,
   };
   const assistantNode = appendMessage(assistantMessage, true);
   const contentNode = assistantNode.querySelector(".message-content");
@@ -284,6 +489,7 @@ async function sendMessage(content) {
       body: JSON.stringify({
         conversation_id: conversationId,
         ...requestSettings,
+        runtime_variant: requestRuntimeVariant(),
         messages: state.messages.map(({ role, content: text }) => ({ role, content: text })),
       }),
       signal: state.controller.signal,
@@ -377,6 +583,14 @@ function updateHealth(health) {
   elements.location.textContent = health.runtime?.location || "On this Mac";
 
   const runtime = health.runtime || {};
+  const comparisonAvailable = Boolean(runtime.comparison?.available);
+  const checkpointMatch = String(runtime.adapter || "").match(/checkpoint-(\d+)/);
+  const adapterButton = $('.runtime-button[data-runtime="targeted"]');
+  adapterButton.textContent = checkpointMatch ? `Step ${checkpointMatch[1]}` : "Targeted";
+  $$(".runtime-button").forEach((button) => {
+    button.disabled = !comparisonAvailable;
+  });
+  if (!comparisonAvailable && status === "ready") setRuntimeMode("base", false);
   const rows = [
     ["Status", elements.status.textContent],
     ["Model", runtime.base_model || "Loading"],
@@ -384,6 +598,9 @@ function updateHealth(health) {
     ["Adapter", runtime.adapter || "None (base model)"],
     ["Backend", runtime.backend || "—"],
     ["Quantization", runtime.quantization || "—"],
+    ["Prompt profile", runtime.prompt_profile || "—"],
+    ["Decoding", runtime.decoding || "—"],
+    ["History", runtime.history || "—"],
     ["Location", runtime.location || "On this Mac"],
   ];
   elements.detailsList.replaceChildren();
@@ -467,6 +684,7 @@ elements.input.addEventListener("keydown", (event) => {
 });
 
 $$(".mode-button").forEach((button) => button.addEventListener("click", () => setMode(button.dataset.mode)));
+$$(".runtime-button").forEach((button) => button.addEventListener("click", () => setRuntimeMode(button.dataset.runtime)));
 $$("[data-prompt]").forEach((button) => button.addEventListener("click", () => {
   if (button.dataset.modeTarget) setMode(button.dataset.modeTarget);
   sendMessage(button.dataset.prompt);
@@ -491,6 +709,24 @@ function setSidebar(open) {
 $("#mobile-menu").addEventListener("click", () => setSidebar(true));
 $("#sidebar-close").addEventListener("click", () => setSidebar(false));
 elements.sidebarScrim.addEventListener("click", () => setSidebar(false));
+
+demoPrompts.forEach((item, index) => {
+  const option = document.createElement("option");
+  option.value = String(index);
+  option.textContent = item.label;
+  elements.demoPrompt.append(option);
+});
+elements.demoPrompt.addEventListener("change", () => {
+  if (elements.demoPrompt.value === "") return;
+  const item = demoPrompts[Number(elements.demoPrompt.value)];
+  setMode(item.mode);
+  elements.language.value = item.language;
+  elements.level.value = item.level;
+  elements.input.value = item.prompt;
+  elements.demoPrompt.value = "";
+  autoResize();
+  elements.input.focus();
+});
 
 elements.messages.addEventListener("click", async (event) => {
   const button = event.target.closest("[data-action]");

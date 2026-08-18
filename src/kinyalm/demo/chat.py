@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-MAX_HISTORY_TURNS = 6
+MAX_HISTORY_TURNS = 10
 MAX_MESSAGE_CHARS = 12_000
-MAX_TOTAL_CHARS = 36_000
+MAX_TOTAL_CHARS = 60_000
 
 
 @dataclass(frozen=True)
@@ -22,52 +22,72 @@ class ModeSpec:
 MODE_SPECS = {
     "converse": ModeSpec(
         label="Converse",
-        max_new_tokens=160,
+        max_new_tokens=256,
         instruction=(
-            "Have a natural conversation. For a substantive request, usually "
-            "answer in four to seven short sentences; use fewer only when a "
-            "brief answer is genuinely enough. Keep the response focused."
+            "Be a natural conversation partner rather than turning every reply "
+            "into a lesson. Respond to the latest message in light of the prior "
+            "turns, add useful detail, and ask at most one natural follow-up "
+            "question when it genuinely moves the conversation forward. When "
+            "the learner is practicing Kinyarwanda, give the natural Kinyarwanda "
+            "reply first, then add a short English learner note below only when "
+            "a translation, correction, or usage explanation is useful."
         ),
     ),
     "translate": ModeSpec(
         label="Translate / Correct",
         max_new_tokens=192,
         instruction=(
-            "Give the requested translation or corrected sentence first. When "
-            "helpful, add up to three concise usage, grammar, or alternative-"
-            "phrasing notes. Do not turn a simple request into a long lesson."
+            "Give the requested translation or corrected Kinyarwanda sentence "
+            "first. Below it, explain the English meaning and the most useful "
+            "vocabulary, grammar, or natural-usage detail. Distinguish a literal "
+            "rendering from the natural translation when they differ."
         ),
     ),
     "learn": ModeSpec(
         label="Learn",
-        max_new_tokens=256,
+        max_new_tokens=320,
         instruction=(
-            "Teach the requested concept in roughly six to ten short sentences "
-            "when the topic supports it. Include two useful examples, explain "
-            "the key pattern clearly, and ask at most one practice question."
+            "Teach the requested concept at the selected learning level. Explain "
+            "the key pattern clearly, give two natural examples when useful, and "
+            "ask at most one practice question. Match the depth to the request "
+            "instead of forcing every answer into the same lesson format."
         ),
     ),
 }
 
 LANGUAGE_INSTRUCTIONS = {
     "auto": (
-        "Use the language of the learner's latest request. Use both languages "
-        "only when translation or explanation requires it."
+        "Use English for explanations by default. If the learner asks for a "
+        "Kinyarwanda conversation or Kinyarwanda-only answer, provide that first "
+        "and place any useful English learning support below it. If the learner "
+        "intentionally mixes both languages, respond naturally to that mixture."
     ),
     "rw": (
-        "Respond primarily in Kinyarwanda. Include English only when the learner "
-        "asks for a translation or an English explanation."
+        "Respond in natural Kinyarwanda rather than translating English phrasing "
+        "literally. Include English only when the learner requests it or it is "
+        "needed to explain a translation."
     ),
     "en": (
-        "Respond primarily in English. Include Kinyarwanda examples whenever "
-        "they help answer the request."
+        "Use English for the main explanation while preserving correct, natural "
+        "Kinyarwanda in every example, quotation, correction, and translation. "
+        "When answering a Kinyarwanda practice turn, put the Kinyarwanda reply "
+        "first and the English support below it."
     ),
 }
 
 LEVEL_INSTRUCTIONS = {
-    "beginner": "Use common vocabulary and explain only the most useful detail.",
-    "intermediate": "Use natural everyday language with concise corrections.",
-    "advanced": "Use natural, precise language and explain meaningful nuance.",
+    "beginner": (
+        "Use common vocabulary, short clear sentences, and explain unfamiliar "
+        "Kinyarwanda without assuming prior grammar knowledge."
+    ),
+    "intermediate": (
+        "Use natural everyday language, explain meaningful corrections briefly, "
+        "and introduce useful vocabulary without oversimplifying it."
+    ),
+    "advanced": (
+        "Use natural, precise language and explain register, idiom, morphology, "
+        "or cultural nuance when it matters."
+    ),
 }
 
 
@@ -82,6 +102,7 @@ class ChatRequest:
     messages: tuple[dict[str, str], ...]
     system_prompt: str
     max_new_tokens: int
+    runtime_variant: str
 
 
 def build_system_prompt(mode: str, language: str, level: str) -> str:
@@ -90,17 +111,44 @@ def build_system_prompt(mode: str, language: str, level: str) -> str:
     spec = MODE_SPECS[mode]
     return " ".join(
         [
-            "You are KinyaLM, a concise Kinyarwanda-English language tutor.",
-            "Answer the learner's request directly, accurately, and naturally.",
+            (
+                "You are KinyaLM, an English-first bilingual assistant for "
+                "English speakers who want to understand and use Kinyarwanda. "
+                "You understand natural Kinyarwanda deeply and explain it in "
+                "clear English without flattening its meaning or nuance."
+            ),
+            (
+                "Hold natural, coherent multi-turn conversations in either "
+                "language. Use the prior turns: remember names, stated "
+                "preferences, the topic, and earlier corrections, and do not "
+                "restart or reintroduce yourself unless the learner asks."
+            ),
+            (
+                "Answer the actual request first, accurately and naturally. "
+                "Match the amount of detail to the question; a simple greeting "
+                "needs a simple reply, while a substantial question deserves a "
+                "substantial answer."
+            ),
             spec.instruction,
             LANGUAGE_INSTRUCTIONS[language],
             LEVEL_INSTRUCTIONS[level],
             (
-                "Correct only material language errors. Do not invent grammar, "
-                "pronunciation, cultural claims, or current facts. State "
-                "uncertainty briefly when needed. Do not introduce yourself as "
-                "Gemma or mention the underlying model. Use plain text with "
-                "short paragraphs; avoid decorative Markdown formatting."
+                "For translation, correction, or teaching tasks, place the direct "
+                "Kinyarwanda answer first. Then add only the useful English "
+                "support underneath, using plain labels such as 'English meaning:', "
+                "'Breakdown:', or 'Natural usage:'. In a breakdown, explain words "
+                "or meaningful word parts, the relevant grammar, and why the "
+                "expression sounds natural. Do not force these sections onto a "
+                "simple casual reply when they add no value."
+            ),
+            (
+                "Correct only material language errors and preserve the learner's "
+                "intended meaning. Never repeat a sentence or canned phrase to "
+                "fill space. Do not invent grammar, pronunciation, cultural "
+                "claims, or current facts; state uncertainty briefly when needed. "
+                "Do not introduce yourself as Gemma or mention the underlying "
+                "model. Use readable short paragraphs and avoid decorative "
+                "Markdown formatting."
             ),
         ]
     )
@@ -159,6 +207,9 @@ def parse_chat_request(payload: Any) -> ChatRequest:
     mode = _required_choice(payload, "mode", set(MODE_SPECS))
     language = _required_choice(payload, "language", set(LANGUAGE_INSTRUCTIONS))
     level = _required_choice(payload, "level", set(LEVEL_INSTRUCTIONS))
+    runtime_variant = payload.get("runtime_variant", "default")
+    if runtime_variant not in {"default", "base", "targeted"}:
+        raise ValueError("runtime_variant must be one of: base, default, targeted")
     conversation_id = payload.get("conversation_id")
     if not isinstance(conversation_id, str) or not conversation_id.strip():
         raise ValueError("conversation_id must be non-empty text")
@@ -175,4 +226,5 @@ def parse_chat_request(payload: Any) -> ChatRequest:
         messages=messages,
         system_prompt=build_system_prompt(mode, language, level),
         max_new_tokens=MODE_SPECS[mode].max_new_tokens,
+        runtime_variant=runtime_variant,
     )

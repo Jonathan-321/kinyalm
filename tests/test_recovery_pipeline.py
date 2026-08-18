@@ -10,10 +10,12 @@ from kinyalm.evaluation import (
     compare_probe_repetition,
     load_bakeoff_config,
     load_task_bank,
+    render_native_review_markdown,
     summarize_native_review,
     write_blind_review_pack,
 )
 from scripts.build_targeted_rewrite_queue import build_rewrite_rows
+from scripts.build_team_reviewed_longform_sft import combine_records
 from scripts.cloud.submit_recovery_arm import load_arm
 from scripts.download_reviewed_sft import verify_package
 from scripts.promote_targeted_rewrites import promote_rewrites
@@ -34,6 +36,11 @@ def test_recovery_bank_has_150_unique_permanently_held_out_prompts():
     assert len({task.prompt.casefold() for task in tasks}) == 150
     assert sum(task.category == "Morphology and grammar" for task in tasks) == 30
     assert sum(task.category == "Sentence correction" for task in tasks) == 20
+    candidate_by_id = {candidate.id: candidate for candidate in config.candidates}
+    teacher = candidate_by_id["gemma4-31b-it"]
+    assert teacher.revision == "3548789868c5356dbf307c98e6f609007b82b3eb"
+    assert teacher.local_mlx is not None
+    assert teacher.local_mlx.model_id == "mlx-community/gemma-4-31b-it-4bit"
 
 
 def test_blind_pack_contains_native_correction_fields(tmp_path):
@@ -149,6 +156,71 @@ def test_native_review_rejects_adapter_below_base_and_recommends_cpt(tmp_path):
     assert summary["continued_pretraining"]["decision"] == "consider-cpt"
 
 
+def test_native_review_reports_normalized_paired_improvement(tmp_path):
+    outcomes = [
+        ("T1", True, True),
+        ("T2", False, True),
+        ("T3", True, False),
+        ("T4", False, True),
+    ]
+    rows = []
+    candidate_by_id = {}
+    for index, (task_id, base_pass, adapter_pass) in enumerate(outcomes, start=1):
+        for offset, (candidate, passed) in enumerate(
+            (("base", base_pass), ("adapter", adapter_pass))
+        ):
+            blind_id = f"B{index * 2 - 1 + offset:03d}"
+            row = _scored_row(blind_id, candidate, passed=passed)
+            row["task_id"] = task_id
+            rows.append(row)
+            candidate_by_id[blind_id] = candidate
+    review_path, key_path = _write_review_fixture(
+        tmp_path, rows, candidate_by_id
+    )
+
+    summary = summarize_native_review(
+        review_path,
+        key_path,
+        baseline_candidate_id="base",
+    )
+
+    assert summary["candidates"]["base"]["pass_rate_percent"] == 50.0
+    assert summary["candidates"]["adapter"]["pass_rate_percent"] == 75.0
+    comparison = summary["comparisons_to_baseline"]["adapter"]
+    assert comparison["paired_valid_prompt_count"] == 4
+    assert comparison["absolute_improvement_percentage_points"] == 25.0
+    assert comparison["relative_error_reduction_percent"] == 50.0
+    assert comparison["recovered_baseline_failures"] == 2
+    assert comparison["new_regressions"] == 1
+    assert comparison["net_improved_prompts"] == 1
+    assert (
+        comparison["bootstrap_95_ci_percentage_points"]["bootstrap_samples"]
+        == 10_000
+    )
+    assert "+25.00 pp" in render_native_review_markdown(summary)
+
+
+def test_review_report_can_be_labeled_as_model_assisted(tmp_path):
+    rows = [
+        _scored_row("B001", "base", passed=True),
+        _scored_row("B002", "adapter", passed=True),
+    ]
+    review_path, key_path = _write_review_fixture(
+        tmp_path, rows, {"B001": "base", "B002": "adapter"}
+    )
+    summary = summarize_native_review(
+        review_path,
+        key_path,
+        baseline_candidate_id="base",
+        report_title="Normalized Model-Assisted Evaluation Results",
+        scope="Preliminary blinded model-judge scores.",
+    )
+
+    report = render_native_review_markdown(summary)
+    assert report.startswith("# Normalized Model-Assisted Evaluation Results")
+    assert "Scope: Preliminary blinded model-judge scores." in report
+
+
 def test_rewrite_queue_is_blank_and_does_not_copy_held_out_text():
     review = _scored_row("B001", "base", passed=False)
     review["prompt"] = "Secret held-out prompt"
@@ -244,15 +316,43 @@ def test_recovery_lora_and_checkpoint_parsers_are_strict():
 
 def test_recovery_arm_config_matches_requested_matrix():
     config_path = ROOT / "configs/training/gemma4_recovery_arms.json"
-    config, first = load_arm(config_path, "qv-r8-lr2e6")
-    _, second = load_arm(config_path, "qv-r8-lr5e6")
-    _, third = load_arm(config_path, "qvo-r8-lr2e6")
+    config, first = load_arm(config_path, "qv-r8-lr2e5")
+    _, second = load_arm(config_path, "qv-r8-lr5e5")
+    _, third = load_arm(config_path, "qv-r8-lr1e4")
+    _, lower = load_arm(config_path, "qv-r8-lr5e6")
+    _, middle = load_arm(config_path, "qv-r8-lr1e5")
+    _, upper_middle = load_arm(config_path, "qv-r8-lr3e5")
 
+    assert config["dataset_gate"]["profile"] == "team-reviewed-longform-v1"
+    assert config["dataset_gate"]["minimum_rows"] == 3144
+    assert config["dataset_gate"]["maximum_rows"] == 3144
+    assert config["shared"]["max_steps"] == 100
+    assert config["shared"]["full_epoch_steps"] == 780
     assert config["shared"]["checkpoint_steps"] == [25, 50, 100]
+    assert config["shared"]["max_sequence_length"] == 1536
+    assert config["full_epoch"] == {
+        "max_steps": 780,
+        "save_steps": 100,
+        "eval_steps": 100,
+        "quality_gate_steps": [100, 200, 300, 400, 500, 600, 700],
+        "preserve_checkpoint_steps": [100, 200, 300, 400, 500, 600, 700],
+    }
+    assert config["extended_probe"] == {
+        "max_steps": 250,
+        "save_steps": 50,
+        "eval_steps": 50,
+        "quality_gate_steps": [50, 100, 150, 200, 250],
+        "preserve_checkpoint_steps": [50, 100, 150, 200, 250],
+        "quality_gate_policy": "record",
+    }
+    assert lower["learning_rate"] == 5e-6
+    assert middle["learning_rate"] == 1e-5
     assert first["target_modules"] == ["q_proj", "v_proj"]
-    assert first["lora_r"] == 8 and first["learning_rate"] == 2e-6
-    assert second["learning_rate"] == 5e-6
-    assert third["target_modules"] == ["q_proj", "v_proj", "o_proj"]
+    assert first["lora_r"] == 8 and first["learning_rate"] == 2e-5
+    assert second["learning_rate"] == 5e-5
+    assert upper_middle["learning_rate"] == 3e-5
+    assert third["target_modules"] == ["q_proj", "v_proj"]
+    assert third["learning_rate"] == 1e-4
 
 
 def _sft_row(row_id, split):
@@ -309,6 +409,29 @@ def test_downloaded_reviewed_package_requires_hash_matched_human_data(tmp_path):
         "train.jsonl",
         "validation.jsonl",
     ]
+
+
+def test_team_reviewed_longform_combines_sources_into_one_split():
+    native = _sft_row("native-row-1", "train")
+    native["source"] = "native-reviewed"
+    longform = _sft_row("longform-row-1", "validation")
+    longform["source"] = "generated-candidate"
+    longform["task_family"] = "natural-conversation"
+    longform["messages"][0]["content"] = "Amakuru yawe?"
+    longform["messages"][1]["content"] = "Ni meza cyane."
+
+    records, report = combine_records(
+        [native], [longform], dataset_id="combined-v1", train_ratio=0.5
+    )
+
+    assert report["conversation_count"] == 2
+    assert report["assistant_turn_count"] == 2
+    assert report["split_counts"] == {"train": 1, "validation": 1}
+    by_id = {record["id"]: record for record in records}
+    assert {row["split"] for row in records} == {"train", "validation"}
+    assert by_id["longform-row-1"]["curation_tier"] == (
+        "team-reviewed-distillation"
+    )
 
 
 def test_publication_metadata_preserves_selected_checkpoints(tmp_path):

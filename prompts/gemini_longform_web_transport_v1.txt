@@ -1,0 +1,10 @@
+
+Web-chat transport rules:
+
+- Return the JSON array inside exactly one fenced `json` code block. Add no text
+  before or after that block.
+- ASCII double quotes (U+0022) may be used only as JSON delimiters. Inside a
+  message's content, quote words or example sentences with single quotes.
+- Before responding, verify that a strict JSON parser can parse the code block.
+- This is a fresh candidate generation, not a request to revise any earlier
+  response.

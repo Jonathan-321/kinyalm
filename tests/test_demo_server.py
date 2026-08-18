@@ -42,6 +42,10 @@ class FakeRuntime:
             "finish_reason": "stop",
         }
 
+    def generate_variant_messages(self, *, variant, **kwargs):
+        result = self.generate_messages(**kwargs)
+        return {**result, "runtime_variant": variant}
+
     def close(self):
         self.closed = True
         self.closed_thread_id = threading.get_ident()
@@ -57,7 +61,7 @@ def chat_payload():
     }
 
 
-def ready_application(tmp_path):
+def ready_application(tmp_path, system_prompt_override=None):
     runtime = FakeRuntime()
     state = RuntimeState()
     state.set_ready(runtime, {"name": "KinyaLM", "location": "On this Mac"})
@@ -68,6 +72,7 @@ def ready_application(tmp_path):
         runtime=state,
         feedback=FeedbackStore(tmp_path / "feedback"),
         static_dir=static,
+        system_prompt_override=system_prompt_override,
     )
     return application, state, runtime
 
@@ -93,10 +98,40 @@ def test_stream_chat_emits_start_deltas_and_final_metrics(tmp_path):
     messages, max_tokens, thinking = runtime.calls[0]
     assert messages[0]["role"] == "system"
     assert messages[-1]["content"] == "Muraho"
-    assert max_tokens == 160
+    assert max_tokens == 256
     assert thinking is False
     assert runtime.call_thread_ids[0] != request_thread_id
     assert runtime.closed_thread_id == runtime.call_thread_ids[0]
+
+
+def test_stream_chat_can_use_fixed_benchmark_system_prompt(tmp_path):
+    application, state, runtime = ready_application(
+        tmp_path, system_prompt_override="Fixed benchmark prompt"
+    )
+
+    try:
+        application.stream_chat(chat_payload(), lambda event: None)
+    finally:
+        state.close()
+
+    messages, _, _ = runtime.calls[0]
+    assert messages[0] == {"role": "system", "content": "Fixed benchmark prompt"}
+
+
+def test_stream_chat_selects_requested_runtime_variant(tmp_path):
+    application, state, runtime = ready_application(tmp_path)
+    request_payload = chat_payload()
+    request_payload["runtime_variant"] = "base"
+    events = []
+
+    try:
+        application.stream_chat(request_payload, events.append)
+    finally:
+        state.close()
+
+    assert events[0]["runtime_variant"] == "base"
+    assert events[-1]["response"] == "Muraho neza."
+    assert len(runtime.calls) == 1
 
 
 def test_feedback_is_private_jsonl(tmp_path):

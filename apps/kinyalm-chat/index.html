@@ -127,21 +127,34 @@
         </header>
 
         <section class="controls-bar" aria-label="Conversation settings">
-          <div class="mode-control" role="tablist" aria-label="Mode">
-            <button class="mode-button active" data-mode="converse" role="tab" aria-selected="true" type="button">Converse</button>
-            <button class="mode-button" data-mode="translate" role="tab" aria-selected="false" type="button">Translate</button>
-            <button class="mode-button" data-mode="learn" role="tab" aria-selected="false" type="button">Learn</button>
+          <div class="segmented-controls">
+            <div class="mode-control" role="tablist" aria-label="Conversation mode">
+              <button class="mode-button active" data-mode="converse" role="tab" aria-selected="true" type="button">Converse</button>
+              <button class="mode-button" data-mode="translate" role="tab" aria-selected="false" type="button">Translate</button>
+              <button class="mode-button" data-mode="learn" role="tab" aria-selected="false" type="button">Learn</button>
+            </div>
+            <div class="runtime-control" role="tablist" aria-label="Model version">
+              <button class="runtime-button active" data-runtime="targeted" role="tab" aria-selected="true" type="button">Targeted</button>
+              <button class="runtime-button" data-runtime="base" role="tab" aria-selected="false" type="button">Base</button>
+              <button class="runtime-button" data-runtime="compare" role="tab" aria-selected="false" type="button">Compare</button>
+            </div>
           </div>
           <div class="select-controls">
-            <label>
-              <span class="sr-only">Response language</span>
-              <select id="language-select" aria-label="Response language">
-                <option value="auto">Auto language</option>
-                <option value="rw">Kinyarwanda</option>
-                <option value="en">English</option>
+            <label class="demo-prompt-control">
+              <span class="sr-only">Demo prompt</span>
+              <select id="demo-prompt-select" aria-label="Demo prompt">
+                <option value="">Demo prompts</option>
               </select>
             </label>
-            <label>
+            <label class="language-control">
+              <span class="sr-only">Response language</span>
+              <select id="language-select" aria-label="Response language">
+                <option value="auto">Auto</option>
+                <option value="rw">Kinyarwanda</option>
+                <option value="en" selected>English</option>
+              </select>
+            </label>
+            <label class="level-control">
               <span class="sr-only">Learning level</span>
               <select id="level-select" aria-label="Learning level">
                 <option value="beginner">Beginner</option>

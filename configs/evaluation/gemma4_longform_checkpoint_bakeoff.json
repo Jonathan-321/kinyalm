@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "run_name": "gemma4-longform-checkpoint-native-bakeoff-v1",
+  "task_bank": "docs/evaluation/recovery-task-bank.md",
+  "task_split": "benchmark-only",
+  "expected_task_count": 150,
+  "system_prompt": "You are KinyaLM, a concise Kinyarwanda-English language tutor. Answer the learner's request directly, accurately, and naturally. Use the language requested by the learner. Give the answer or correction first, then only the explanation needed for the task. Do not invent grammar, pronunciation, cultural claims, or current facts. State uncertainty briefly when needed. Do not mention the underlying model. Avoid decorative formatting and unnecessary repetition.",
+  "seed": 20260807,
+  "max_new_tokens": 256,
+  "enable_thinking": false,
+  "candidates": [
+    {
+      "id": "gemma4-12b-it-base",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
+    },
+    {
+      "id": "kinyalm-longform-step-400",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "adapter": {
+        "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+        "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+        "subfolder": "checkpoints/checkpoint-400"
+      }
+    },
+    {
+      "id": "kinyalm-longform-step-500",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "adapter": {
+        "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+        "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+        "subfolder": "checkpoints/checkpoint-500"
+      }
+    },
+    {
+      "id": "kinyalm-longform-step-600",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "adapter": {
+        "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+        "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+        "subfolder": "checkpoints/checkpoint-600"
+      }
+    },
+    {
+      "id": "kinyalm-longform-step-700",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "adapter": {
+        "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+        "revision": "44f584225fb3cc215a52be69fcb107da2e743643",
+        "subfolder": "checkpoints/checkpoint-700"
+      }
+    },
+    {
+      "id": "kinyalm-longform-step-780",
+      "model_id": "google/gemma-4-12B-it",
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "adapter": {
+        "repo_id": "kinyalm/kinyalm-gemma-4-12b-longform-fullepoch-qv-r8-lr2e5",
+        "revision": "44f584225fb3cc215a52be69fcb107da2e743643"
+      }
+    }
+  ]
+}

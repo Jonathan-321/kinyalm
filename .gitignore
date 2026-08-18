@@ -14,6 +14,7 @@ __pycache__/
 .mypy_cache/
 .venv/
 .env
+.tmp/
 
 # Large local data should not be committed by default.
 data/mlx-data/

@@ -20,12 +20,32 @@ def test_chat_request_applies_mode_budget_and_kinyalm_identity():
     assert request.messages == ({"role": "user", "content": "Muraho"},)
     assert "You are KinyaLM" in request.system_prompt
     assert "Do not introduce yourself as Gemma" in request.system_prompt
-    assert "four to seven short sentences" in request.system_prompt
+    assert "coherent multi-turn conversations" in request.system_prompt
+    assert "English-first bilingual assistant" in request.system_prompt
+    assert "English meaning:" in request.system_prompt
+    assert request.runtime_variant == "default"
 
 
-def test_chat_request_keeps_only_six_previous_turns():
+def test_chat_request_accepts_a_pinned_runtime_variant():
+    request_payload = payload([{"role": "user", "content": "Muraho"}])
+    request_payload["runtime_variant"] = "targeted"
+
+    request = parse_chat_request(request_payload)
+
+    assert request.runtime_variant == "targeted"
+
+
+def test_chat_request_rejects_unknown_runtime_variant():
+    request_payload = payload([{"role": "user", "content": "Muraho"}])
+    request_payload["runtime_variant"] = "winner"
+
+    with pytest.raises(ValueError, match="runtime_variant"):
+        parse_chat_request(request_payload)
+
+
+def test_chat_request_keeps_only_ten_previous_turns():
     messages = []
-    for index in range(8):
+    for index in range(12):
         messages.extend(
             [
                 {"role": "user", "content": f"question {index}"},
@@ -36,7 +56,7 @@ def test_chat_request_keeps_only_six_previous_turns():
 
     request = parse_chat_request(payload(messages))
 
-    assert len(request.messages) == 13
+    assert len(request.messages) == 21
     assert request.messages[0] == {"role": "user", "content": "question 2"}
     assert request.messages[-1]["content"] == "latest question"
 
@@ -64,7 +84,7 @@ def test_each_mode_has_distinct_behavior_and_budget():
     prompts = {mode: build_system_prompt(mode, "rw", "beginner") for mode in MODE_SPECS}
 
     assert len(set(prompts.values())) == len(MODE_SPECS)
-    assert MODE_SPECS["converse"].max_new_tokens == 160
+    assert MODE_SPECS["converse"].max_new_tokens == 256
     assert MODE_SPECS["translate"].max_new_tokens == 192
     assert MODE_SPECS["converse"].max_new_tokens < MODE_SPECS["learn"].max_new_tokens
-    assert "primarily in Kinyarwanda" in prompts["translate"]
+    assert "Respond in natural Kinyarwanda" in prompts["translate"]

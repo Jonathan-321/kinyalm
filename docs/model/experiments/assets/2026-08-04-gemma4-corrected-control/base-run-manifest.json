@@ -1,0 +1,55 @@
+{
+  "backend": "transformers",
+  "candidates": [
+    {
+      "adapter_id": null,
+      "adapter_revision": null,
+      "backend": "transformers",
+      "backend_version": "5.14.1",
+      "id": "gemma4-12b-it",
+      "ignored_weight_prefixes": [],
+      "model_id": "google/gemma-4-12B-it",
+      "model_type_override": null,
+      "quantization": null,
+      "revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "source_id": "gemma4-12b-it",
+      "source_model_id": "google/gemma-4-12B-it",
+      "source_revision": "707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7",
+      "suppress_token_ids": []
+    }
+  ],
+  "config_path": "configs/evaluation/gemma4_bakeoff.json",
+  "config_sha256": "f988ac250cf9124d0be32fcbcd691963aef5ebc6f3e516bae7cf0e3e64531139",
+  "created_at_utc": "2026-08-04T05:55:18.481461+00:00",
+  "enable_thinking": false,
+  "git_commit": "b303cdc8d555683d8cf0d8684677b697baec04af",
+  "max_new_tokens": 768,
+  "packages": {
+    "accelerate": "1.14.0",
+    "huggingface-hub": "1.25.1",
+    "mlx": null,
+    "mlx-lm": null,
+    "torch": "2.13.0",
+    "transformers": "5.14.1"
+  },
+  "platform": "Linux-6.8.0-1046-nvidia-x86_64-with-glibc2.35",
+  "python": "3.13.14 (main, Jul 23 2026, 14:44:45) [Clang 22.1.3 ]",
+  "run_kind": "bf16-reference",
+  "run_name": "gemma4-zero-shot-bakeoff-v1",
+  "schema_version": 1,
+  "task_bank_path": "docs/evaluation/learning-task-bank.md",
+  "task_bank_sha256": "c3602c292093ba376aa73318036b7824248b9d37d099aa4e95adf9ae0dfe3929",
+  "task_count": 10,
+  "task_ids": [
+    "T001",
+    "T003",
+    "T005",
+    "T008",
+    "T010",
+    "T011",
+    "T013",
+    "T015",
+    "T016",
+    "T018"
+  ]
+}

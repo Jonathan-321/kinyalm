@@ -1,6 +1,7 @@
 """Evaluation helpers for KinyaLM."""
 
 from kinyalm.evaluation.bakeoff import (
+    AdapterSpec,
     BakeoffConfig,
     CandidateSpec,
     MlxRuntimeSpec,
@@ -15,7 +16,10 @@ from kinyalm.evaluation.benchmarks import (
     load_benchmark_manifest,
     validate_benchmark_manifest,
 )
-from kinyalm.evaluation.native_review import summarize_native_review
+from kinyalm.evaluation.native_review import (
+    render_native_review_markdown,
+    summarize_native_review,
+)
 from kinyalm.evaluation.repetition import compare_probe_repetition
 from kinyalm.evaluation.task_bank import (
     TutorTask,
@@ -24,6 +28,7 @@ from kinyalm.evaluation.task_bank import (
 )
 
 __all__ = [
+    "AdapterSpec",
     "BenchmarkManifestResult",
     "BenchmarkSpec",
     "BakeoffConfig",
@@ -38,6 +43,7 @@ __all__ = [
     "load_benchmark_manifest",
     "load_task_bank",
     "summarize_native_review",
+    "render_native_review_markdown",
     "validate_benchmark_manifest",
     "write_blind_review_pack",
 ]

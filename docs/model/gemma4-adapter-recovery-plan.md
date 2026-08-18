@@ -59,6 +59,72 @@ Use the same chat template, system prompt, greedy decoding, and token budget.
 If the direct PEFT and MLX answers disagree materially, investigate base
 checkpoint compatibility before another training run.
 
+The runner now supports adapter variants without changing the held-out task
+bank or decoding configuration. Run the first ten tasks on CUDA for the base:
+
+```bash
+uv run python scripts/run_multilingual_bakeoff.py \
+  --backend transformers \
+  --candidate gemma4-12b-it \
+  --limit 10 \
+  --output-dir outputs/adapter-parity/base
+```
+
+Then run the original PEFT adapter directly against the same pinned base:
+
+```bash
+uv run python scripts/run_multilingual_bakeoff.py \
+  --backend transformers \
+  --candidate gemma4-12b-it \
+  --adapter kinyalm/kinyalm-gemma-4-12b-experimental \
+  --adapter-revision feefb1e7ac359b60ca45af9db8fd883af8cac933 \
+  --run-as original-peft \
+  --limit 10 \
+  --output-dir outputs/adapter-parity/peft
+```
+
+Run the converted adapter on the Mac with the same task subset:
+
+```bash
+OUTPUT_DIR=outputs/adapter-parity/mlx \
+  bash scripts/local/run_gemma4_12b_bakeoff.sh \
+  --adapter ~/.cache/kinyalm/gemma4-12b-experimental-adapter/adapter-mlx \
+  --adapter-revision feefb1e7ac359b60ca45af9db8fd883af8cac933 \
+  --run-as original-mlx \
+  --limit 10
+```
+
+After all three raw files are on one machine, build a randomized review pack:
+
+```bash
+uv run python scripts/build_adapter_parity_review.py \
+  --limit 10 \
+  --result outputs/adapter-parity/base/raw/gemma4-12b-it.jsonl \
+  --result outputs/adapter-parity/peft/raw/original-peft.jsonl \
+  --result outputs/adapter-parity/mlx/raw/original-mlx.jsonl \
+  --output-dir outputs/adapter-parity/review
+```
+
+Share only `blind-review.csv` during scoring. `blind-key.json` contains model
+and adapter identities and must remain private until the review is complete.
+
+The direct PEFT run from 2026-08-03 already reproduced catastrophic repetition
+and elementary meaning errors on a separate 30-prompt set. The local MLX arm
+completed on 2026-08-04 and failed 2 of 10 held-out tasks through catastrophic
+repetition while making additional meaning errors. The unchanged MLX base
+completed the same 10 tasks with zero token-limit loops and preserved the two
+elementary translations reversed by the adapter. See
+[`experiments/2026-08-03-gemma4-base-vs-adapter-eval.md`](experiments/2026-08-03-gemma4-base-vs-adapter-eval.md)
+and
+[`experiments/2026-08-04-gemma4-12b-mlx-adapter-heldout.md`](experiments/2026-08-04-gemma4-12b-mlx-adapter-heldout.md).
+The corrected adapter completed an exact same-prompt CUDA-versus-MLX check on
+2026-08-04 and failed output parity. The MLX arm moved the catastrophic loop
+from `T010` to `T005` and reversed two elementary translations that CUDA got
+right. This does not isolate quantization from adapter-runtime semantics, but it
+does disqualify the current QAT-base-plus-adapter composition as a faithful
+local representation of the PEFT checkpoint. See
+[`experiments/2026-08-04-gemma4-12b-corrected-control.md`](experiments/2026-08-04-gemma4-12b-corrected-control.md).
+
 ### Gate 2: corrected-objective control
 
 Train one experimental control on the same immutable 863-row split using the
@@ -66,9 +132,22 @@ corrected assistant-only objective, one epoch, and `5e-5`. This isolates the
 training-objective change. Keep it labeled experimental because the source is
 still critic-only.
 
+The Gemma 4 Lambda profile publishes this control to
+`kinyalm/kinyalm-gemma-4-12b-corrected-control`. It must not reuse the rejected
+adapter repository.
+
 Save checkpoints every 25 steps. Evaluate each checkpoint on the same held-out
 task bank so a late regression can be discarded instead of accepted merely
 because final validation loss is lower.
+
+**Status (2026-08-04): completed, but failed the model-quality gate.** The
+one-epoch control reached validation loss `1.3750` and token accuracy `0.6993`,
+then completed an exact BF16 base-versus-PEFT comparison on ten held-out tasks.
+The adapter reduced mean output length from 379.2 to 170.6 tokens, but one task
+entered a factually wrong 768-token repetition loop while the base had zero
+token-limit failures. The training correction is retained; this adapter is not
+promoted. See
+[`experiments/2026-08-04-gemma4-12b-corrected-control.md`](experiments/2026-08-04-gemma4-12b-corrected-control.md).
 
 ### Gate 3: curated-data run
 
@@ -115,4 +194,3 @@ preference set or an automatic verifier for Kinyarwanda naturalness.
   separately.
 - [MT-Bench](https://arxiv.org/abs/2306.05685) documents model-judge biases and
   supports retaining blinded native-speaker review as the final language gate.
-

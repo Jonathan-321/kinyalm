@@ -55,12 +55,22 @@ class MlxRuntimeSpec:
 
 
 @dataclass(frozen=True)
+class AdapterSpec:
+    """One pinned Hugging Face PEFT adapter or checkpoint subfolder."""
+
+    repo_id: str
+    revision: str
+    subfolder: str | None = None
+
+
+@dataclass(frozen=True)
 class CandidateSpec:
-    """One unchanged model candidate in a bake-off."""
+    """One base model or base-plus-adapter candidate in a bake-off."""
 
     id: str
     model_id: str
     revision: str
+    adapter: AdapterSpec | None = None
     local_mlx: MlxRuntimeSpec | None = None
 
 
@@ -192,8 +202,21 @@ def write_blind_review_pack(
                     "blind_id": blind_id,
                     "model_label": label_by_candidate[candidate_id],
                     "candidate_id": candidate_id,
-                    "model_id": str(result.get("model_id", "")),
-                    "model_revision": str(result.get("model_revision", "")),
+                    "model_id": _optional_text(result.get("model_id")),
+                    "model_revision": _optional_text(
+                        result.get("model_revision")
+                    ),
+                    "adapter_id": _optional_text(result.get("adapter_id")),
+                    "adapter_revision": _optional_text(
+                        result.get("adapter_revision")
+                    ),
+                    "adapter_subfolder": _optional_text(
+                        result.get("adapter_subfolder")
+                    ),
+                    "inference_backend": _optional_text(
+                        result.get("inference_backend")
+                    ),
+                    "quantization": _optional_text(result.get("quantization")),
                 }
             )
 
@@ -230,11 +253,27 @@ def _candidate(raw: Any, index: int) -> CandidateSpec:
     local_mlx = None
     if local_mlx_raw is not None:
         local_mlx = _mlx_runtime(local_mlx_raw, index)
+    adapter_raw = raw.get("adapter")
+    adapter = None
+    if adapter_raw is not None:
+        adapter = _adapter(adapter_raw, index)
     return CandidateSpec(
         id=_string(raw, "id", label=f"candidate {index}"),
         model_id=_string(raw, "model_id", label=f"candidate {index}"),
         revision=_string(raw, "revision", label=f"candidate {index}"),
+        adapter=adapter,
         local_mlx=local_mlx,
+    )
+
+
+def _adapter(raw: Any, index: int) -> AdapterSpec:
+    if not isinstance(raw, dict):
+        raise ValueError(f"candidate {index} adapter must be a JSON object")
+    label = f"candidate {index} adapter"
+    return AdapterSpec(
+        repo_id=_string(raw, "repo_id", label=label),
+        revision=_string(raw, "revision", label=label),
+        subfolder=_optional_string(raw, "subfolder", label=label),
     )
 
 
@@ -274,6 +313,20 @@ def _validate_config(config: BakeoffConfig) -> None:
     for candidate in config.candidates:
         if not REVISION_PATTERN.fullmatch(candidate.revision):
             raise ValueError(f"{candidate.id}: revision must be a 40-character SHA")
+        if candidate.adapter is not None:
+            if not REVISION_PATTERN.fullmatch(candidate.adapter.revision):
+                raise ValueError(
+                    f"{candidate.id}: adapter revision must be a 40-character SHA"
+                )
+            subfolder = candidate.adapter.subfolder
+            if subfolder is not None and (
+                subfolder.startswith("/")
+                or subfolder.endswith("/")
+                or any(part in {"", ".", ".."} for part in subfolder.split("/"))
+            ):
+                raise ValueError(
+                    f"{candidate.id}: adapter subfolder must be a safe relative path"
+                )
         if candidate.local_mlx is not None and not REVISION_PATTERN.fullmatch(
             candidate.local_mlx.revision
         ):
@@ -297,10 +350,25 @@ def _review_response(result: dict[str, Any]) -> str:
     return f"[GENERATION ERROR] {error}"
 
 
+def _optional_text(value: Any) -> str:
+    return "" if value is None else str(value)
+
+
 def _string(raw: dict[str, Any], key: str, *, label: str = "config") -> str:
     value = raw.get(key)
     if not isinstance(value, str) or not value.strip():
         raise ValueError(f"{label} {key} must be a non-empty string")
+    return value.strip()
+
+
+def _optional_string(
+    raw: dict[str, Any], key: str, *, label: str = "config"
+) -> str | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"{label} {key} must be a non-empty string when provided")
     return value.strip()
 
 

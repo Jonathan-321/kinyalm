@@ -120,6 +120,9 @@ claim through its own held-out and native-speaker evaluation.
 | [Direct Preference Optimization](https://arxiv.org/abs/2305.18290) | Learn from chosen/rejected responses without the full PPO reward-model loop | Best candidate for a later preference stage after native speakers create a frozen comparison dataset | Future; no preference run |
 | [Constitutional AI](https://arxiv.org/abs/2212.08073) | AI feedback can generate critiques and preferences under explicit principles | Supports critic-assisted review, but reinforces the need to separate AI feedback from human linguistic authority | Conceptual reference |
 | [Tulu 3](https://arxiv.org/abs/2411.15124) | Combines SFT, DPO, RLVR, decontamination, and multi-task evaluation in an open post-training recipe | Useful map of later stages; RLVR is not the first priority for subjective Kinyarwanda tutoring quality | Future reference |
+| [Concrete Problems in AI Safety](https://arxiv.org/abs/1606.06565) | An imperfect objective can produce reward hacking and unintended behavior | Every future reward must be paired with correctness, meaning-preservation, and regression gates | Future preference/RL design |
+| [Deep Reinforcement Learning from Human Preferences](https://arxiv.org/abs/1706.03741) | Pairwise human feedback can communicate goals that are difficult to specify programmatically | Supports native-speaker preference pairs for nuanced tutoring quality | Future preference data |
+| [Scaling Laws for Reward Model Overoptimization](https://arxiv.org/abs/2210.10760) | Optimizing an imperfect proxy reward too strongly can reduce ground-truth quality | KinyaLM will retain held-out human review and avoid selecting a checkpoint from reward score alone | Future preference/RL design |
 
 ### Why RL is not the next project step
 
@@ -132,6 +135,17 @@ claim through its own held-out and native-speaker evaluation.
   judgment.
 - The highest-value next result is still a clean SFT base-versus-adapter
   comparison. DPO can follow once reviewers create chosen/rejected pairs.
+
+### Practitioner evidence boundary
+
+The team also reviewed an August 3, 2026 Castform case study in which a
+rule-based style reward was exploited through short, content-losing answers.
+Semantic-preservation and tone rewards corrected specific failures, while a
+larger model and more detector rewards did not guarantee generalization to
+unseen detectors. We use this as a practical design warning for multi-objective
+rewards and output inspection, not as a peer-reviewed result or evidence about
+Kinyarwanda. See the [Castform RL workflow](https://castform.com/docs/getting-started/how-it-works/)
+and the shared [training run](https://app.castform.com/train/e280fa87-5916-4156-afa3-128bcf0747bd).
 
 ## Serving, context, and tools
 

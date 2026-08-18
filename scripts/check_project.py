@@ -114,7 +114,10 @@ def main() -> int:
         f"{len(benchmark_specs)} external benchmark specs from "
         f"{benchmark_manifest_path.relative_to(ROOT)}."
     )
-    print("First implementation target: tokenizer analysis on reviewed examples.")
+    print(
+        "Current target: hidden native evaluation, adapter recovery, and a "
+        "reproducible research release."
+    )
     print(
         "Reminder: keep raw training data, benchmark test rows, and experiment "
         "artifacts out of this repo."

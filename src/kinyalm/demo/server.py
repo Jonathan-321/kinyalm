@@ -9,7 +9,7 @@ import threading
 import time
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -107,12 +107,28 @@ class RuntimeState:
                         {"role": "system", "content": job.request.system_prompt},
                         *job.request.messages,
                     ]
-                    job.result = runtime.generate_messages(
-                        messages=messages,
-                        max_new_tokens=job.request.max_new_tokens,
-                        enable_thinking=False,
-                        on_text=job.on_text,
-                    )
+                    if job.request.runtime_variant == "default":
+                        job.result = runtime.generate_messages(
+                            messages=messages,
+                            max_new_tokens=job.request.max_new_tokens,
+                            enable_thinking=False,
+                            on_text=job.on_text,
+                        )
+                    else:
+                        generate_variant = getattr(
+                            runtime, "generate_variant_messages", None
+                        )
+                        if generate_variant is None:
+                            raise ValueError(
+                                "this runtime does not support base/adapter comparison"
+                            )
+                        job.result = generate_variant(
+                            variant=job.request.runtime_variant,
+                            messages=messages,
+                            max_new_tokens=job.request.max_new_tokens,
+                            enable_thinking=False,
+                            on_text=job.on_text,
+                        )
                 except BaseException as exc:
                     job.error = exc
                 finally:
@@ -232,10 +248,12 @@ class ChatApplication:
         runtime: RuntimeState,
         feedback: FeedbackStore,
         static_dir: Path,
+        system_prompt_override: str | None = None,
     ) -> None:
         self.runtime = runtime
         self.feedback = feedback
         self.static_dir = static_dir.resolve()
+        self.system_prompt_override = system_prompt_override
 
     def static_file(self, request_path: str) -> Path | None:
         relative = "index.html" if request_path == "/" else request_path.lstrip("/")
@@ -252,12 +270,15 @@ class ChatApplication:
         send: Callable[[dict[str, Any]], None],
     ) -> None:
         request = parse_chat_request(payload)
+        if self.system_prompt_override is not None:
+            request = replace(request, system_prompt=self.system_prompt_override)
         request_id = str(uuid.uuid4())
         send(
             {
                 "type": "start",
                 "request_id": request_id,
                 "max_new_tokens": request.max_new_tokens,
+                "runtime_variant": request.runtime_variant,
             }
         )
         result = self.runtime.generate(

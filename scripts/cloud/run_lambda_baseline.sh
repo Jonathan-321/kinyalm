@@ -16,15 +16,31 @@ case "$DATA_PROFILE" in
   native-recovery-v1)
     PROFILE_DATA_REVISION=""
     ;;
+  team-reviewed-longform-v1)
+    PROFILE_DATA_REVISION=""
+    ;;
   *)
-    echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, or native-recovery-v1" >&2
+    echo "DATA_PROFILE must be legacy-critic-1k, sft10k-v4, human-reviewed-432, native-recovery-v1, or team-reviewed-longform-v1" >&2
     exit 2
     ;;
 esac
 DATA_REVISION="${DATA_REVISION:-$PROFILE_DATA_REVISION}"
-DATA_PATH_IN_REPO="${DATA_PATH_IN_REPO:-data/reviewed/native-recovery-rewrites-v1}"
-if [[ "$DATA_PROFILE" == "native-recovery-v1" && -z "$DATA_REVISION" ]]; then
-  echo "DATA_REVISION is required for native-recovery-v1" >&2
+if [[ "$DATA_PROFILE" == "team-reviewed-longform-v1" ]]; then
+  PROFILE_DATA_PATH="data/reviewed/kinyalm-team-reviewed-longform-sft3144-v1"
+  PROFILE_DATA_MINIMUM_ROWS=3144
+  PROFILE_DATA_MAXIMUM_ROWS=3144
+else
+  PROFILE_DATA_PATH="data/reviewed/native-recovery-rewrites-v1"
+  PROFILE_DATA_MINIMUM_ROWS=500
+  PROFILE_DATA_MAXIMUM_ROWS=1000
+fi
+DATA_PATH_IN_REPO="${DATA_PATH_IN_REPO:-$PROFILE_DATA_PATH}"
+DATA_MINIMUM_ROWS="${DATA_MINIMUM_ROWS:-$PROFILE_DATA_MINIMUM_ROWS}"
+DATA_MAXIMUM_ROWS="${DATA_MAXIMUM_ROWS:-$PROFILE_DATA_MAXIMUM_ROWS}"
+if [[ ( "$DATA_PROFILE" == "native-recovery-v1" \
+  || "$DATA_PROFILE" == "team-reviewed-longform-v1" ) \
+  && -z "$DATA_REVISION" ]]; then
+  echo "DATA_REVISION is required for pinned reviewed data" >&2
   exit 2
 fi
 MODEL_PROFILE="${MODEL_PROFILE:-gemma4}"
@@ -41,9 +57,9 @@ case "$MODEL_PROFILE" in
     # still require the appropriate Hugging Face organization permissions.
     PROFILE_MODEL_ID="google/gemma-4-12B-it"
     PROFILE_MODEL_REVISION="707f0a3b8a3c7ad586ed01e27eafbad8a27dd0f7"
-    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-experimental"
+    PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-corrected-control"
     PROFILE_ATTN_IMPLEMENTATION="eager"
-    PROFILE_RUN_SLUG="gemma4-12b-experimental"
+    PROFILE_RUN_SLUG="gemma4-12b-corrected-control"
     ;;
   qwen)
     PROFILE_MODEL_ID="Qwen/Qwen2.5-7B-Instruct"
@@ -72,6 +88,11 @@ elif [[ "$DATA_PROFILE" == "native-recovery-v1" && "$MODEL_PROFILE" == "gemma4" 
   PROFILE_RUN_SLUG="gemma4-12b-native-recovery"
   PROFILE_SAVE_STEPS=25
   PROFILE_EVAL_STEPS=25
+elif [[ "$DATA_PROFILE" == "team-reviewed-longform-v1" && "$MODEL_PROFILE" == "gemma4" ]]; then
+  PROFILE_OUTPUT_REPO="kinyalm/kinyalm-gemma-4-12b-longform-probe"
+  PROFILE_RUN_SLUG="gemma4-12b-longform-probe"
+  PROFILE_SAVE_STEPS=25
+  PROFILE_EVAL_STEPS=25
 else
   PROFILE_SAVE_STEPS=25
   PROFILE_EVAL_STEPS=25
@@ -87,18 +108,27 @@ ALLOW_EXPERIMENTAL_FULL_RUN="${ALLOW_EXPERIMENTAL_FULL_RUN:-0}"
 WARMUP_RATIO="${WARMUP_RATIO:-0.03}"
 LEARNING_RATE="${LEARNING_RATE:-5e-5}"
 EPOCHS="${EPOCHS:-1}"
+MAX_SEQ_LEN="${MAX_SEQ_LEN:-1024}"
 SAVE_STEPS="${SAVE_STEPS:-$PROFILE_SAVE_STEPS}"
 EVAL_STEPS="${EVAL_STEPS:-$PROFILE_EVAL_STEPS}"
+RESUME_FROM_CHECKPOINT="${RESUME_FROM_CHECKPOINT:-}"
+INIT_ADAPTER="${INIT_ADAPTER:-}"
+INIT_ADAPTER_REVISION="${INIT_ADAPTER_REVISION:-}"
+INIT_ADAPTER_SUBFOLDER="${INIT_ADAPTER_SUBFOLDER:-}"
 LORA_R="${LORA_R:-16}"
 LORA_ALPHA="${LORA_ALPHA:-32}"
 LORA_DROPOUT="${LORA_DROPOUT:-0.05}"
 LORA_TARGET_MODULES="${LORA_TARGET_MODULES:-q_proj,k_proj,v_proj,o_proj,gate_proj,up_proj,down_proj}"
 QUALITY_GATE_CONFIG="${QUALITY_GATE_CONFIG:-}"
 QUALITY_GATE_STEPS="${QUALITY_GATE_STEPS:-25,50,100}"
+QUALITY_GATE_POLICY="${QUALITY_GATE_POLICY:-stop}"
 PRESERVE_CHECKPOINT_STEPS="${PRESERVE_CHECKPOINT_STEPS:-25,50,100}"
 CANDIDATE_QUALITY_POLICY="${CANDIDATE_QUALITY_POLICY:-unflagged}"
-SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE:-configs/training/track2-baseline-prompts.txt}"
-SAMPLES_ENABLED=1
+SAMPLE_PROMPTS_FILE="${SAMPLE_PROMPTS_FILE-configs/training/track2-baseline-prompts.txt}"
+SAMPLES_ENABLED=0
+if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
+  SAMPLES_ENABLED=1
+fi
 if [[ "$MAX_STEPS" == "1" ]]; then
   WARMUP_RATIO=0
   SAMPLE_PROMPTS_FILE=""
@@ -136,11 +166,45 @@ if [[ ! "$LORA_TARGET_MODULES" =~ ^(q_proj|k_proj|v_proj|o_proj|gate_proj|up_pro
   echo "LORA_TARGET_MODULES contains an unsupported projection list" >&2
   exit 2
 fi
+if [[ "$QUALITY_GATE_POLICY" != "stop" && "$QUALITY_GATE_POLICY" != "record" ]]; then
+  echo "QUALITY_GATE_POLICY must be stop or record" >&2
+  exit 2
+fi
+if [[ -n "$RESUME_FROM_CHECKPOINT" && ! "$RESUME_FROM_CHECKPOINT" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "RESUME_FROM_CHECKPOINT must be an absolute checkpoint path" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER" \
+  && ! "$INIT_ADAPTER" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ \
+  && ! "$INIT_ADAPTER" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+  echo "INIT_ADAPTER must be a Hugging Face repository ID or absolute path" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER_REVISION" && ! "$INIT_ADAPTER_REVISION" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "INIT_ADAPTER_REVISION must be a 40-character commit SHA" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER_SUBFOLDER" \
+  && ! "$INIT_ADAPTER_SUBFOLDER" =~ ^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]]; then
+  echo "INIT_ADAPTER_SUBFOLDER must be a safe relative path" >&2
+  exit 2
+fi
+if [[ -n "$INIT_ADAPTER" && -n "$RESUME_FROM_CHECKPOINT" ]]; then
+  echo "INIT_ADAPTER and RESUME_FROM_CHECKPOINT are mutually exclusive" >&2
+  exit 2
+fi
+if [[ -z "$INIT_ADAPTER" \
+  && ( -n "$INIT_ADAPTER_REVISION" || -n "$INIT_ADAPTER_SUBFOLDER" ) ]]; then
+  echo "INIT_ADAPTER_REVISION and INIT_ADAPTER_SUBFOLDER require INIT_ADAPTER" >&2
+  exit 2
+fi
 if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'model_profile=%s\n' "$MODEL_PROFILE"
   printf 'data_profile=%s\n' "$DATA_PROFILE"
   printf 'data_revision=%s\n' "$DATA_REVISION"
   printf 'data_path_in_repo=%s\n' "$DATA_PATH_IN_REPO"
+  printf 'data_minimum_rows=%s\n' "$DATA_MINIMUM_ROWS"
+  printf 'data_maximum_rows=%s\n' "$DATA_MAXIMUM_ROWS"
   printf 'model_id=%s\n' "$MODEL_ID"
   printf 'model_revision=%s\n' "$MODEL_REVISION"
   printf 'output_repo=%s\n' "$OUTPUT_REPO"
@@ -149,17 +213,24 @@ if [[ "$PROFILE_ONLY" == "1" ]]; then
   printf 'warmup_ratio=%s\n' "$WARMUP_RATIO"
   printf 'learning_rate=%s\n' "$LEARNING_RATE"
   printf 'epochs=%s\n' "$EPOCHS"
+  printf 'max_sequence_length=%s\n' "$MAX_SEQ_LEN"
   printf 'save_steps=%s\n' "$SAVE_STEPS"
   printf 'eval_steps=%s\n' "$EVAL_STEPS"
+  printf 'resume_from_checkpoint=%s\n' "$RESUME_FROM_CHECKPOINT"
+  printf 'init_adapter=%s\n' "$INIT_ADAPTER"
+  printf 'init_adapter_revision=%s\n' "$INIT_ADAPTER_REVISION"
+  printf 'init_adapter_subfolder=%s\n' "$INIT_ADAPTER_SUBFOLDER"
   printf 'lora_r=%s\n' "$LORA_R"
   printf 'lora_alpha=%s\n' "$LORA_ALPHA"
   printf 'lora_dropout=%s\n' "$LORA_DROPOUT"
   printf 'lora_target_modules=%s\n' "$LORA_TARGET_MODULES"
   printf 'quality_gate_config=%s\n' "$QUALITY_GATE_CONFIG"
   printf 'quality_gate_steps=%s\n' "$QUALITY_GATE_STEPS"
+  printf 'quality_gate_policy=%s\n' "$QUALITY_GATE_POLICY"
   printf 'preserve_checkpoint_steps=%s\n' "$PRESERVE_CHECKPOINT_STEPS"
   printf 'candidate_quality_policy=%s\n' "$CANDIDATE_QUALITY_POLICY"
   printf 'samples_enabled=%s\n' "$SAMPLES_ENABLED"
+  printf 'sample_prompts_file=%s\n' "$SAMPLE_PROMPTS_FILE"
   exit 0
 fi
 if [[ "$PREFLIGHT_ONLY" == "0" && "$MODEL_PROFILE" == "gemma4" \
@@ -252,12 +323,14 @@ case "$DATA_PROFILE" in
       --output-dir "$DATA_DIR" \
       --acknowledge-experimental
     ;;
-  native-recovery-v1)
+  native-recovery-v1|team-reviewed-longform-v1)
     uv run python scripts/download_reviewed_sft.py \
       --repo-id "$DATA_REPO" \
       --revision "$DATA_REVISION" \
       --path-in-repo "$DATA_PATH_IN_REPO" \
-      --output-dir "$DATA_DIR"
+      --output-dir "$DATA_DIR" \
+      --minimum-rows "$DATA_MINIMUM_ROWS" \
+      --maximum-rows "$DATA_MAXIMUM_ROWS"
     ;;
 esac
 
@@ -272,6 +345,7 @@ training_args=(
   --warmup-ratio "$WARMUP_RATIO"
   --learning-rate "$LEARNING_RATE"
   --epochs "$EPOCHS"
+  --max-seq-len "$MAX_SEQ_LEN"
   --save-steps "$SAVE_STEPS"
   --eval-steps "$EVAL_STEPS"
   --max-steps "$MAX_STEPS"
@@ -280,8 +354,21 @@ training_args=(
   --lora-dropout "$LORA_DROPOUT"
   --target-modules "$LORA_TARGET_MODULES"
 )
+if [[ -n "$RESUME_FROM_CHECKPOINT" ]]; then
+  training_args+=(--resume-from-checkpoint "$RESUME_FROM_CHECKPOINT")
+fi
+if [[ -n "$INIT_ADAPTER" ]]; then
+  training_args+=(--init-adapter "$INIT_ADAPTER")
+fi
+if [[ -n "$INIT_ADAPTER_REVISION" ]]; then
+  training_args+=(--init-adapter-revision "$INIT_ADAPTER_REVISION")
+fi
+if [[ -n "$INIT_ADAPTER_SUBFOLDER" ]]; then
+  training_args+=(--init-adapter-subfolder "$INIT_ADAPTER_SUBFOLDER")
+fi
 if [[ "$DATA_PROFILE" != "human-reviewed-432" \
-  && "$DATA_PROFILE" != "native-recovery-v1" ]]; then
+  && "$DATA_PROFILE" != "native-recovery-v1" \
+  && "$DATA_PROFILE" != "team-reviewed-longform-v1" ]]; then
   training_args+=(--experimental)
 fi
 if [[ -n "$SAMPLE_PROMPTS_FILE" ]]; then
@@ -291,6 +378,7 @@ if [[ -n "$QUALITY_GATE_CONFIG" ]]; then
   training_args+=(
     --quality-gate-config "$QUALITY_GATE_CONFIG"
     --quality-gate-steps "$QUALITY_GATE_STEPS"
+    --quality-gate-policy "$QUALITY_GATE_POLICY"
   )
 fi
 

@@ -1,0 +1,45 @@
+Generate candidate supervised fine-tuning conversations for KinyaLM, a
+Kinyarwanda-first language tutor built from Gemma 4 12B IT.
+
+Return only one JSON array containing exactly the conversations listed in the
+batch specification. Preserve every supplied metadata value exactly. Do not
+add Markdown, commentary, scores, review notes, or extra conversations.
+
+Each conversation object must contain exactly these fields:
+
+  conversation_id, batch_id, task_family, difficulty, source_language,
+  target_language, messages
+
+Messages must alternate user and assistant, start with the user, end with the
+assistant, and contain exactly the specified message_count.
+
+Quality contract:
+
+- Every assistant response should contain 90-140 words and approximately
+  100-300 Gemma tokens. Do not pad answers with praise or summaries.
+- Later user messages must react to, apply, challenge, or clarify the preceding
+  answer. Later answers must use details established earlier in the dialogue.
+- Use the scenario_seed as inspiration, not as text that must appear.
+- Keep Kinyarwanda natural and idiomatic. Avoid literal translation when a
+  natural Kinyarwanda expression exists.
+- For correction tasks, give the corrected form, identify the exact change,
+  explain why it is needed, and provide a fresh example.
+- For morphology, distinguish underlying morphemes from surface sound changes.
+  Do not invent a rule when the analysis is uncertain.
+- For ambiguity, ask for the missing context before giving a specific answer.
+- Reading-comprehension tasks must include a complete original source passage
+  in the first user message and answer only from that passage.
+- Translation tasks must explain one meaningful agreement, register, or
+  word-choice decision.
+- Code-switching tasks must describe register as context-dependent without
+  calling ordinary informal speech inferior or disrespectful.
+- Avoid generic praise, repeated openings, canned conclusions, unsupported
+  cultural claims, and claims about being a model or native speaker.
+- Do not include private information, current politics, medical, legal, or
+  financial advice, religious persuasion, stereotypes, or unverifiable facts.
+- Check spelling, spacing, noun agreement, verb morphology, tense, and
+  punctuation before returning the JSON.
+
+Batch specification:
+
+{{BATCH_SPECIFICATION_JSON}}

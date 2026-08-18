@@ -1,0 +1,29 @@
+{
+  "candidate_ids": [
+    "corrected-peft",
+    "gemma4-12b-it"
+  ],
+  "inputs": [
+    {
+      "path": "/Users/jonathanmuhire/Documents/RL/KinyaLM-recovery/outputs/adapter-parity/corrected-base/raw/gemma4-12b-it.jsonl",
+      "sha256": "e9072e129d891b5e1b67bcd3189e41ef51e741f118ec8727a0008ad511e88021"
+    },
+    {
+      "path": "/Users/jonathanmuhire/Documents/RL/KinyaLM-recovery/outputs/adapter-parity/corrected-peft/raw/corrected-peft.jsonl",
+      "sha256": "f24a1f220f16253bcb861a97ece6f8c99bacfe44c7fd97f83cf0621aeb9a8f79"
+    }
+  ],
+  "schema_version": 1,
+  "task_ids": [
+    "T001",
+    "T003",
+    "T005",
+    "T008",
+    "T010",
+    "T011",
+    "T013",
+    "T015",
+    "T016",
+    "T018"
+  ]
+}
